@@ -1,0 +1,118 @@
+{
+ "actions": [],
+ "creation": "2021-02-17 08:31:46.780071",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "approval_doctype",
+  "approval_role",
+  "enabled",
+  "column_break_3",
+  "primary_assignee",
+  "last_user",
+  "section_break_6",
+  "condition",
+  "section_break_4",
+  "message",
+  "title"
+ ],
+ "fields": [
+  {
+   "fieldname": "approval_doctype",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Approval Doctype",
+   "options": "DocType",
+   "reqd": 1
+  },
+  {
+   "fieldname": "approval_role",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Approval Role",
+   "options": "Role",
+   "reqd": 1
+  },
+  {
+   "fieldname": "condition",
+   "fieldtype": "Text",
+   "label": "Condition"
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "last_user",
+   "fieldtype": "Link",
+   "label": "Last user",
+   "options": "User"
+  },
+  {
+   "fieldname": "message",
+   "fieldtype": "Code",
+   "label": "Message"
+  },
+  {
+   "fieldname": "primary_assignee",
+   "fieldtype": "Link",
+   "label": "Primary Assignee",
+   "options": "User"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "Title",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled"
+  }
+ ],
+ "links": [],
+ "modified": "2022-11-17 11:25:31.093733",
+ "modified_by": "Administrator",
+ "module": "Approvals",
+ "name": "Document Approval Rule",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All",
+   "share": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
+}

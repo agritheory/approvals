@@ -51,7 +51,7 @@ export default {
 		},
 		status(){
 			if(cur_frm.doc.docstatus !== 0){
-				return false
+				return true
 			}	else if(this.approval.approval_role != 'User Approval' && !this.approval.user_has_approval_role){
 				return true
 			}	else if(this.approval.approval_role == 'User Approval' && this.approval.assigned_username !== frappe.session.user){

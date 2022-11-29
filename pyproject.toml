@@ -1,5 +1,5 @@
 [project]
-name = "check_run"
+name = "approvals"
 authors = [
     { name = "AgriTheory", email = "support@agritheory.dev"}
 ]

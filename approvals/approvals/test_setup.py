@@ -167,7 +167,7 @@ def create_invoices(settings):
 			'qty': 1,
 		})
 		pi.save()
-		pi.submit()
+		# pi.submit()  # Create drafts in system to be able to test approval mechanism
 	pi = frappe.new_doc('Purchase Invoice')
 	pi.company = settings.company
 	pi.set_posting_time = 1
@@ -179,7 +179,7 @@ def create_invoices(settings):
 		'qty': 1,
 	})
 	pi.save()
-	pi.submit()
+	# pi.submit()
 
 
 def create_users(users):

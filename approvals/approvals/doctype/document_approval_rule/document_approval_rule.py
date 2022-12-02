@@ -16,6 +16,9 @@ class DocumentApprovalRule(Document):
 		if frappe.flags.in_patch or frappe.flags.in_install or frappe.flags.in_setup_wizard:
 			return False
 
+		if not self.enabled:
+			return False
+		
 		if not self.condition:
 			return True
 
@@ -53,7 +56,8 @@ class DocumentApprovalRule(Document):
 		if frappe.get_value('ToDo', {'role': self.approval_role, 'owner': user, 'reference_name': doc.name, 'status': 'Open'}):
 			return
 		todo = frappe.new_doc('ToDo')
-		todo.owner = user
+		todo.owner = user  # Saving as 'Administrator' regardless of user value
+		todo.allocated_to = user
 		todo.reference_type = doc.doctype
 		todo.reference_name = doc.name
 		todo.role = self.approval_role

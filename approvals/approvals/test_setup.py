@@ -232,7 +232,7 @@ def create_client_script():
 	cs.dt = cs.name = "Purchase Invoice"
 	cs.apply_to = "Form"
 	cs.enabled = 1
-	cs.script = "frappe.ui.form.on('Purchase Invoice', {refresh: frm => {frappe.approvals.load_approvals(frm)}})"
+	cs.script = "frappe.ui.form.on('Purchase Invoice', {refresh(frm) {frappe.provide('approvals').load_approvals(frm)}})"
 	cs.save()
 
 

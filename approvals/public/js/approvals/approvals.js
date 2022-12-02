@@ -92,7 +92,7 @@ approvals.add_approver_dialog = function (frm) {
 approvals.remove_approver_dialog = function (frm, user_approvals=[]) {
   return new Promise((resolve) => {
     let dialog = new frappe.ui.Dialog({
-      title: __("Add a user to approve this document"),
+      title: __("Remove a user from approving this document"),
       fields: [
         {
           fieldtype: "Select",

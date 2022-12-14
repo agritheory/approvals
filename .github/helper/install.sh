@@ -40,5 +40,9 @@ bench get-app hrms --skip-assets
 bench get-app approvals "${GITHUB_WORKSPACE}" --skip-assets
 
 bench start &> bench_run_logs.txt &
+bench --site test_site install-app payments
+bench --site test_site install-app erpnext
+bench --site test_site install-app hrms
+bench --site test_site install-app approvals
 bench --site test_site reinstall --yes
 CI=Yes bench build

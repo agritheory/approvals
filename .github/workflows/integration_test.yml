@@ -87,4 +87,5 @@ jobs:
       - name: Approvals Setup
         run: |
           cd ~/frappe-bench
+          bench install-app approvals
           bench --site test_site execute 'approvals.approvals.test_setup.before_test'

@@ -125,7 +125,8 @@ def create_test_data():
 	create_client_script()
 	create_server_script(script_text)
 	create_invoices(settings)
-	
+	dismiss_onboarding()
+
 
 def create_suppliers(settings):
 	for supplier in suppliers + tax_authority:
@@ -245,3 +246,8 @@ def create_server_script(script_text):
 	da.doctype_event = 'After Save'
 	da.script = script_text
 	da.save()
+
+
+def dismiss_onboarding():
+	for m in frappe.get_all('Module Onboarding'):
+		frappe.db.set_value('Module Onboarding', m, 'is_complete', 1)

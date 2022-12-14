@@ -1,9 +1,9 @@
 name: Validate Diff Release
 on:
   push:
-    branches: [ version-13 ]
+    branches: [ version-14 ]
   pull_request:
-    branches: [ version-13 ]
+    branches: [ version-14 ]
 
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

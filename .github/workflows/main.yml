@@ -79,7 +79,7 @@ jobs:
           bench get-app approvals $GITHUB_WORKSPACE
           bench setup requirements --dev
           bench new-site --db-root-password root --admin-password admin test_site
-          bench --site test_site install-app approvals
+          bench --site test_site install-app payments erpnext hrms approvals
           bench build
         env:
           CI: 'Yes'

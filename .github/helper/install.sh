@@ -4,7 +4,7 @@
 cd ~ || exit
 
 pip install frappe-bench
-git clone https://github.com/frappe/frappe --branch version-13 --depth 1
+git clone https://github.com/frappe/frappe --branch version-14 --depth 1
 bench init --skip-assets --frappe-path ~/frappe --python "$(which python)" frappe-bench
 
 mkdir ~/frappe-bench/sites/test_site

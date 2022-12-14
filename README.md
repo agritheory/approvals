@@ -53,5 +53,5 @@ Setup test data
 ```
 # Enable server scripts and install test data
 bench --site {{ site name }} set-config server_script_enabled true
-bench execute 'approvals.approvals.test_setup.before_test'
+bench --site {{ site name }} execute 'approvals.approvals.test_setup.before_test'
 ```

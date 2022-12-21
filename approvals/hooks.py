@@ -6,6 +6,7 @@ app_publisher = "AgriTheory"
 app_description = "Customizable Approval Workflows"
 app_email = "support@agritheory.dev"
 app_license = "MIT"
+required_apps = ["payments", "erpnext", "hrms"]
 
 # Includes in <head>
 # ------------------

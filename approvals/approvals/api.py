@@ -118,8 +118,8 @@ def set_status_to_approved(doc, method=None, automatic=False):
 def reject_document(doc, role=None, comment='', method=None):
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	doc = frappe.get_doc(doc.doctype, doc.name)
-	doc.status = 'Rejected'
 	doc.save()
+	doc.set_status(update=True, status='Rejected')
 	rejection = add_comment(doc.doctype, doc.name, comment, frappe.session.user, frappe.session.user)
 	revoke_approvals_on_reject(doc, method)
 	return rejection

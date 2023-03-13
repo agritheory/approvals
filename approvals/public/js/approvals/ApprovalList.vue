@@ -5,6 +5,7 @@
 		<ApprovalListItem v-for="(approval, index) in approvals"
 			:key="index"
 			:approval="approval"
+			:approval_state="approval_state"
 			@documentapproval="handleDocumentApproval"
 		/>
 	</ul>
@@ -29,13 +30,17 @@ export default {
 	name: "ApprovalList",
 	components: { ApprovalListItem },
 	data() {
-		return { approvals: []}
+		return {
+			approvals: [],
+			approval_state: ''
+		}
 	},
 	methods: {
 		fetchApprovalsAndRoles(){
 			frappe.xcall('approvals.approvals.api.fetch_approvals_and_roles', {doc: cur_frm.doc})
 			.then((r) => {
-				this.$set(this, 'approvals', r)
+				this.$set(this, 'approvals', r.approvals)
+				this.$set(this, 'approval_state', r.approval_state)
 			})
 		},
 		handleDocumentApproval(){

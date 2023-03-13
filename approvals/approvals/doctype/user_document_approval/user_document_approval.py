@@ -35,4 +35,4 @@ class UserDocumentApproval(Document):
 	def remove_todo(self):
 		todo = frappe.get_value('ToDo', {'reference_name': self.reference_name, 'owner': self.approver}, 'name')
 		if todo:
-			frappe.get_doc('ToDo', todo).delete(ignore_permissions=True)
+			frappe.delete_doc('ToDo', todo, force=True)

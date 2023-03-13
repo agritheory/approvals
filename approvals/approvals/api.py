@@ -1,6 +1,8 @@
 import frappe
 import json
 from frappe.desk.form.utils import add_comment
+from frappe.model.workflow import get_workflow_name
+
 
 @frappe.whitelist()
 def get_approval_roles(doc, method=None):
@@ -64,7 +66,8 @@ def fetch_approvals_and_roles(doc, method=None):
 			'assigned_username':assignments.get(role, role),
 		})
 		add_roles.append(_role)
-	return add_roles
+	approval_state = frappe.get_value('Workflow', get_workflow_name(doc.doctype), 'approval_state') or 'Pending'
+	return {'approvals': add_roles, 'approval_state': approval_state}
 
 
 @frappe.whitelist()
@@ -86,8 +89,12 @@ def approve_document(doc, method=None, role=None, user=None):
 	checked_all = check_all_document_approvals(doc, method, include_role=role, user=user)
 	if checked_all:
 		doc = frappe.get_doc(doc.doctype, doc.name)
-		doc.submit()
-		doc.set_status(update=True, status='Approved')
+		if doc.meta.is_submittable:
+			doc.submit()
+			doc.set_status(update=True, status='Approved')
+		else:
+			doc.save()
+			doc.set_status(update=True, status='Approved')
 
 	return approval
 

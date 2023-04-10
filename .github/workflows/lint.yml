@@ -1,9 +1,9 @@
-name: Validate, Schema Diff and Release
+name: Validate, Schema Diff
 on:
   push:
-    branches: [ main, version-14 ]
+    branches: [ version-14 ]
   pull_request:
-    branches: [ main, version-14 ]
+    branches: [ version-14 ]
 
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -72,15 +72,6 @@ jobs:
 
       - name: Diff table
         run: python3 fsjd/frappe_schema_json_diff.py base/mrd.txt head/acmr.txt 1
-
-
-  Release:
-    needs: [ Validate_Python_JSON_syntax ]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Release
-        run: npx semantic-release
 
   Validate_Python_JSON_syntax:
     runs-on: ubuntu-latest

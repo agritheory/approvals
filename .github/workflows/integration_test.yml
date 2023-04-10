@@ -6,7 +6,7 @@ on:
 
 jobs:
   cypress-run:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 25
 
     name: Integration Test
@@ -30,7 +30,7 @@ jobs:
 
       - uses: actions/setup-node@v2
         with:
-          node-version: 14
+          node-version: 18
           check-latest: true
 
       - name: Add to Hosts
@@ -83,6 +83,9 @@ jobs:
 
       - name: Install
         run: bash ${GITHUB_WORKSPACE}/.github/helper/install.sh
+
+      - name: Install
+        run: cd ~/frappe-bench install-app approvals
 
       - name: Approvals Setup
         run: |

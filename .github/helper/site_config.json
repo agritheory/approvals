@@ -13,5 +13,6 @@
  "host_name": "http://test_site:8000",
  "install_apps": ["payments", "erpnext", "hrms", "approvals"],
  "throttle_user_limit": 100,
- "developer_mode": 1
+ "developer_mode": 1,
+ "mute_emails": 1
 }

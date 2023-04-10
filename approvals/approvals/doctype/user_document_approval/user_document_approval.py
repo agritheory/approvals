@@ -1,6 +1,3 @@
-
-from __future__ import unicode_literals
-
 import frappe
 from frappe.model.document import Document
 from frappe.utils.data import today
@@ -16,23 +13,26 @@ class UserDocumentApproval(Document):
 		self.remove_todo()
 
 	def add_todo(self):
-		todo = frappe.new_doc('ToDo')
+		todo = frappe.new_doc("ToDo")
 		todo.owner = self.approver
 		todo.reference_type = self.reference_doctype
 		todo.reference_name = self.reference_name
-		todo.assigned_by = 'Administrator'
+		todo.assigned_by = "Administrator"
 		todo.date = today()
-		todo.status = 'Open'
-		todo.priority = 'Medium'
+		todo.status = "Open"
+		todo.priority = "Medium"
 		todo.description = "A document requires your approval"
 		todo.save()
-		create_approval_notification(frappe._dict({
-			'doctype': self.reference_doctype,
-			'name': self.reference_name,
-			'owner': frappe.session.user})
-		, self.approver)
+		create_approval_notification(
+			frappe._dict(
+				{"doctype": self.reference_doctype, "name": self.reference_name, "owner": frappe.session.user}
+			),
+			self.approver,
+		)
 
 	def remove_todo(self):
-		todo = frappe.get_value('ToDo', {'reference_name': self.reference_name, 'owner': self.approver}, 'name')
+		todo = frappe.get_value(
+			"ToDo", {"reference_name": self.reference_name, "owner": self.approver}, "name"
+		)
 		if todo:
-			frappe.get_doc('ToDo', todo).delete(ignore_permissions=True)
+			frappe.get_doc("ToDo", todo).delete(ignore_permissions=True)

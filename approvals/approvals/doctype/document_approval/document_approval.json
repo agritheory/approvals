@@ -1,96 +1,96 @@
 {
- "creation": "2021-02-17 08:28:43.749509",
- "doctype": "DocType",
- "editable_grid": 1,
- "engine": "InnoDB",
- "field_order": [
-  "reference_doctype",
-  "reference_name",
-  "column_break_3",
-  "approver",
-  "approval_role",
-  "user_approval",
-  "title"
- ],
- "fields": [
-  {
-   "fieldname": "reference_doctype",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Reference Doctype",
-   "options": "DocType",
-   "read_only": 1
-  },
-  {
-   "fieldname": "reference_name",
-   "fieldtype": "Dynamic Link",
-   "in_list_view": 1,
-   "label": "Reference Name",
-   "options": "reference_doctype",
-   "read_only": 1
-  },
-  {
-   "fieldname": "approver",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Approver",
-   "options": "User",
-   "read_only": 1
-  },
-  {
-   "fieldname": "approval_role",
-   "fieldtype": "Link",
-   "label": "Approval Role",
-   "options": "Role",
-   "read_only": 1
-  },
-  {
-   "fieldname": "title",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Title"
-  },
-  {
-   "fieldname": "user_approval",
-   "fieldtype": "Data",
-   "label": "Approval Role",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_3",
-   "fieldtype": "Column Break"
-  }
- ],
- "modified": "2021-03-10 07:47:54.239958",
- "modified_by": "Administrator",
- "module": "Approvals",
- "name": "Document Approval",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "All",
-   "share": 1
-  }
- ],
- "sort_field": "modified",
- "sort_order": "DESC",
- "title_field": "title",
- "track_changes": 1
+	"creation": "2021-02-17 08:28:43.749509",
+	"doctype": "DocType",
+	"editable_grid": 1,
+	"engine": "InnoDB",
+	"field_order": [
+		"reference_doctype",
+		"reference_name",
+		"column_break_3",
+		"approver",
+		"approval_role",
+		"user_approval",
+		"title"
+	],
+	"fields": [
+		{
+			"fieldname": "reference_doctype",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"label": "Reference Doctype",
+			"options": "DocType",
+			"read_only": 1
+		},
+		{
+			"fieldname": "reference_name",
+			"fieldtype": "Dynamic Link",
+			"in_list_view": 1,
+			"label": "Reference Name",
+			"options": "reference_doctype",
+			"read_only": 1
+		},
+		{
+			"fieldname": "approver",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"label": "Approver",
+			"options": "User",
+			"read_only": 1
+		},
+		{
+			"fieldname": "approval_role",
+			"fieldtype": "Link",
+			"label": "Approval Role",
+			"options": "Role",
+			"read_only": 1
+		},
+		{
+			"fieldname": "title",
+			"fieldtype": "Data",
+			"hidden": 1,
+			"label": "Title"
+		},
+		{
+			"fieldname": "user_approval",
+			"fieldtype": "Data",
+			"label": "Approval Role",
+			"read_only": 1
+		},
+		{
+			"fieldname": "column_break_3",
+			"fieldtype": "Column Break"
+		}
+	],
+	"modified": "2021-03-10 07:47:54.239958",
+	"modified_by": "Administrator",
+	"module": "Approvals",
+	"name": "Document Approval",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"export": 1,
+			"print": 1,
+			"read": 1,
+			"report": 1,
+			"role": "System Manager",
+			"share": 1,
+			"write": 1
+		},
+		{
+			"email": 1,
+			"export": 1,
+			"print": 1,
+			"read": 1,
+			"report": 1,
+			"role": "All",
+			"share": 1
+		}
+	],
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"title_field": "title",
+	"track_changes": 1
 }

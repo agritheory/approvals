@@ -103,7 +103,6 @@ li {
 	margin-bottom: 1em;
 	width: 100%;
 }
-
 button {
 	display: table-cell;
 	text-align: center;
@@ -113,7 +112,6 @@ button {
 	margin-right: 1ch;
 	padding: 4px 10px;
 }
-
 button:hover:enabled {
 	color: var(--dark-green-avatar-color);
 	font-weight: bold;
@@ -126,18 +124,15 @@ button:disabled {
 	background: #687178;
 	color: #fff;
 }
-
 div {
 	width: 100%;
 	display: table-row;
 }
-
 .button-reject {
 	background: var(--bg-orange);
 	color: var(--text-on-orange);
 	margin-right: 0px;
 }
-
 .button-reject:hover:enabled {
 	color: var(--text-on-orange);
 	font-weight: bold;

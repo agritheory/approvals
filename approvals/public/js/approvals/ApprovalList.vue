@@ -123,7 +123,6 @@ const removeApprover = async () => {
 	margin-bottom: 0px;
 	padding-bottom: 0px;
 }
-
 .remove-approver {
 	position: absolute;
 	bottom: -1px;

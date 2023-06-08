@@ -36,10 +36,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-<<<<<<< HEAD
-=======
-lib/
->>>>>>> fc6b94c (initial commit)
 lib64/
 parts/
 sdist/
@@ -71,10 +67,7 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
-<<<<<<< HEAD
 .cypress-coverage
-=======
->>>>>>> fc6b94c (initial commit)
 
 # Translations
 *.mo

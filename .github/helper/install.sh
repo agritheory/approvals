@@ -15,11 +15,6 @@ cd ~ || exit
 
 pip install --upgrade pip
 pip install frappe-bench
-git clone https://github.com/frappe/frappe --branch version-14 --depth 1
-bench init --skip-assets --frappe-path ~/frappe --python "$(which python)" frappe-bench
-
-mkdir ~/frappe-bench/sites/test_site
-cp -r "${GITHUB_WORKSPACE}/.github/helper/site_config.json" ~/frappe-bench/sites/test_site
 
 mysql --host 127.0.0.1 --port 3306 -u root -e "SET GLOBAL character_set_server = 'utf8mb4'"
 mysql --host 127.0.0.1 --port 3306 -u root -e "SET GLOBAL collation_server = 'utf8mb4_unicode_ci'"
@@ -54,6 +49,7 @@ bench setup requirements --python
 bench use test_site
 bench set-config -g server_script_enabled 1
 
+echo "BEFORE FIRST BENCH START"
 bench start &> bench_run_logs.txt &
 CI=Yes &
 bench --site test_site reinstall --yes --admin-password admin

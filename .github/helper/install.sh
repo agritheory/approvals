@@ -47,12 +47,20 @@ printf '%s\n' 'frappe' 'erpnext' 'approvals' > ~/frappe-bench/sites/apps.txt
 bench setup requirements --python
 bench use test_site
 
+echo "BEFORE FIRST BENCH START"
 bench start &> bench_run_logs.txt &
 CI=Yes &
 bench --site test_site reinstall --yes --admin-password admin
 
+echo "BEFORE SETUP REQUIREMENTS"
 bench setup requirements --dev
 
+echo "BENCH VERSION NUMBERS:"
+bench version
+echo "SITE LIST-APPS:"
+bench list-apps
+
+echo "BEFORE SECOND BENCH START"
 bench start &> bench_run_logs.txt &
 CI=Yes &
 bench execute 'approvals.tests.setup.before_test'

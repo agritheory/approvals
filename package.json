@@ -1,0 +1,16 @@
+{
+	"name": "@agritheory/approvals",
+	"release": {
+		"branches": [
+			"version-14"
+		]
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/agritheory/approvals.git"
+	},
+	"publishConfig": {
+		"access": "restricted"
+	},
+	"private": true
+}

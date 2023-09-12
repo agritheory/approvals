@@ -6,16 +6,14 @@ app_publisher = "AgriTheory"
 app_description = "Customizable Approval Workflows"
 app_email = "support@agritheory.dev"
 app_license = "MIT"
-required_apps = ["payments", "erpnext", "hrms"]
+required_apps = ["erpnext", "hrms"]
 
 # Includes in <head>
 # ------------------
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/approvals/css/approvals.css"
-app_include_js = [
-	"approvals.bundle.js"
-]
+app_include_js = ["approvals.bundle.js"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/approvals/css/approvals.css"
@@ -45,7 +43,7 @@ app_include_js = [
 
 # website user home page (by Role)
 # role_home_page = {
-#	"Role": "home_page"
+# 	"Role": "home_page"
 # }
 
 # Generators
@@ -59,8 +57,8 @@ app_include_js = [
 
 # add methods and filters to jinja environment
 # jinja = {
-#	"methods": "approvals.utils.jinja_methods",
-#	"filters": "approvals.utils.jinja_filters"
+# 	"methods": "approvals.utils.jinja_methods",
+# 	"filters": "approvals.utils.jinja_filters"
 # }
 
 # Installation
@@ -86,11 +84,11 @@ app_include_js = [
 # Permissions evaluated in scripted ways
 
 # permission_query_conditions = {
-#	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
+# 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
 # }
 #
 # has_permission = {
-#	"Event": "frappe.desk.doctype.event.event.has_permission",
+# 	"Event": "frappe.desk.doctype.event.event.has_permission",
 # }
 
 # DocType Class
@@ -98,7 +96,7 @@ app_include_js = [
 # Override standard doctype classes
 
 # override_doctype_class = {
-#	"ToDo": "custom_app.overrides.CustomToDo"
+# 	"ToDo": "custom_app.overrides.CustomToDo"
 # }
 
 # Document Events
@@ -106,32 +104,32 @@ app_include_js = [
 # Hook on document methods and events
 
 # doc_events = {
-#	"*": {
-#		"on_update": "method",
-#		"on_cancel": "method",
-#		"on_trash": "method"
-#	}
+# 	"*": {
+# 		"on_update": "method",
+# 		"on_cancel": "method",
+# 		"on_trash": "method"
+# 	}
 # }
 
 # Scheduled Tasks
 # ---------------
 
 # scheduler_events = {
-#	"all": [
-#		"approvals.tasks.all"
-#	],
-#	"daily": [
-#		"approvals.tasks.daily"
-#	],
-#	"hourly": [
-#		"approvals.tasks.hourly"
-#	],
-#	"weekly": [
-#		"approvals.tasks.weekly"
-#	],
-#	"monthly": [
-#		"approvals.tasks.monthly"
-#	],
+# 	"all": [
+# 		"approvals.tasks.all"
+# 	],
+# 	"daily": [
+# 		"approvals.tasks.daily"
+# 	],
+# 	"hourly": [
+# 		"approvals.tasks.hourly"
+# 	],
+# 	"weekly": [
+# 		"approvals.tasks.weekly"
+# 	],
+# 	"monthly": [
+# 		"approvals.tasks.monthly"
+# 	],
 # }
 
 # Testing
@@ -143,14 +141,14 @@ app_include_js = [
 # ------------------------------
 #
 # override_whitelisted_methods = {
-#	"frappe.desk.doctype.event.event.get_events": "approvals.event.get_events"
+# 	"frappe.desk.doctype.event.event.get_events": "approvals.event.get_events"
 # }
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
 # along with any modifications made in other Frappe apps
 # override_doctype_dashboards = {
-#	"Task": "approvals.task.get_dashboard_data"
+# 	"Task": "approvals.task.get_dashboard_data"
 # }
 
 # exempt linked doctypes from being automatically cancelled
@@ -162,29 +160,29 @@ app_include_js = [
 # --------------------
 
 # user_data_fields = [
-#	{
-#		"doctype": "{doctype_1}",
-#		"filter_by": "{filter_by}",
-#		"redact_fields": ["{field_1}", "{field_2}"],
-#		"partial": 1,
-#	},
-#	{
-#		"doctype": "{doctype_2}",
-#		"filter_by": "{filter_by}",
-#		"partial": 1,
-#	},
-#	{
-#		"doctype": "{doctype_3}",
-#		"strict": False,
-#	},
-#	{
-#		"doctype": "{doctype_4}"
-#	}
+# 	{
+# 		"doctype": "{doctype_1}",
+# 		"filter_by": "{filter_by}",
+# 		"redact_fields": ["{field_1}", "{field_2}"],
+# 		"partial": 1,
+# 	},
+# 	{
+# 		"doctype": "{doctype_2}",
+# 		"filter_by": "{filter_by}",
+# 		"partial": 1,
+# 	},
+# 	{
+# 		"doctype": "{doctype_3}",
+# 		"strict": False,
+# 	},
+# 	{
+# 		"doctype": "{doctype_4}"
+# 	}
 # ]
 
 # Authentication and authorization
 # --------------------------------
 
 # auth_hooks = [
-#	"approvals.auth.validate"
+# 	"approvals.auth.validate"
 # ]

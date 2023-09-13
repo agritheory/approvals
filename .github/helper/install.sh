@@ -26,41 +26,39 @@ mysql --host 127.0.0.1 --port 3306 -u root -e "GRANT ALL PRIVILEGES ON \`test_si
 mysql --host 127.0.0.1 --port 3306 -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'root'"  # match site_cofig
 mysql --host 127.0.0.1 --port 3306 -u root -e "FLUSH PRIVILEGES"
 
-
 git clone https://github.com/frappe/frappe --branch version-14
 bench init frappe-bench --frappe-path ~/frappe --python "$(which python)" --skip-assets --ignore-exist
 
 mkdir ~/frappe-bench/sites/test_site
 cp -r "${GITHUB_WORKSPACE}/.github/helper/site_config.json" ~/frappe-bench/sites/test_site/
 
-cd ./frappe-bench || exit
+cd ~/frappe-bench || exit
 
 sed -i 's/watch:/# watch:/g' Procfile
 sed -i 's/schedule:/# schedule:/g' Procfile
 sed -i 's/socketio:/# socketio:/g' Procfile
 sed -i 's/redis_socketio:/# redis_socketio:/g' Procfile
 
-bench get-app https://github.com/frappe/erpnext --branch version-14 --resolve-deps --skip-assets
-bench get-app approvals "${GITHUB_WORKSPACE}" --skip-assets --resolve-deps
-
-printf '%s\n' 'frappe' 'erpnext' 'approvals' > ~/frappe-bench/sites/apps.txt
-bench setup requirements --python
 bench use test_site
 
-echo "BEFORE FIRST BENCH START"
+bench get-app https://github.com/frappe/erpnext --branch version-14 --resolve-deps --skip-assets
+bench get-app hrms --branch version-14 https://github.com/frappe/hrms.git --skip-assets
+bench get-app approvals "${GITHUB_WORKSPACE}" --skip-assets --resolve-deps
+
+printf '%s\n' 'frappe' 'erpnext' 'hrms' 'approvals' > ~/frappe-bench/sites/apps.txt
+bench setup requirements --python
+
 bench start &> bench_run_logs.txt &
 CI=Yes &
 bench --site test_site reinstall --yes --admin-password admin
 
-echo "BEFORE SETUP REQUIREMENTS"
 bench setup requirements --dev
 
-echo "BENCH VERSION NUMBERS:"
-bench version
-echo "SITE LIST-APPS:"
-bench list-apps
+# echo "BENCH VERSION NUMBERS:"
+# bench version
+# echo "SITE LIST-APPS:"
+# bench list-apps
 
-echo "BEFORE SECOND BENCH START"
 bench start &> bench_run_logs.txt &
 CI=Yes &
 bench execute 'approvals.tests.setup.before_test'

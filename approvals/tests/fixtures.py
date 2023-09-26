@@ -17,22 +17,22 @@ pi_dars = [
 		"approval_doctype": "Purchase Invoice",
 		"approval_role": "Accounts Manager",
 		"primary_assignee": "",
-		"condition": "doc.grand_total > 999.00",
-		"enabled": 1,
+		"condition": "doc.grand_total > 1000.00",
+		"enabled": 0,
 	},
 	{
 		"approval_doctype": "Purchase Invoice",
 		"approval_role": "Stock Manager",
 		"primary_assignee": "quincy@cfc.com",
-		"condition": "500.00 <= doc.grand_total <= 999.00",
+		"condition": "500.00 <= doc.grand_total <= 1000.00",
 		"enabled": 1,
 	},
 	{
 		"approval_doctype": "Purchase Invoice",
 		"approval_role": "Item Manager",
-		"primary_assignee": "",
-		"condition": "100.00 <= doc.grand_total < 500.00",
-		"enabled": 0,
+		"primary_assignee": "sam@cfc.com",
+		"condition": "200.00 <= doc.grand_total < 500.00",
+		"enabled": 1,
 	},
 ]
 

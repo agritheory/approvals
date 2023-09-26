@@ -60,15 +60,15 @@ def create_test_data():
 		}
 	)
 
-	create_users(users)
+	create_users(settings)
 	create_suppliers(settings)
 	create_items(settings)
-	create_document_approval_settings()
-	create_pi_document_approval_rules(pi_dars)
-	create_client_script()
-	create_server_script(script_text)
+	create_document_approval_settings(settings)
+	create_pi_document_approval_rules(settings)
+	create_client_script(settings)
+	create_server_script(settings)
 	create_invoices(settings)
-	dismiss_onboarding()
+	dismiss_onboarding(settings)
 
 
 def create_suppliers(settings):
@@ -135,7 +135,7 @@ def create_invoices(settings):
 	# pi.submit()
 
 
-def create_users(users):
+def create_users(settings):
 	for u in users:
 		user = frappe.new_doc("User")
 		user.email = u["email"]
@@ -163,24 +163,25 @@ def create_users(users):
 		frappe.db.commit()
 
 
-def create_pi_document_approval_rules(pi_dars):
+def create_pi_document_approval_rules(settings):
 	for d in pi_dars:
 		dar = frappe.new_doc("Document Approval Rule")
 		dar.approval_doctype = d["approval_doctype"]
 		dar.approval_role = d["approval_role"]
+		dar.primary_assignee = d["primary_assignee"]
 		dar.condition = d["condition"]
 		dar.enabled = d["enabled"]
 		dar.save()
 
 
-def create_document_approval_settings():
+def create_document_approval_settings(settings):
 	das = frappe.get_doc("Document Approval Settings", "Document Approval Settings")
 	das.settings = "{}"  # Invalid JSON error if left blank in UI
 	das.fallback_approver = "Accounts Manager"
 	das.save()
 
 
-def create_client_script():
+def create_client_script(settings):
 	cs = frappe.new_doc("Client Script")
 	cs.dt = cs.name = "Purchase Invoice"
 	cs.apply_to = "Form"
@@ -189,7 +190,7 @@ def create_client_script():
 	cs.save()
 
 
-def create_server_script(script_text):
+def create_server_script(settings):
 	da = frappe.new_doc("Server Script")
 	da.name = "Assign Approvers - Purchase Invoice"
 	# da.group = 'on_update'  # no `group` field in DocType
@@ -200,6 +201,6 @@ def create_server_script(script_text):
 	da.save()
 
 
-def dismiss_onboarding():
+def dismiss_onboarding(settings):
 	for m in frappe.get_all("Module Onboarding"):
 		frappe.db.set_value("Module Onboarding", m, "is_complete", 1)

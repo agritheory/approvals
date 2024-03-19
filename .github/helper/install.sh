@@ -55,6 +55,7 @@ CI=Yes &
 bench --site test_site reinstall --yes --admin-password admin
 
 bench setup requirements --dev
+bench set-config -g server_script_enabled 1
 
 echo "BENCH VERSION NUMBERS:"
 bench version

@@ -41,21 +41,19 @@ sed -i 's/socketio:/# socketio:/g' Procfile
 sed -i 's/redis_socketio:/# redis_socketio:/g' Procfile
 
 bench get-app https://github.com/frappe/erpnext --branch ${BRANCH_NAME} --resolve-deps --skip-assets
-echo "SUCCESSFULLY FINISHED ERPNEXT, TRYING HRMS"
 bench get-app https://github.com/frappe/hrms --branch ${BRANCH_NAME} --skip-assets
-echo "SUCCESSFULLY FINISHED HRMS, TRYING APPROVALS"
 bench get-app approvals "${GITHUB_WORKSPACE}" --skip-assets 
 
 printf '%s\n' 'frappe' 'erpnext' 'hrms' 'approvals' > ~/frappe-bench/sites/apps.txt
 bench setup requirements --python
 bench use test_site
+bench set-config -g server_script_enabled 1
 
 bench start &> bench_run_logs.txt &
 CI=Yes &
 bench --site test_site reinstall --yes --admin-password admin
 
 bench setup requirements --dev
-bench set-config -g server_script_enabled 1
 
 echo "BENCH VERSION NUMBERS:"
 bench version

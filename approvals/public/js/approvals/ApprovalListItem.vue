@@ -30,7 +30,7 @@
 <script>
 export default {
 	name: 'ApprovalListItem',
-	props: ['approval'],
+  props: ["approval", "approval_state"],
 	methods: {
 		handleApproval() {
 			frappe
@@ -57,7 +57,7 @@ export default {
 			})
 		},
 		status() {
-			if (cur_frm.doc.docstatus !== 0) {
+      if(cur_frm.doc[frappe.workflow.get_state_fieldname(cur_frm.doctype)] !== this.approval_state){
 				return true
 			} else if (this.approval.approval_role != 'User Approval' && !this.approval.user_has_approval_role) {
 				return true

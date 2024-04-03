@@ -1,6 +1,7 @@
 import frappe
 import json
 from frappe.desk.form.utils import add_comment
+from frappe.model.workflow import get_workflow_name
 
 
 @frappe.whitelist()
@@ -82,7 +83,11 @@ def fetch_approvals_and_roles(doc, method=None):
 			}
 		)
 		add_roles.append(_role)
-	return add_roles
+	approval_state = (
+		frappe.get_value("Workflow", get_workflow_name(doc.doctype), "custom_approval_state")
+		or "Pending"
+	)
+	return {"approvals": add_roles, "approval_state": approval_state}
 
 
 @frappe.whitelist()
@@ -104,8 +109,12 @@ def approve_document(doc, method=None, role=None, user=None):
 	checked_all = check_all_document_approvals(doc, method, include_role=role, user=user)
 	if checked_all:
 		doc = frappe.get_doc(doc.doctype, doc.name)
-		doc.submit()
-		doc.set_status(update=True, status="Approved")
+		if doc.meta.is_submittable:
+			doc.submit()
+			doc.set_status(update=True, status="Approved")
+		else:
+			doc.save()
+			doc.set_status(update=True, status="Approved")
 
 	return approval
 
@@ -136,8 +145,8 @@ def set_status_to_approved(doc, method=None, automatic=False):
 def reject_document(doc, role=None, comment="", method=None):
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	doc = frappe.get_doc(doc.doctype, doc.name)
-	doc.status = "Rejected"
 	doc.save()
+	doc.set_status(update=True, status="Rejected")
 	rejection = add_comment(doc.doctype, doc.name, comment, frappe.session.user, frappe.session.user)
 	revoke_approvals_on_reject(doc, method)
 	return rejection

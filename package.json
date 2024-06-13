@@ -1,5 +1,6 @@
 {
 	"name": "@agritheory/approvals",
+	"private": true,
 	"release": {
 		"branches": [
 			"version-14",
@@ -10,8 +11,10 @@
 		"type": "git",
 		"url": "https://github.com/agritheory/approvals.git"
 	},
+	"dependencies": {
+		"vue": "^3.4.27"
+	},
 	"publishConfig": {
 		"access": "restricted"
-	},
-	"private": true
+	}
 }

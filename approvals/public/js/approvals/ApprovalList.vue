@@ -2,24 +2,29 @@
 	<div>
 		<h4>Approvals</h4>
 		<ul class="list-unstyled">
-			<ApprovalListItem v-for="(approval, index) in approvalsData" :key="index" :approval="approval"
+			<ApprovalListItem
+				v-for="(approval, index) in approvalsData"
+				:key="index"
+				:approval="approval"
 				@documentapproval="approveDocument" />
 		</ul>
 
-		<a v-show="isDraft" class="text-muted" @click="addApprover">
-			Add Approver
-			<i class="octicon octicon-plus" style="margin-left: 2px"></i>
-		</a>
-		<br />
-		<a v-show="isDraft" class="text-muted" @click="removeApprover" style="position: relative">
-			Remove Approver
-			<i class="remove-approver">×</i>
-		</a>
+		<div v-if="isDraft">
+			<a class="text-muted" @click="addApprover">
+				Add Approver
+				<i class="octicon octicon-plus" style="margin-left: 2px"></i>
+			</a>
+			<br />
+			<a class="text-muted" @click="removeApprover" style="position: relative">
+				Remove Approver
+				<i class="remove-approver">×</i>
+			</a>
+		</div>
 	</div>
 </template>
 
-<script setup>
-import { onMounted, computed, ref } from 'vue';
+<script setup lang="ts">
+import { onMounted, computed, ref } from 'vue'
 
 import ApprovalListItem from './ApprovalListItem.vue'
 

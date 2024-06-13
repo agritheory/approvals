@@ -5,10 +5,7 @@
 		</div>
 
 		<div v-if="!approval.approved">
-			<button
-				@click="approve"
-				:disabled="status ? 'disabled' : null"
-				:class="status ? 'btn btn-disabled' : 'btn'">
+			<button @click="approve" :disabled="status ? 'disabled' : null" :class="status ? 'btn btn-disabled' : 'btn'">
 				APPROVE
 			</button>
 			<button
@@ -30,8 +27,8 @@
 	</li>
 </template>
 
-<script setup>
-import { computed } from 'vue';
+<script setup lang="ts">
+import { computed } from 'vue'
 
 const props = defineProps(['approval'])
 const emit = defineEmits(['documentapproval'])

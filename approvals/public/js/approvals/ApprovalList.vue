@@ -28,7 +28,13 @@ import { onMounted, computed, ref } from 'vue'
 
 import ApprovalListItem from './ApprovalListItem.vue'
 
-const approvalsData = ref([])
+// typescript declarations for FrappeJS
+declare const approvals: any;
+declare const cur_dialog: any;
+declare const cur_frm: any;
+declare const frappe: any;
+
+const approvalsData = ref<any[]>([])
 
 onMounted(async () => {
 	await fetchApprovalsAndRoles()

@@ -5,12 +5,12 @@
 		</div>
 
 		<div v-if="!approval.approved">
-			<button @click="approve" :disabled="status ? 'disabled' : null" :class="status ? 'btn btn-disabled' : 'btn'">
+			<button @click="approve" :disabled="!status" :class="status ? 'btn btn-disabled' : 'btn'">
 				APPROVE
 			</button>
 			<button
 				@click="reject"
-				:disabled="status ? 'disabled' : null"
+				:disabled="!status"
 				:class="status ? 'btn btn-disabled button-reject' : 'btn button-reject'">
 				REJECT
 			</button>
@@ -29,6 +29,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+
+// typescript declarations for FrappeJS
+declare const approvals: any;
+declare const cur_frm: any;
+declare const frappe: any;
 
 const props = defineProps(['approval'])
 const emit = defineEmits(['documentapproval'])

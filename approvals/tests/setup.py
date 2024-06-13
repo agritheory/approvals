@@ -1,17 +1,12 @@
 import datetime
+import os
 
 import frappe
-from frappe.desk.page.setup_wizard.setup_wizard import setup_complete
 from erpnext.setup.utils import enable_all_roles_and_domains, set_defaults_for_tests
-from erpnext.accounts.doctype.account.account import update_account_number
+from frappe.desk.page.setup_wizard.setup_wizard import setup_complete
+from frappe.installer import update_site_config
 
-from approvals.tests.fixtures import (
-	suppliers,
-	tax_authority,
-	pi_dars,
-	users,
-	script_text,
-)
+from approvals.tests.fixtures import pi_dars, script_text, suppliers, tax_authority, users
 
 
 def before_test():
@@ -190,6 +185,10 @@ def create_client_script():
 
 
 def create_server_script(script_text):
+	sites_path = os.getcwd()
+	common_site_config_path = os.path.join(sites_path, "common_site_config.json")
+	update_site_config("server_script_enabled", True, site_config_path=common_site_config_path)
+
 	da = frappe.new_doc("Server Script")
 	da.name = "Assign Approvers - Purchase Invoice"
 	# da.group = 'on_update'  # no `group` field in DocType

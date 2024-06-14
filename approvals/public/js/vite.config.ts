@@ -12,7 +12,7 @@ export default defineConfig({
 		outDir: './approvals/public/dist/js',
 		target: 'esnext',
 		lib: {
-			entry: resolve(__dirname, './approvals/approvals.js'),
+			entry: resolve(__dirname, './approvals/approvals.ts'),
 			name: 'approvals',
 			formats: ['es'], // only create module output for Frappe
 		},

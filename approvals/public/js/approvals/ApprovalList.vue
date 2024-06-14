@@ -46,7 +46,6 @@ const approvalsData = ref<Approval[]>([])
 
 onMounted(async () => {
 	await fetchApprovalsAndRoles()
-	console.log('ad: ', approvalsData.value)
 })
 
 const isDraft = computed(() => {
@@ -64,7 +63,7 @@ const approveDocument = async () => {
 }
 
 const addApprover = async () => {
-	const user = await approvals.add_approver_dialog(cur_frm)
+	const user = await approvals.add_approver_dialog()
 	cur_dialog.hide()
 	await frappe.xcall('approvals.approvals.api.add_user_approval', { doc: cur_frm.doc, user: user.user })
 	await fetchApprovalsAndRoles()
@@ -77,7 +76,7 @@ const removeApprover = async () => {
 		})
 		.map(approval => approval.assigned_to_user)
 
-	const user = await approvals.remove_approver_dialog(cur_frm, userApprovals)
+	const user = await approvals.remove_approver_dialog(userApprovals)
 	let username = ''
 	if (user.user.includes('@')) {
 		username = user.user

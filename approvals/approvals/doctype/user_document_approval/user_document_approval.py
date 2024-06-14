@@ -35,4 +35,4 @@ class UserDocumentApproval(Document):
 			"ToDo", {"reference_name": self.reference_name, "owner": self.approver}, "name"
 		)
 		if todo:
-			frappe.delete_doc('ToDo', todo, force=True)
+			frappe.delete_doc("ToDo", todo, force=True)

@@ -29,8 +29,7 @@ def get_approval_roles(doc, method=None):
 
 	if not roles:
 		fallback_approver = settings.fallback_approver_role
-		if fallback_approver:
-			roles.append(fallback_approver)
+		roles.append(fallback_approver)
 	return roles
 
 

@@ -2,8 +2,8 @@ import { createApp } from 'vue'
 
 import ApprovalList from './ApprovalList.vue'
 
-declare const $: any
 declare const __: any
+declare const $: any
 declare const approvals: any
 declare const cur_dialog: any
 declare const frappe: any

@@ -6,7 +6,7 @@
 				v-for="(approval, index) in approvalsData"
 				:key="index"
 				:approval="approval"
-				@documentapproval="approveDocument" />
+				@documentapproval="refreshApprovals" />
 		</ul>
 
 		<div v-if="isDraft">
@@ -57,9 +57,9 @@ const fetchApprovalsAndRoles = async () => {
 	approvalsData.value = response.approvals
 }
 
-const approveDocument = async () => {
+const refreshApprovals = async () => {
 	await fetchApprovalsAndRoles()
-	window.setTimeout(cur_frm.reload_doc(), 200)
+	cur_frm.reload_doc()
 }
 
 const addApprover = async () => {

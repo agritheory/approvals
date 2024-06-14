@@ -1,5 +1,7 @@
-import frappe
 import json
+
+import frappe
+from frappe import _
 from frappe.desk.form.utils import add_comment
 from frappe.model.workflow import get_workflow_name
 
@@ -226,4 +228,12 @@ def create_approval_notification(doc, user):
 	no.document_name = doc.name
 	no.from_user = doc.owner
 	no.email_content = f"{doc.doctype} {doc.name} requires your approval"
-	no.save()
+	try:
+		no.save()
+	except AttributeError:
+		# missing outgoing email account error
+		frappe.msgprint(
+			_(
+				"Approval notification delivery failed. Please setup a default Email Account from Setup > Email > Email Account"
+			),
+		)

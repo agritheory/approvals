@@ -87,9 +87,9 @@ app_include_js = ["approvals.bundle.js"]
 # 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
 # }
 #
-# has_permission = {
-# 	"Event": "frappe.desk.doctype.event.event.has_permission",
-# }
+has_permission = {
+	"Purchase Invoice": "approvals.approvals.overrides.purchase_invoice.has_permission",
+}
 
 # DocType Class
 # ---------------

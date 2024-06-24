@@ -1,6 +1,7 @@
 import json
 
 import frappe
+from frappe import _
 from frappe.desk.form.utils import add_comment
 from frappe.model.workflow import get_workflow_name
 
@@ -30,8 +31,11 @@ def get_approval_roles(doc, method=None):
 
 	if not roles:
 		fallback_approver = settings.fallback_approver_role
-		if fallback_approver:
-			roles.append(fallback_approver)
+		if not fallback_approver:
+			frappe.throw(
+				_("No approvers found. Please set a fallback approver role in Document Approval Settings.")
+			)
+		roles.append(fallback_approver)
 	return roles
 
 

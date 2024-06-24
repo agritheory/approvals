@@ -88,7 +88,7 @@ app_include_js = ["approvals.bundle.js"]
 # }
 #
 has_permission = {
-	"Purchase Invoice": "approvals.approvals.overrides.purchase_invoice.has_permission",
+	"*": "approvals.approvals.overrides.permissions.has_permission",
 }
 
 # DocType Class

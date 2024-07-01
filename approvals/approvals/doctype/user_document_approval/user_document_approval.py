@@ -22,7 +22,7 @@ class UserDocumentApproval(Document):
 		todo.status = "Open"
 		todo.priority = "Medium"
 		todo.description = "A document requires your approval"
-		todo.save()
+		todo.save(ignore_permissions=True)
 		create_approval_notification(
 			frappe._dict(
 				{"doctype": self.reference_doctype, "name": self.reference_name, "owner": frappe.session.user}

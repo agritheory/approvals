@@ -102,7 +102,7 @@ def approve_document(doc, method=None, role=None, user=None):
 	approval.approver = user
 	approval.approval_role = role if role != "User Approval" else None
 	approval.user_approval = "User Approval" if role == "User Approval" else None
-	approval.save()
+	approval.save(ignore_permissions=True)
 	todo = frappe.get_value("ToDo", {"reference_name": doc.name, "role": role}, "name")
 	if todo:
 		todo = frappe.get_doc("ToDo", todo)

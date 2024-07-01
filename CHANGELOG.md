@@ -1,6 +1,27 @@
 # CHANGELOG
 
+## v15.1.0 (2024-07-01)
 
+### Feature
+
+* feat: format vue files to composition API (v15) (#20)
+
+* feat: format vue files to composition API
+
+* feat: use vite as builder for approvals
+
+* fix: typing issue
+
+* fix: include css, reverse show/hide of status
+
+* feat: add naming format for Document Approval Rule
+
+* fix: handle case where fallback approver is not set
+
+---------
+
+Co-authored-by: Rohan Bansal &lt;rohan@agritheory.dev&gt;
+Co-authored-by: Tyler Matteson &lt;tyler@agritheory.com&gt; ([`bd44a6b`](https://github.com/agritheory/approvals/commit/bd44a6b7b39e766d18893d7b015c3571e0e03a87))
 
 ## v15.0.1 (2024-06-13)
 
@@ -17,7 +38,6 @@
 * fix: enable server script before creating invoices (#19)
 
 Co-authored-by: Rohan Bansal &lt;rohan@agritheory.dev&gt; ([`baa41d5`](https://github.com/agritheory/approvals/commit/baa41d54e38d4a36d6bc25b4627eddb3d4a66d5a))
-
 
 ## v15.0.0 (2024-03-19)
 
@@ -42,7 +62,6 @@ Co-authored-by: Rohan Bansal &lt;rohan@agritheory.dev&gt; ([`baa41d5`](https://g
 * ci: create yarn.lock file
 
 * ci: cache fix test ([`2980408`](https://github.com/agritheory/approvals/commit/298040846a52c3e369b5e2767749421f4f3acd5e))
-
 
 ## v14.1.0 (2023-06-08)
 

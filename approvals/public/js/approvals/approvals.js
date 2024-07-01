@@ -1,24 +1,24 @@
+import { createApp } from 'vue'
+
 import ApprovalList from './ApprovalList.vue'
 
-frappe.provide('frappe')
 frappe.provide('approvals')
 
-frappe.get_form_sidebar_extension = function () {
+frappe.get_form_sidebar_extension = () => {
 	return `<div id="approvals-section"></div>`
 }
 
 approvals.load_approvals = frm => {
 	console.log('load approvals')
 	const approvals_section = document.getElementById('approvals-section')
-	approvals.Approvals = new window.Vue({
-		el: approvals_section,
-		render: h => h(ApprovalList),
-	})
+	const app = createApp(ApprovalList)
+	app.mount(approvals_section)
+	approvals.Approvals = app
 }
 
-approvals.rejection_reason_dialog = function (frm) {
+approvals.rejection_reason_dialog = frm => {
 	return new Promise(resolve => {
-		let dialog = new frappe.ui.Dialog({
+		const dialog = new frappe.ui.Dialog({
 			title: __('Please provide a reason for rejection'),
 			fields: [
 				{
@@ -28,7 +28,7 @@ approvals.rejection_reason_dialog = function (frm) {
 				},
 			],
 			primary_action: function () {
-				let reason = dialog.comment_box.value
+				const reason = dialog.comment_box.value
 				if (!reason) {
 					frappe.throw('A rejection reason is required')
 				}
@@ -41,7 +41,7 @@ approvals.rejection_reason_dialog = function (frm) {
 			},
 			primary_action_label: __('Add Comment'),
 		})
-		let wrapper = $(dialog.fields_dict.rejection_reason.$wrapper)
+		const wrapper = $(dialog.fields_dict.rejection_reason.$wrapper)
 		dialog.comment_box = frappe.ui.form.make_control({
 			parent: wrapper,
 			render_input: true,
@@ -61,15 +61,15 @@ approvals.rejection_reason_dialog = function (frm) {
 	})
 }
 
-approvals.provide_rejection_reason = async function (frm) {
-	let args = await approvals.rejection_reason_dialog(frm)
+approvals.provide_rejection_reason = async frm => {
+	const args = await approvals.rejection_reason_dialog(frm)
 	cur_dialog.hide()
 	return args
 }
 
-approvals.add_approver_dialog = function (frm) {
+approvals.add_approver_dialog = frm => {
 	return new Promise(resolve => {
-		let dialog = new frappe.ui.Dialog({
+		const dialog = new frappe.ui.Dialog({
 			title: __('Add a user to approve this document'),
 			fields: [
 				{
@@ -81,7 +81,7 @@ approvals.add_approver_dialog = function (frm) {
 				},
 			],
 			primary_action: function () {
-				let values = dialog.get_values()
+				const values = dialog.get_values()
 				resolve({ user: values.approval_user })
 			},
 			primary_action_label: __('Add Approver'),
@@ -91,9 +91,9 @@ approvals.add_approver_dialog = function (frm) {
 	})
 }
 
-approvals.remove_approver_dialog = function (frm, user_approvals = []) {
+approvals.remove_approver_dialog = (frm, user_approvals = []) => {
 	return new Promise(resolve => {
-		let dialog = new frappe.ui.Dialog({
+		const dialog = new frappe.ui.Dialog({
 			title: __('Remove a user from approving this document'),
 			fields: [
 				{
@@ -105,7 +105,7 @@ approvals.remove_approver_dialog = function (frm, user_approvals = []) {
 				},
 			],
 			primary_action: function () {
-				let values = dialog.get_values()
+				const values = dialog.get_values()
 				resolve({ user: values.remove_user })
 			},
 			primary_action_label: __('Remove Approver'),

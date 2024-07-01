@@ -1,5 +1,7 @@
-import frappe
 import json
+
+import frappe
+from frappe import _
 from frappe.desk.form.utils import add_comment
 from frappe.model.workflow import get_workflow_name
 
@@ -29,7 +31,8 @@ def get_approval_roles(doc, method=None):
 
 	if not roles:
 		fallback_approver = settings.fallback_approver_role
-		roles.append(fallback_approver)
+		if fallback_approver:
+			roles.append(fallback_approver)
 	return roles
 
 
@@ -99,7 +102,7 @@ def approve_document(doc, method=None, role=None, user=None):
 	approval.approver = user
 	approval.approval_role = role if role != "User Approval" else None
 	approval.user_approval = "User Approval" if role == "User Approval" else None
-	approval.save()
+	approval.save(ignore_permissions=True)
 	todo = frappe.get_value("ToDo", {"reference_name": doc.name, "role": role}, "name")
 	if todo:
 		todo = frappe.get_doc("ToDo", todo)
@@ -225,4 +228,12 @@ def create_approval_notification(doc, user):
 	no.document_name = doc.name
 	no.from_user = doc.owner
 	no.email_content = f"{doc.doctype} {doc.name} requires your approval"
-	no.save()
+	try:
+		no.save()
+	except AttributeError:
+		# missing outgoing email account error
+		frappe.msgprint(
+			_(
+				"Approval notification delivery failed. Please setup a default Email Account from Setup > Email > Email Account"
+			),
+		)

@@ -2,7 +2,7 @@ import frappe
 from frappe.model.document import Document
 
 
-def has_permission(doc: Document, ptype: str | None = None, user: str | None = None) -> bool:
+def has_permission(doc: Document, ptype: str = "read", user: str | None = None) -> bool:
 	user = user or frappe.session.user
 
 	approval_rules = frappe.get_all(
@@ -28,6 +28,3 @@ def has_permission(doc: Document, ptype: str | None = None, user: str | None = N
 
 	if user_document_approvals:
 		return True
-
-	# fallback to standard permission check if all of the above are false
-	return doc.has_permission()

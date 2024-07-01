@@ -40,16 +40,16 @@ const emit = defineEmits(['documentapproval'])
 
 const status = computed(() => {
 	if (cur_frm.doc.docstatus !== 0) {
-		return true
+		return false
 	} else if (props.approval.approval_role != 'User Approval' && !props.approval.user_has_approval_role) {
-		return true
+		return false
 	} else if (
 		props.approval.approval_role == 'User Approval' &&
 		props.approval.assigned_username !== frappe.session.user
 	) {
-		return true
-	} else {
 		return false
+	} else {
+		return true
 	}
 })
 

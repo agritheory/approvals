@@ -1,6 +1,6 @@
 import frappe
+from frappe import _
 from frappe.model.document import Document
-from frappe.utils.data import today
 
 
 class DocumentApproval(Document):

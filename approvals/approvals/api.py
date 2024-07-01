@@ -31,8 +31,11 @@ def get_approval_roles(doc, method=None):
 
 	if not roles:
 		fallback_approver = settings.fallback_approver_role
-		if fallback_approver:
-			roles.append(fallback_approver)
+		if not fallback_approver:
+			frappe.throw(
+				_("No approvers found. Please set a fallback approver role in Document Approval Settings.")
+			)
+		roles.append(fallback_approver)
 	return roles
 
 
@@ -116,7 +119,7 @@ def approve_document(doc, method=None, role=None, user=None):
 			doc.submit()
 			doc.set_status(update=True, status="Approved")
 		else:
-			doc.save()
+			doc.save(ignore_permissions=True)
 			doc.set_status(update=True, status="Approved")
 
 	return approval
@@ -148,7 +151,7 @@ def set_status_to_approved(doc, method=None, automatic=False):
 def reject_document(doc, role=None, comment="", method=None):
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	doc = frappe.get_doc(doc.doctype, doc.name)
-	doc.save()
+	doc.save(ignore_permissions=True)
 	doc.set_status(update=True, status="Rejected")
 	rejection = add_comment(doc.doctype, doc.name, comment, frappe.session.user, frappe.session.user)
 	revoke_approvals_on_reject(doc, method)
@@ -193,7 +196,7 @@ def add_user_approval(doc, method=None, user=None):
 	uda.reference_doctype = doc.doctype
 	uda.reference_name = doc.name
 	uda.approver = user
-	uda.save()
+	uda.save(ignore_permissions=True)
 	frappe.db.commit()
 
 
@@ -212,7 +215,7 @@ def remove_user_approval(doc, method=None, user=None):
 	removal.comment_email = frappe.session.user
 	removal.content = f"<b>{user}<b> removed as approver by <b>{frappe.session.user}</b>"
 	removal.subject = "Approver removed"
-	removal.save()
+	removal.save(ignore_permissions=True)
 	return
 
 
@@ -229,7 +232,7 @@ def create_approval_notification(doc, user):
 	no.from_user = doc.owner
 	no.email_content = f"{doc.doctype} {doc.name} requires your approval"
 	try:
-		no.save()
+		no.save(ignore_permissions=True)
 	except AttributeError:
 		# missing outgoing email account error
 		frappe.msgprint(

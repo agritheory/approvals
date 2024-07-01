@@ -178,7 +178,7 @@ def create_pi_document_approval_rules(settings):
 def create_document_approval_settings(settings):
 	das = frappe.get_doc("Document Approval Settings", "Document Approval Settings")
 	das.settings = "{}"  # Invalid JSON error if left blank in UI
-	das.fallback_approver = "Accounts Manager"
+	das.fallback_approver_role = "Accounts Manager"
 	das.save()
 
 

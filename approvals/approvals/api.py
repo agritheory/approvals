@@ -57,8 +57,8 @@ def fetch_approvals_and_roles(doc, method=None):
 		i["role"] for i in frappe.get_all("Has Role", {"parent": frappe.session.user}, "role")
 	]
 	assignments = {
-		a["role"] if a["role"] else a["owner"]: a["owner"]
-		for a in frappe.get_all("ToDo", {"reference_name": doc.name}, ["owner", "role"])
+		a["role"] if a["role"] else a["allocated_to"]: a["allocated_to"]
+		for a in frappe.get_all("ToDo", {"reference_name": doc.name}, ["allocated_to", "role"])
 	}
 	add_roles = []
 	for role in roles:
@@ -105,6 +105,7 @@ def approve_document(doc, method=None, role=None, user=None):
 		todo = frappe.get_doc("ToDo", todo)
 		todo.status = "Closed"
 		todo.save(ignore_permissions=True)
+		frappe.db.commit()
 
 	checked_all = check_all_document_approvals(doc, method, include_role=role, user=user)
 	if checked_all:
@@ -226,3 +227,9 @@ def create_approval_notification(doc, user):
 	no.from_user = doc.owner
 	no.email_content = f"{doc.doctype} {doc.name} requires your approval"
 	no.save()
+
+
+@frappe.whitelist()
+def send_reminder_email():
+	if not frappe.conf.get("approvals", {}).get("send_reminder_email"):
+		return

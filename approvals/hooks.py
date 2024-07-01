@@ -114,7 +114,12 @@ app_include_js = ["approvals.bundle.js"]
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
+scheduler_events = {
+    "cron": {
+		"30	8	*	*	*": [
+			"approvals.approvals.api.send_reminder_email",
+		]
+	},
 # 	"all": [
 # 		"approvals.tasks.all"
 # 	],
@@ -130,7 +135,7 @@ app_include_js = ["approvals.bundle.js"]
 # 	"monthly": [
 # 		"approvals.tasks.monthly"
 # 	],
-# }
+}
 
 # Testing
 # -------

@@ -3,20 +3,19 @@
 		<div style="font-size: 110%" :style="!approval.approved ? 'display: table-cell;' : 'display: table-row;'">
 			{{ approval.approval_role }}
 		</div>
+
 		<div v-if="!approval.approved">
-			<button
-				@click="handleApproval"
-				:disabled="status() ? 'disabled' : null"
-				:class="status() ? 'btn btn-disabled' : 'btn'">
+			<button @click="approve" :disabled="!status" :class="status ? 'btn btn-disabled' : 'btn'">
 				APPROVE
 			</button>
 			<button
-				@click="handleRejection"
-				:disabled="status() ? 'disabled' : null"
-				:class="status() ? 'btn btn-disabled button-reject' : 'btn button-reject'">
+				@click="reject"
+				:disabled="!status"
+				:class="status ? 'btn btn-disabled button-reject' : 'btn button-reject'">
 				REJECT
 			</button>
 		</div>
+
 		<div>
 			<span v-if="approval.approved">{{ approval.approver }} - Approved</span>
 			<span v-else>{{
@@ -27,58 +26,67 @@
 		</div>
 	</li>
 </template>
-<script>
-export default {
-	name: 'ApprovalListItem',
-  props: ["approval", "approval_state"],
-	methods: {
-		handleApproval() {
-			frappe
-				.xcall('approvals.approvals.api.approve_document', {
-					doc: cur_frm.doc,
-					role: this.$props.approval.approval_role,
-					user: frappe.session.user,
-				})
-				.then(r => {
-					this.$emit('documentapproval')
-				})
-		},
-		handleRejection() {
-			approvals.provide_rejection_reason(cur_frm).then(r => {
-				frappe
-					.xcall('approvals.approvals.api.reject_document', {
-						doc: cur_frm.doc,
-						role: this.$props.approval.approval_role,
-						comment: r.rejection_reason,
-					})
-					.then(r => {
-						this.$emit('documentapproval')
-					})
-			})
-		},
-		status() {
-      if(cur_frm.doc[frappe.workflow.get_state_fieldname(cur_frm.doctype)] !== this.approval_state){
-				return true
-			} else if (this.approval.approval_role != 'User Approval' && !this.approval.user_has_approval_role) {
-				return true
-			} else if (
-				this.approval.approval_role == 'User Approval' &&
-				this.approval.assigned_username !== frappe.session.user
-			) {
-				return true
-			} else {
-				return false
-			}
-		},
+
+<script setup lang="ts">
+import { computed } from 'vue'
+
+import type { Approval } from './ApprovalList.vue'
+
+// typescript declarations for FrappeJS
+declare const approvals: any;
+declare const cur_frm: any;
+declare const frappe: any;
+
+const emit = defineEmits(['documentapproval'])
+const props = defineProps({
+	approval: {
+		type: Object as () => Approval,
+		required: true,
 	},
+})
+
+const status = computed(() => {
+	if (cur_frm.doc.docstatus !== 0) {
+		return false
+	} else if (props.approval.approval_role != 'User Approval' && !props.approval.user_has_approval_role) {
+		return false
+	} else if (
+		props.approval.approval_role == 'User Approval' &&
+		props.approval.assigned_username !== frappe.session.user
+	) {
+		return false
+	} else {
+		return true
+	}
+})
+
+const approve = async () => {
+	await frappe.xcall('approvals.approvals.api.approve_document', {
+		doc: cur_frm.doc,
+		role: props.approval.approval_role,
+		user: frappe.session.user,
+	})
+	emit('documentapproval')
+}
+
+const reject = async () => {
+	const response = await approvals.provide_rejection_reason(cur_frm)
+	await frappe.xcall('approvals.approvals.api.reject_document', {
+		doc: cur_frm.doc,
+		role: props.approval.approval_role,
+		comment: response.rejection_reason,
+	})
+	emit('documentapproval')
 }
 </script>
+
 <style scoped>
 li {
 	display: table;
 	margin-bottom: 1em;
 	width: 100%;
 }
+
 button {
 	display: table-cell;
 	text-align: center;
@@ -88,6 +96,7 @@ button {
 	margin-right: 1ch;
 	padding: 4px 10px;
 }
+
 button:hover:enabled {
 	color: var(--dark-green-avatar-color);
 	font-weight: bold;
@@ -100,15 +109,18 @@ button:disabled {
 	background: #687178;
 	color: #fff;
 }
+
 div {
 	width: 100%;
 	display: table-row;
 }
+
 .button-reject {
 	background: var(--bg-orange);
 	color: var(--text-on-orange);
 	margin-right: 0px;
 }
+
 .button-reject:hover:enabled {
 	color: var(--text-on-orange);
 	font-weight: bold;

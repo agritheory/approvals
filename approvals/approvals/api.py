@@ -249,45 +249,60 @@ def create_approval_notification(doc, user):
 def send_reminder_email():
 	if not frappe.conf.get("approvals", {}).get("send_reminder_email"):
 		return
-	
+
 	ToDo = DocType("ToDo")
 	UserDocumentApproval = DocType("User Document Approval")
 	DocumentApproval = DocType("Document Approval")
 
 	todos = (
-		frappe.qb
-		.from_(ToDo)
-		.select(ToDo.allocated_to.as_("approver"), ToDo.reference_type.as_("doctype"), ToDo.reference_name.as_("name"))
-		.where((ToDo.status == "Open") & (ToDo.document_approval_rule.isnotnull()) & (ToDo.document_approval_rule != ""))
+		frappe.qb.from_(ToDo)
+		.select(
+			ToDo.allocated_to.as_("approver"),
+			ToDo.reference_type.as_("doctype"),
+			ToDo.reference_name.as_("name"),
+		)
+		.where(
+			(ToDo.status == "Open")
+			& (ToDo.document_approval_rule.isnotnull())
+			& (ToDo.document_approval_rule != "")
+		)
 	).run(as_dict=True)
 
 	assignments = (
-		frappe.qb
-		.from_(UserDocumentApproval)
+		frappe.qb.from_(UserDocumentApproval)
 		.left_join(DocumentApproval)
 		.on(
-			(UserDocumentApproval.approver == DocumentApproval.approver) &
-			(UserDocumentApproval.reference_doctype == DocumentApproval.reference_doctype) &
-		 	(UserDocumentApproval.reference_name == DocumentApproval.reference_name)
+			(UserDocumentApproval.approver == DocumentApproval.approver)
+			& (UserDocumentApproval.reference_doctype == DocumentApproval.reference_doctype)
+			& (UserDocumentApproval.reference_name == DocumentApproval.reference_name)
 		)
 		.where(DocumentApproval.name.isnull())
-		.select(UserDocumentApproval.approver, UserDocumentApproval.reference_doctype.as_("doctype"), UserDocumentApproval.reference_name.as_("name"))
+		.select(
+			UserDocumentApproval.approver,
+			UserDocumentApproval.reference_doctype.as_("doctype"),
+			UserDocumentApproval.reference_name.as_("name"),
+		)
 	).run(as_dict=True)
 
 	pending_approval = todos + assignments
 
 	approvers = {}
 	for pending in pending_approval:
-		user = pending['approver']
+		user = pending["approver"]
 		if user not in approvers:
 			approvers[user] = []
-		approvers[user].append(frappe._dict({
-			'doctype': pending['doctype'],
-			'name': pending['name'],
-			'url': get_url_to_form(pending['doctype'], pending['name'])
-		}))
+		approvers[user].append(
+			frappe._dict(
+				{
+					"doctype": pending["doctype"],
+					"name": pending["name"],
+					"url": get_url_to_form(pending["doctype"], pending["name"]),
+				}
+			)
+		)
 
 	email_template = frappe.get_doc("Email Template", "Pending Approval")
+
 	for approver_email, approver_data in approvers.items():
 		approver_data = {"documents": approver_data}
 		frappe.sendmail(
@@ -298,4 +313,3 @@ def send_reminder_email():
 			reference_doctype=None,
 			reference_name=None,
 		)
-

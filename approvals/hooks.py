@@ -15,13 +15,6 @@ required_apps = ["erpnext", "hrms"]
 app_include_css = ["/assets/approvals/dist/js/style.css"]
 app_include_js = ["/assets/approvals/dist/js/approvals.js"]
 
-fixtures = [
-	{
-		"dt": "Email Template",
-		"filters": [["name", "=", "Pending Approval"]],
-	},
-]
-
 # include js, css files in header of web template
 # web_include_css = "/assets/approvals/css/approvals.css"
 # web_include_js = "/assets/approvals/js/approvals.js"
@@ -72,7 +65,7 @@ fixtures = [
 # ------------
 
 # before_install = "approvals.install.before_install"
-# after_install = "approvals.install.after_install"
+after_install = "approvals.install.after_install"
 
 # Uninstallation
 # ------------

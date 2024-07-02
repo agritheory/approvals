@@ -247,3 +247,6 @@ def create_approval_notification(doc, user):
 def send_reminder_email():
 	if not frappe.conf.get("approvals", {}).get("send_reminder_email"):
 		return
+	
+	# Open ToDo with allocated_to to user
+	# User Document Approval

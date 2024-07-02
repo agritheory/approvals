@@ -114,12 +114,7 @@ after_install = "approvals.install.after_install"
 # Scheduled Tasks
 # ---------------
 
-scheduler_events = {
-    "cron": {
-		"30	8	*	*	*": [
-			"approvals.approvals.api.send_reminder_email",
-		]
-	},
+# scheduler_events = {
 # 	"all": [
 # 		"approvals.tasks.all"
 # 	],
@@ -135,7 +130,7 @@ scheduler_events = {
 # 	"monthly": [
 # 		"approvals.tasks.monthly"
 # 	],
-}
+# }
 
 # Testing
 # -------

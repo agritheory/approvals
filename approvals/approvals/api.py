@@ -105,7 +105,7 @@ def approve_document(doc, method=None, role=None, user=None):
 	approval.approver = user
 	approval.approval_role = role if role != "User Approval" else None
 	approval.user_approval = "User Approval" if role == "User Approval" else None
-	approval.save()
+	approval.save(ignore_permissions=True)
 	todo = frappe.get_value("ToDo", {"reference_name": doc.name, "role": role}, "name")
 	if todo:
 		todo = frappe.get_doc("ToDo", todo)
@@ -119,7 +119,7 @@ def approve_document(doc, method=None, role=None, user=None):
 			doc.submit()
 			doc.set_status(update=True, status="Approved")
 		else:
-			doc.save()
+			doc.save(ignore_permissions=True)
 			doc.set_status(update=True, status="Approved")
 
 	return approval
@@ -151,7 +151,7 @@ def set_status_to_approved(doc, method=None, automatic=False):
 def reject_document(doc, role=None, comment="", method=None):
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	doc = frappe.get_doc(doc.doctype, doc.name)
-	doc.save()
+	doc.save(ignore_permissions=True)
 	doc.set_status(update=True, status="Rejected")
 	rejection = add_comment(doc.doctype, doc.name, comment, frappe.session.user, frappe.session.user)
 	revoke_approvals_on_reject(doc, method)
@@ -196,7 +196,7 @@ def add_user_approval(doc, method=None, user=None):
 	uda.reference_doctype = doc.doctype
 	uda.reference_name = doc.name
 	uda.approver = user
-	uda.save()
+	uda.save(ignore_permissions=True)
 	frappe.db.commit()
 
 
@@ -215,7 +215,7 @@ def remove_user_approval(doc, method=None, user=None):
 	removal.comment_email = frappe.session.user
 	removal.content = f"<b>{user}<b> removed as approver by <b>{frappe.session.user}</b>"
 	removal.subject = "Approver removed"
-	removal.save()
+	removal.save(ignore_permissions=True)
 	return
 
 
@@ -231,4 +231,12 @@ def create_approval_notification(doc, user):
 	no.document_name = doc.name
 	no.from_user = doc.owner
 	no.email_content = f"{doc.doctype} {doc.name} requires your approval"
-	no.save()
+	try:
+		no.save(ignore_permissions=True)
+	except AttributeError:
+		# missing outgoing email account error
+		frappe.msgprint(
+			_(
+				"Approval notification delivery failed. Please setup a default Email Account from Setup > Email > Email Account"
+			),
+		)

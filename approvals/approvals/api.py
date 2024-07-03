@@ -2,6 +2,7 @@ import json
 
 import frappe
 from frappe import _
+from frappe.utils import cint, get_datetime
 from frappe.desk.form.utils import add_comment
 from frappe.model.workflow import get_workflow_name
 from frappe.query_builder import DocType
@@ -248,6 +249,12 @@ def create_approval_notification(doc, user):
 @frappe.whitelist()
 def send_reminder_email():
 	if not frappe.conf.get("approvals", {}).get("send_reminder_email"):
+		return
+
+	reminder_email_hour = frappe.get_value(
+		"Document Approval Settings", "Document Approval Settings", "reminder_email_hour"
+	)
+	if get_datetime().hour != cint(reminder_email_hour):
 		return
 
 	ToDo = DocType("ToDo")

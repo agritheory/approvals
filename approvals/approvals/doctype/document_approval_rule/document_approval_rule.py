@@ -10,7 +10,7 @@ class DocumentApprovalRule(Document):
 	def validate(self):
 		self.title = f"{self.approval_doctype} - {self.approval_role}"
 
-	def apply(self, doc, method=None, doctype=None, name=None):
+	def apply(self, doc: Document, method: str | None = None, doctype: str | None = None, name: str | None = None):
 		if frappe.flags.in_patch or frappe.flags.in_install or frappe.flags.in_setup_wizard:
 			return False
 
@@ -39,10 +39,10 @@ class DocumentApprovalRule(Document):
 		# except:
 		# 	frappe.throw(f'Error parsing approval rule conditions for {self.title}')
 
-	def get_message(self, doc):
+	def get_message(self, doc: Document):
 		return frappe.render_template(self.message, doc.__dict__)
 
-	def assign_user(self, doc):
+	def assign_user(self, doc: Document):
 		users = get_users(self.approval_role)
 		# get index of current user
 		if not users:
@@ -77,7 +77,7 @@ class DocumentApprovalRule(Document):
 
 
 @frappe.whitelist()
-def get_users(role):
+def get_users(role: str):
 	return [
 		i["parent"]
 		for i in frappe.db.sql(

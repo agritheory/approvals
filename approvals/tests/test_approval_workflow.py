@@ -1,7 +1,5 @@
 import frappe
 from frappe.utils import flt
-import pytest
-
 
 """
 Approval Rules:

@@ -1,8 +1,9 @@
 import frappe
-from approvals.approvals.api import create_approval_notification
 from frappe.model.document import Document
 from frappe.share import add
 from frappe.utils.data import today
+
+from approvals.approvals.api import create_approval_notification
 
 
 class UserDocumentApproval(Document):

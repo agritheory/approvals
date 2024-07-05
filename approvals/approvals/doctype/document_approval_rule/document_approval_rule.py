@@ -1,9 +1,10 @@
 import frappe
 import frappe.cache_manager
-from approvals.approvals.api import create_approval_notification
 from frappe.model.document import Document
 from frappe.share import add
 from frappe.utils import today
+
+from approvals.approvals.api import create_approval_notification
 
 
 class DocumentApprovalRule(Document):

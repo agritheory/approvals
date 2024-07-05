@@ -79,21 +79,14 @@ class DocumentApprovalRule(Document):
 
 @frappe.whitelist()
 def get_users(role):
-	return [
-		i["parent"]
-		for i in frappe.db.sql(
-			"""
-	SELECT `tabHas Role`.parent
-	FROM `tabHas Role`, `tabUser`
-	WHERE
-		`tabHas Role`.role = %(role)s
-		AND `tabHas Role`.parent = `tabUser`.name
-		AND `tabUser`.enabled = 1
-		AND `tabUser`.user_type = 'System User'
-		AND `tabUser`.name != 'Administrator'
-	ORDER BY parent
-	""",
-			{"role": role},
-			as_dict=True,
-		)
-	]
+	users = frappe.get_all(
+		"User",
+		filters={"enabled": True, "user_type": "System User", "name": ("!=", "Administrator")},
+		pluck="name",
+	)
+
+	users_with_role = frappe.get_all(
+		"Has Role", filters={"role": role, "parent": ("in", users)}, pluck="parent"
+	)
+
+	return users_with_role

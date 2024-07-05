@@ -24,9 +24,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue';
 
-import ApprovalListItem from './ApprovalListItem.vue'
+import ApprovalListItem from './ApprovalListItem.vue';
 
 // typescript declarations for FrappeJS
 declare const approvals: any
@@ -66,7 +66,7 @@ const addApprover = async () => {
 	const user = await approvals.add_approver_dialog()
 	cur_dialog.hide()
 	await frappe.xcall('approvals.approvals.api.add_user_approval', { doc: cur_frm.doc, user: user.user })
-	await fetchApprovalsAndRoles()
+	await refreshApprovals()
 }
 
 const removeApprover = async () => {

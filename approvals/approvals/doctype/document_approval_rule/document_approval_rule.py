@@ -1,9 +1,9 @@
 import frappe
-from frappe.model.document import Document
 import frappe.cache_manager
-from frappe import _, get_value, get_all
-from frappe.utils.data import today
 from approvals.approvals.api import create_approval_notification
+from frappe.model.document import Document
+from frappe.share import add
+from frappe.utils import today
 
 
 class DocumentApprovalRule(Document):
@@ -58,6 +58,7 @@ class DocumentApprovalRule(Document):
 			{"role": self.approval_role, "owner": user, "reference_name": doc.name, "status": "Open"},
 		):
 			return
+		add(doc.doctype, doc.name, user, read=True, write=True)  # share document with user
 		todo = frappe.new_doc("ToDo")
 		todo.owner = user  # Saving as 'Administrator' regardless of user value
 		todo.allocated_to = user

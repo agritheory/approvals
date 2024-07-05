@@ -87,9 +87,9 @@ app_include_js = ["/assets/approvals/dist/js/approvals.js"]
 # 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
 # }
 #
-has_permission = {
-	"*": "approvals.approvals.overrides.permissions.has_permission",
-}
+# has_permission = {
+# 	"Event": "frappe.desk.doctype.event.event.has_permission",
+# }
 
 # DocType Class
 # ---------------

@@ -1,8 +1,9 @@
 import frappe
-from frappe.model.document import Document
 import frappe.cache_manager
-from frappe import _, get_value, get_all
-from frappe.utils.data import today
+from frappe.model.document import Document
+from frappe.share import add as add_share
+from frappe.utils import today
+
 from approvals.approvals.api import create_approval_notification
 
 
@@ -58,6 +59,7 @@ class DocumentApprovalRule(Document):
 			{"role": self.approval_role, "owner": user, "reference_name": doc.name, "status": "Open"},
 		):
 			return
+		add_share(doc.doctype, doc.name, user, read=True, write=True)  # share document with user
 		todo = frappe.new_doc("ToDo")
 		todo.owner = user  # Saving as 'Administrator' regardless of user value
 		todo.allocated_to = user
@@ -78,21 +80,14 @@ class DocumentApprovalRule(Document):
 
 @frappe.whitelist()
 def get_users(role):
-	return [
-		i["parent"]
-		for i in frappe.db.sql(
-			"""
-	SELECT `tabHas Role`.parent
-	FROM `tabHas Role`, `tabUser`
-	WHERE
-		`tabHas Role`.role = %(role)s
-		AND `tabHas Role`.parent = `tabUser`.name
-		AND `tabUser`.enabled = 1
-		AND `tabUser`.user_type = 'System User'
-		AND `tabUser`.name != 'Administrator'
-	ORDER BY parent
-	""",
-			{"role": role},
-			as_dict=True,
-		)
-	]
+	users = frappe.get_all(
+		"User",
+		filters={"enabled": True, "user_type": "System User", "name": ("!=", "Administrator")},
+		pluck="name",
+	)
+
+	users_with_role = frappe.get_all(
+		"Has Role", filters={"role": role, "parent": ("in", users)}, pluck="parent"
+	)
+
+	return users_with_role

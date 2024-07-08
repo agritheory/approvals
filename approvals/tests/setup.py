@@ -6,13 +6,7 @@ from erpnext.setup.utils import enable_all_roles_and_domains, set_defaults_for_t
 from frappe.desk.page.setup_wizard.setup_wizard import setup_complete
 from frappe.installer import update_site_config
 
-from approvals.tests.fixtures import (
-	suppliers,
-	tax_authority,
-	pi_dars,
-	users,
-	script_text,
-)
+from approvals.tests.fixtures import pi_dars, script_text, suppliers, tax_authority, users
 
 
 def before_test():

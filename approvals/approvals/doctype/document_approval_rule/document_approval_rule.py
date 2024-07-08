@@ -11,9 +11,6 @@ class DocumentApprovalRule(Document):
 	def validate(self):
 		self.title = f"{self.approval_doctype} - {self.approval_role}"
 
-<<<<<<< HEAD
-	def apply(self, doc, method=None, doctype=None, name=None):
-=======
 	def apply(
 		self,
 		doc: Document,
@@ -21,7 +18,6 @@ class DocumentApprovalRule(Document):
 		doctype: str | None = None,
 		name: str | None = None,
 	):
->>>>>>> 95c7a9d (wip: add workflow integration)
 		if frappe.flags.in_patch or frappe.flags.in_install or frappe.flags.in_setup_wizard:
 			return False
 

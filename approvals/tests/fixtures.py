@@ -55,6 +55,27 @@ document_approval_rules = [
 		"condition": "200.00 <= doc.grand_total < 500.00",
 		"enabled": 1,
 	},
+	{
+		"approval_doctype": "Purchase Order",
+		"approval_role": "Accounts Manager",
+		"primary_assignee": "",
+		"condition": "doc.grand_total > 1000.00",
+		"enabled": 1,
+	},
+	{
+		"approval_doctype": "Purchase Order",
+		"approval_role": "Stock Manager",
+		"primary_assignee": "quincy@cfc.com",
+		"condition": "500.00 <= doc.grand_total <= 1000.00",
+		"enabled": 1,
+	},
+	{
+		"approval_doctype": "Purchase Order",
+		"approval_role": "Item Manager",
+		"primary_assignee": "sam@cfc.com",
+		"condition": "200.00 <= doc.grand_total < 500.00",
+		"enabled": 1,
+	},
 ]
 
 users = [

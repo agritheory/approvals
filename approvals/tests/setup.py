@@ -6,7 +6,14 @@ from erpnext.setup.utils import enable_all_roles_and_domains, set_defaults_for_t
 from frappe.desk.page.setup_wizard.setup_wizard import setup_complete
 from frappe.installer import update_site_config
 
-from approvals.tests.fixtures import pi_dars, script_text, suppliers, tax_authority, users
+from approvals.tests.fixtures import (
+	document_approval_rules,
+	script_text,
+	suppliers,
+	tax_authority,
+	users,
+	workflows,
+)
 
 
 def before_test():
@@ -58,10 +65,10 @@ def create_test_data():
 	create_users(users)
 	create_suppliers(settings)
 	create_items(settings)
-	create_document_approval_settings()
-	create_pi_document_approval_rules(pi_dars)
-	create_client_script()
-	create_server_script(script_text)
+	create_document_approval_settings(settings)
+	create_pi_document_approval_rules(settings)
+	create_client_scripts(settings)
+	create_server_script(settings)
 	create_invoices(settings)
 	dismiss_onboarding()
 
@@ -158,8 +165,8 @@ def create_users(users):
 		frappe.db.commit()
 
 
-def create_pi_document_approval_rules(pi_dars):
-	for d in pi_dars:
+def create_pi_document_approval_rules(settings=None):
+	for d in document_approval_rules:
 		dar = frappe.new_doc("Document Approval Rule")
 		dar.approval_doctype = d["approval_doctype"]
 		dar.approval_role = d["approval_role"]
@@ -168,14 +175,14 @@ def create_pi_document_approval_rules(pi_dars):
 		dar.save()
 
 
-def create_document_approval_settings():
+def create_document_approval_settings(settings=None):
 	das = frappe.get_doc("Document Approval Settings", "Document Approval Settings")
 	das.settings = "{}"  # Invalid JSON error if left blank in UI
 	das.fallback_approver = "Accounts Manager"
 	das.save()
 
 
-def create_client_script():
+def create_client_scripts(settings=None):
 	cs = frappe.new_doc("Client Script")
 	cs.dt = cs.name = "Purchase Invoice"
 	cs.apply_to = "Form"
@@ -183,22 +190,38 @@ def create_client_script():
 	cs.script = "frappe.ui.form.on('Purchase Invoice', {refresh(frm) {frappe.provide('approvals').load_approvals(frm)}})"
 	cs.save()
 
-
-def create_server_script(script_text):
-	sites_path = os.getcwd()
-	common_site_config_path = os.path.join(sites_path, "common_site_config.json")
-	update_site_config("server_script_enabled", True, site_config_path=common_site_config_path)
-
-	da = frappe.new_doc("Server Script")
-	da.name = "Assign Approvers - Purchase Invoice"
-	# da.group = 'on_update'  # no `group` field in DocType
-	da.script_type = "DocType Event"
-	da.reference_doctype = "Purchase Invoice"
-	da.doctype_event = "After Save"
-	da.script = script_text
-	da.save()
+	cs = frappe.new_doc("Client Script")
+	cs.dt = cs.name = "Purchase Order"
+	cs.apply_to = "Form"
+	cs.enabled = 1
+	cs.script = "frappe.ui.form.on('Purchase Order', {refresh(frm) {frappe.provide('approvals').load_approvals(frm)}})"
+	cs.save()
 
 
-def dismiss_onboarding():
+def dismiss_onboarding(settings=None):
 	for m in frappe.get_all("Module Onboarding"):
 		frappe.db.set_value("Module Onboarding", m, "is_complete", 1)
+
+
+def create_workflows(settings=None):
+	for workflow in workflows:
+		doc = frappe.new_doc("Workflow")
+		doc.update(**workflow)
+		doc.save()
+
+
+def create_purchase_orders(settings=None):
+	for supplier in suppliers:
+		po = frappe.new_doc("Purchase Order")
+		po.company = settings.company
+		po.transaction_date = po.required_date = settings.day
+		po.supplier = supplier[0]
+		po.append(
+			"items",
+			{
+				"item_code": supplier[1],
+				"rate": supplier[3],
+				"qty": 1,
+			},
+		)
+		po.save()

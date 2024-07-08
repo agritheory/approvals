@@ -2,6 +2,12 @@ import { createApp } from 'vue'
 
 import ApprovalList from './ApprovalList.vue'
 
+declare const __: any
+declare const $: any
+declare const approvals: any
+declare const cur_dialog: any
+declare const frappe: any
+
 frappe.provide('approvals')
 
 frappe.get_form_sidebar_extension = () => {
@@ -9,14 +15,13 @@ frappe.get_form_sidebar_extension = () => {
 }
 
 approvals.load_approvals = frm => {
-	console.log('load approvals')
 	const approvals_section = document.getElementById('approvals-section')
 	const app = createApp(ApprovalList)
-	app.mount(approvals_section)
+	app.mount(approvals_section!)
 	approvals.Approvals = app
 }
 
-approvals.rejection_reason_dialog = frm => {
+approvals.rejection_reason_dialog = (frm: any) => {
 	return new Promise(resolve => {
 		const dialog = new frappe.ui.Dialog({
 			title: __('Please provide a reason for rejection'),
@@ -61,13 +66,13 @@ approvals.rejection_reason_dialog = frm => {
 	})
 }
 
-approvals.provide_rejection_reason = async frm => {
+approvals.provide_rejection_reason = async (frm: any) => {
 	const args = await approvals.rejection_reason_dialog(frm)
 	cur_dialog.hide()
 	return args
 }
 
-approvals.add_approver_dialog = frm => {
+approvals.add_approver_dialog = () => {
 	return new Promise(resolve => {
 		const dialog = new frappe.ui.Dialog({
 			title: __('Add a user to approve this document'),
@@ -91,7 +96,7 @@ approvals.add_approver_dialog = frm => {
 	})
 }
 
-approvals.remove_approver_dialog = (frm, user_approvals = []) => {
+approvals.remove_approver_dialog = (user_approvals: (string | undefined)[]) => {
 	return new Promise(resolve => {
 		const dialog = new frappe.ui.Dialog({
 			title: __('Remove a user from approving this document'),

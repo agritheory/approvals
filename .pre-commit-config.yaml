@@ -46,16 +46,6 @@ repos:
               frappe/public/js/lib/.*
           )$
 
-  - repo: https://github.com/PyCQA/autoflake
-    rev: v2.3.1
-    hooks:
-      - id: autoflake
-
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-
   - repo: https://github.com/PyCQA/flake8
     rev: 7.0.0
     hooks:

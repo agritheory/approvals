@@ -1,6 +1,6 @@
 import frappe
 from frappe.model.document import Document
-from frappe.share import add
+from frappe.share import add as add_share
 from frappe.utils.data import today
 
 from approvals.approvals.api import create_approval_notification
@@ -15,8 +15,7 @@ class UserDocumentApproval(Document):
 		self.remove_todo()
 
 	def add_todo(self):
-		# share document with user
-		add(self.reference_doctype, self.reference_name, self.approver, read=True, write=True)
+		add_share(self.reference_doctype, self.reference_name, self.approver, read=True, write=True)
 
 		todo = frappe.new_doc("ToDo")
 		todo.owner = self.approver

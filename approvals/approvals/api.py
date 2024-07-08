@@ -90,14 +90,15 @@ def fetch_approvals_and_roles(doc: Document, method: str | None = None):
 		)
 		add_roles.append(_role)
 	approval_state = (
-		frappe.get_value("Workflow", get_workflow_name(doc.doctype), "custom_approval_state")
-		or "Pending"
+		frappe.get_value("Workflow", get_workflow_name(doc.doctype), "approval_state") or "Pending"
 	)
 	return {"approvals": add_roles, "approval_state": approval_state}
 
 
 @frappe.whitelist()
-def approve_document(doc: Document, method: str | None = None, role: str | None = None, user:str | None = None):
+def approve_document(
+	doc: Document, method: str | None = None, role: str | None = None, user: str | None = None
+):
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	approval = frappe.new_doc("Document Approval")
 	approval.reference_doctype = doc.doctype

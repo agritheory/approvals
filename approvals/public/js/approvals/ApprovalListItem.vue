@@ -4,7 +4,7 @@
 			{{ approval.approval_role }}
 		</div>
 
-		<div v-if="!approval.approved">
+		<div v-if="!approval.approved && isApproveable">
 			<button @click="approve" :disabled="!status" :class="status ? 'btn btn-disabled' : 'btn'">
 				APPROVE
 			</button>
@@ -43,6 +43,13 @@ const props = defineProps({
 		type: Object as () => Approval,
 		required: true,
 	},
+	pendingStateName: String,
+})
+
+const isApproveable = computed(() => {
+	let workflowStateField = frappe.workflow.state_fields[cur_frm.doc.doctype]
+	console.log(cur_frm.doc.docstatus === 0 && cur_frm.doc[workflowStateField] == pendingStateName.value)
+	return cur_frm.doc.docstatus === 0 && cur_frm.doc[workflowStateField] == pendingStateName.value
 })
 
 const status = computed(() => {

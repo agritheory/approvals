@@ -11,7 +11,13 @@ class DocumentApprovalRule(Document):
 	def validate(self):
 		self.title = f"{self.approval_doctype} - {self.approval_role}"
 
-	def apply(self, doc: Document, method: str | None = None, doctype: str | None = None, name: str | None = None):
+	def apply(
+		self,
+		doc: Document,
+		method: str | None = None,
+		doctype: str | None = None,
+		name: str | None = None,
+	):
 		if frappe.flags.in_patch or frappe.flags.in_install or frappe.flags.in_setup_wizard:
 			return False
 

@@ -24,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, unref } from 'vue';
 
 import ApprovalListItem from './ApprovalListItem.vue';
 
@@ -43,6 +43,9 @@ export type Approval = {
 }
 
 const approvalsData = ref<Approval[]>([])
+const pendingStateName = ref('')
+
+
 
 onMounted(async () => {
 	await fetchApprovalsAndRoles()
@@ -52,9 +55,19 @@ const isDraft = computed(() => {
 	return cur_frm.doc.docstatus === 0
 })
 
+const frm = computed(() => {
+	return unref(cur_frm)
+})
+
 const fetchApprovalsAndRoles = async () => {
 	const response = await frappe.xcall('approvals.approvals.api.fetch_approvals_and_roles', { doc: cur_frm.doc })
 	approvalsData.value = response.approvals
+	pendingStateName.value = response.approval_state
+	let workflowStateField = frappe.workflow.state_fields[cur_frm.doc.doctype]
+	console.log(workflowStateField, pendingStateName.value)
+	if(cur_frm.doc[workflowStateField] == pendingStateName.value){
+		cur_frm.set_read_only()
+	}
 }
 
 const refreshApprovals = async () => {

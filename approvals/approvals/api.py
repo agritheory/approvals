@@ -5,11 +5,12 @@ from frappe.model.document import Document
 from frappe import _
 from frappe.desk.form.utils import add_comment
 from frappe.model.workflow import get_workflow_name
+from frappe.share import add as add_share
 
 
 @frappe.whitelist()
 def get_approval_roles(doc: Document, method: str | None = None):
-	settings = frappe.get_doc("Document Approval Settings")
+	settings = frappe.get_cached_doc("Document Approval Settings")
 
 	roles = [
 		role
@@ -89,9 +90,7 @@ def fetch_approvals_and_roles(doc: Document, method: str | None = None):
 			}
 		)
 		add_roles.append(_role)
-	approval_state = (
-		frappe.get_value("Workflow", get_workflow_name(doc.doctype), "approval_state") or "Pending"
-	)
+	approval_state = frappe.get_value("Workflow", get_workflow_name(doc.doctype), "approval_state")
 	return {"approvals": add_roles, "approval_state": approval_state}
 
 
@@ -190,6 +189,9 @@ def assign_approvers(doc: Document, method: str | None = None):
 def add_user_approval(doc: Document, method: str | None = None, user: str | None = None):
 	if not user:
 		return
+	if not frappe.has_permission(doc.doctype, ptype="read", user=user, doc=doc.name):
+		add_share(doc.doctype, doc.name, user, read=True, write=True, share=True)
+
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	uda = frappe.new_doc("User Document Approval")
 	uda.reference_doctype = doc.doctype

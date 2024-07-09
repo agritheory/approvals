@@ -1,5 +1,4 @@
 import frappe
-import frappe.cache_manager
 from frappe.model.document import Document
 from frappe.share import add as add_share
 from frappe.utils import today
@@ -42,7 +41,10 @@ class DocumentApprovalRule(Document):
 		)
 		settings = frappe.get_doc("Document Approval Settings")
 		eval_locals = {"doc": doc, "settings": settings.get_settings()}
-		return frappe.safe_eval(self.condition, eval_globals=eval_globals, eval_locals=eval_locals)
+		result = frappe.safe_eval(self.condition, eval_globals=eval_globals, eval_locals=eval_locals)
+		if result and self.assign_users:
+			self.assign_user(doc)
+		return result
 		# except:
 		# 	frappe.throw(f'Error parsing approval rule conditions for {self.title}')
 
@@ -50,6 +52,15 @@ class DocumentApprovalRule(Document):
 		return frappe.render_template(self.message, doc.__dict__)
 
 	def assign_user(self, doc: Document):
+		if doc.meta:
+			workflow_name = doc.meta.get_workflow()
+			if workflow_name:
+				workflow_state_field = frappe.get_cached_value(
+					"Workflow", workflow_name, "workflow_state_field"
+				)
+				approval_state = frappe.get_cached_value("Workflow", workflow_name, "approval_state")
+				if doc.get(workflow_state_field) != approval_state:
+					return
 		users = get_users(self.approval_role)
 		# get index of current user
 		if not users:
@@ -65,23 +76,32 @@ class DocumentApprovalRule(Document):
 			{"role": self.approval_role, "owner": user, "reference_name": doc.name, "status": "Open"},
 		):
 			return
-		add_share(doc.doctype, doc.name, user, read=True, write=True)  # share document with user
-		todo = frappe.new_doc("ToDo")
-		todo.owner = user  # Saving as 'Administrator' regardless of user value
-		todo.allocated_to = user
-		todo.reference_type = doc.doctype
-		todo.reference_name = doc.name
-		todo.role = self.approval_role
-		todo.assigned_by = "Administrator"
-		todo.date = today()
-		todo.status = "Open"
-		todo.priority = "Medium"
-		todo.description = (
-			self.get_message(doc) if self.message else "A document has been assigned to you"
-		)
-		todo.save(ignore_permissions=True)
-		if self.message:
-			create_approval_notification(doc, user)
+		if not frappe.has_permission(doc.doctype, ptype="read", user=user, doc=doc.name):
+			add_share(doc.doctype, doc.name, user, read=True, write=True, share=True)
+		if not frappe.db.get_value(
+			"ToDo",
+			{
+				"allocated_to": user,
+				"reference_type": doc.doctype,
+				"reference_name": doc.name,
+			},
+		):
+			todo = frappe.new_doc("ToDo")
+			todo.owner = user  # Saving as 'Administrator' regardless of user value
+			todo.allocated_to = user
+			todo.reference_type = doc.doctype
+			todo.reference_name = doc.name
+			todo.role = self.approval_role
+			todo.assigned_by = "Administrator"
+			todo.date = today()
+			todo.status = "Open"
+			todo.priority = "Medium"
+			todo.description = (
+				self.get_message(doc) if self.message else frappe._("A document has been assigned to you")
+			)
+			todo.save(ignore_permissions=True)
+			if self.message:
+				create_approval_notification(doc, user)
 
 
 @frappe.whitelist()

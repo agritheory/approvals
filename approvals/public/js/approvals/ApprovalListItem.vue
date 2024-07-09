@@ -4,7 +4,7 @@
 			{{ approval.approval_role }}
 		</div>
 
-		<div v-if="!approval.approved && isApproveable">
+		<div v-if="isApproveable">
 			<button @click="approve" :disabled="!status" :class="status ? 'btn btn-disabled' : 'btn'">
 				APPROVE
 			</button>
@@ -27,32 +27,25 @@
 	</li>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { computed } from 'vue'
 
-import type { Approval } from './ApprovalList.vue'
-
-// typescript declarations for FrappeJS
-declare const approvals: any;
-declare const cur_frm: any;
-declare const frappe: any;
-
 const emit = defineEmits(['documentapproval'])
+
 const props = defineProps({
 	approval: {
-		type: Object as () => Approval,
+		type: Object,
 		required: true,
 	},
-	pendingStateName: {
-		type: String,
-		required: false
-	}
+	approvalStateName: String,
 })
 
 const isApproveable = computed(() => {
-	let workflowStateField = frappe.workflow.state_fields[cur_frm.doc.doctype]
-	console.log(cur_frm.doc.docstatus === 0 && cur_frm.doc[workflowStateField] == pendingStateName.value)
-	return cur_frm.doc.docstatus === 0 && cur_frm.doc[workflowStateField] == pendingStateName.value
+	const workflowStateField = frappe.workflow.state_fields[cur_frm.doc.doctype]
+	if(workflowStateField){
+		return cur_frm.doc.docstatus === 0 && cur_frm.doc[workflowStateField] == props.approvalStateName && !props.approval.approved
+	}
+	return cur_frm.doc.docstatus === 0 && !props.approval.approved
 })
 
 const status = computed(() => {

@@ -3,10 +3,10 @@
 		<h4>Approvals</h4>
 		<ul class="list-unstyled">
 			<ApprovalListItem
-				v-for="(approval, index) in approvalsData"
+				v-for="(approval, index) in approvalsData.approvals"
 				:key="index"
 				:approval="approval"
-				:pendingStateName="pendingStateName"
+				:approvalStateName="approvalsData.approval_state"
 				@documentapproval="refreshApprovals" />
 		</ul>
 
@@ -24,27 +24,15 @@
 	</div>
 </template>
 
-<script setup lang="ts">
-import { computed, onMounted, ref, unref } from 'vue';
+<script setup>
+import { computed, onMounted, unref, reactive } from 'vue';
 
 import ApprovalListItem from './ApprovalListItem.vue';
 
-// typescript declarations for FrappeJS
-declare const approvals: any
-declare const cur_dialog: any
-declare const cur_frm: any
-declare const frappe: any
-export type Approval = {
-	approval_role?: string
-	approved?: boolean
-	approver?: string
-	assigned_to_user?: string
-	assigned_username?: string
-	user_has_approval_role?: boolean
-}
-
-let approvalsData = ref<Approval[]>([])
-let pendingStateName = ref('')
+let approvalsData = reactive({
+	'approvals': [],
+	'approval_state': '',
+})
 
 onMounted(async () => {
 	await fetchApprovalsAndRoles()
@@ -56,11 +44,10 @@ const isDraft = computed(() => {
 
 const fetchApprovalsAndRoles = async () => {
 	const response = await frappe.xcall('approvals.approvals.api.fetch_approvals_and_roles', { doc: cur_frm.doc })
-	approvalsData.value = response.approvals
-	pendingStateName.value = response.approval_state
+	approvalsData.approvals = response.approvals
+	approvalsData.approval_state = response.approval_state
 	let workflowStateField = frappe.workflow.state_fields[cur_frm.doc.doctype]
-	console.log(workflowStateField, pendingStateName.value)
-	if(cur_frm.doc[workflowStateField] == pendingStateName.value){
+	if(cur_frm.doc[workflowStateField] == approvalsData.approval_state){
 		cur_frm.set_read_only()
 	}
 }

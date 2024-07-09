@@ -6,6 +6,7 @@
 				v-for="(approval, index) in approvalsData"
 				:key="index"
 				:approval="approval"
+				:pendingStateName="pendingStateName"
 				@documentapproval="refreshApprovals" />
 		</ul>
 
@@ -42,10 +43,8 @@ export type Approval = {
 	user_has_approval_role?: boolean
 }
 
-const approvalsData = ref<Approval[]>([])
-const pendingStateName = ref('')
-
-
+let approvalsData = ref<Approval[]>([])
+let pendingStateName = ref('')
 
 onMounted(async () => {
 	await fetchApprovalsAndRoles()
@@ -53,10 +52,6 @@ onMounted(async () => {
 
 const isDraft = computed(() => {
 	return cur_frm.doc.docstatus === 0
-})
-
-const frm = computed(() => {
-	return unref(cur_frm)
 })
 
 const fetchApprovalsAndRoles = async () => {

@@ -43,7 +43,10 @@ const props = defineProps({
 		type: Object as () => Approval,
 		required: true,
 	},
-	pendingStateName: String,
+	pendingStateName: {
+		type: String,
+		required: false
+	}
 })
 
 const isApproveable = computed(() => {

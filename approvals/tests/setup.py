@@ -61,7 +61,7 @@ def create_test_data():
 			),
 		}
 	)
-
+	create_workflows()
 	create_users(settings)
 	create_suppliers(settings)
 	create_items(settings)
@@ -69,6 +69,7 @@ def create_test_data():
 	create_pi_document_approval_rules(settings)
 	create_client_scripts(settings)
 	create_server_script(settings)
+	create_purchase_orders(settings)
 	create_invoices(settings)
 	dismiss_onboarding(settings)
 
@@ -221,8 +222,20 @@ def dismiss_onboarding(settings=None):
 
 def create_workflows(settings=None):
 	for workflow in workflows:
+		for state in workflow.get("states"):
+			if frappe.db.exists("Workflow State", state.get("state")):
+				continue
+			ws = frappe.new_doc("Workflow State")
+			ws.workflow_state_name = state.get("state")
+			ws.save()
+		for state in workflow.get("transitions"):
+			if frappe.db.exists("Workflow Action Master", state.get("action")):
+				continue
+			ws = frappe.new_doc("Workflow Action Master")
+			ws.workflow_action_name = state.get("action")
+			ws.save()
 		doc = frappe.new_doc("Workflow")
-		doc.update(**workflow)
+		doc.update(workflow)
 		doc.save()
 
 
@@ -230,7 +243,7 @@ def create_purchase_orders(settings=None):
 	for supplier in suppliers:
 		po = frappe.new_doc("Purchase Order")
 		po.company = settings.company
-		po.transaction_date = po.required_date = settings.day
+		po.transaction_date = po.schedule_date = settings.day
 		po.supplier = supplier[0]
 		po.append(
 			"items",

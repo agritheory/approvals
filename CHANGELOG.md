@@ -1,6 +1,57 @@
 # CHANGELOG
 
-## v1.1.0 (2024-07-02)
+## v14.2.1 (2024-07-08)
+
+### Chore
+
+* chore: fix backport ([`ad4bfa2`](https://github.com/agritheory/approvals/commit/ad4bfa24210fdd4a042b0de54a3558defc078393))
+
+* chore: backport ([`2a11834`](https://github.com/agritheory/approvals/commit/2a11834ca863cbe1136cf95c6ba975b457a8df15))
+
+### Ci
+
+* ci: fix version numbering (#30) ([`2caf35a`](https://github.com/agritheory/approvals/commit/2caf35a9a7ddbd1c2c98a9163ff9cd0c376b13e4))
+
+### Fix
+
+* fix: allow approvers to view non-role documents (#26)
+
+* fix: handle case where fallback approver is not set
+
+* fix: throw error on missing fallback approval role
+
+* fix: allow approvers to view non-role documents
+
+* fix: use wildcard permissions for approvals
+
+* fix: recursion permission checks
+
+* fix: share documents with approvers
+
+* fix: replace SQL with ORM
+
+* fix: remove permission controller hook
+
+* style: pre-commit fixes
+
+* fix: alias add to add_share
+
+---------
+
+Co-authored-by: Rohan Bansal &lt;rohan@agritheory.dev&gt;
+Co-authored-by: Tyler Matteson &lt;tyler@agritheory.com&gt; ([`3b16714`](https://github.com/agritheory/approvals/commit/3b167143d74558b4cef2ade136f5a6981cb9f356))
+
+### Unknown
+
+* Merge pull request #33 from agritheory/fix_backport
+
+chore: fix backport ([`2b307c7`](https://github.com/agritheory/approvals/commit/2b307c76a78ffc8f2f30d2e746c8d2f40d2df49a))
+
+* Merge pull request #32 from agritheory/backport
+
+chore: backport ([`4c62a18`](https://github.com/agritheory/approvals/commit/4c62a18353c2b93fe2572683dae6a3f5c34be706))
+
+## v14.2.0 (2024-07-02)
 
 ### Chore
 
@@ -64,7 +115,7 @@ Co-authored-by: Tyler Matteson &lt;tyler@agritheory.com&gt; ([`ebed7f1`](https:/
 
 Co-authored-by: Rohan Bansal &lt;rohan@agritheory.dev&gt; ([`c99c9c2`](https://github.com/agritheory/approvals/commit/c99c9c27ddcc866cc1e5ed161ed5bd0086ed9578))
 
-## v14.1.0 (2023-06-08)
+## v1.0.0 (2023-06-08)
 
 ### Chore
 

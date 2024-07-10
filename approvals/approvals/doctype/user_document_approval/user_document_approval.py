@@ -1,6 +1,8 @@
 import frappe
 from frappe.model.document import Document
+from frappe.share import add as add_share
 from frappe.utils.data import today
+
 from approvals.approvals.api import create_approval_notification
 
 
@@ -13,6 +15,8 @@ class UserDocumentApproval(Document):
 		self.remove_todo()
 
 	def add_todo(self):
+		add_share(self.reference_doctype, self.reference_name, self.approver, read=True, write=True)
+
 		todo = frappe.new_doc("ToDo")
 		todo.owner = self.approver
 		todo.allocated_to = self.approver
@@ -24,6 +28,7 @@ class UserDocumentApproval(Document):
 		todo.priority = "Medium"
 		todo.description = "A document requires your approval"
 		todo.save(ignore_permissions=True)
+
 		create_approval_notification(
 			frappe._dict(
 				{"doctype": self.reference_doctype, "name": self.reference_name, "owner": frappe.session.user}
@@ -32,8 +37,7 @@ class UserDocumentApproval(Document):
 		)
 
 	def remove_todo(self):
-		todo = frappe.get_value(
+		if todo := frappe.get_value(
 			"ToDo", {"reference_name": self.reference_name, "allocated_to": self.approver}, "name"
-		)
-		if todo:
+		):
 			frappe.delete_doc("ToDo", todo, force=True)

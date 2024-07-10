@@ -16,7 +16,11 @@
 				<i class="octicon octicon-plus" style="margin-left: 2px"></i>
 			</a>
 			<br />
-			<a v-if="approvalsData.length > 0" class="text-muted" @click="removeApprover" style="position: relative">
+			<a
+				v-if="approvalsData.approvals.length > 0"
+				class="text-muted"
+				@click="removeApprover"
+				style="position: relative">
 				Remove Approver
 				<i class="remove-approver">×</i>
 			</a>
@@ -24,14 +28,33 @@
 	</div>
 </template>
 
-<script setup>
-import { computed, onMounted, unref, reactive } from 'vue';
+<script setup lang="ts">
+import { computed, onMounted, reactive } from 'vue'
 
-import ApprovalListItem from './ApprovalListItem.vue';
+import ApprovalListItem from './ApprovalListItem.vue'
 
-let approvalsData = reactive({
-	'approvals': [],
-	'approval_state': '',
+// typescript declarations for FrappeJS
+declare const approvals: any
+declare const cur_dialog: any
+declare const cur_frm: any
+declare const frappe: any
+export type Approval = {
+	approval_role?: string
+	approved?: boolean
+	approver?: string
+	assigned_to_user?: string
+	assigned_username?: string
+	user_has_approval_role?: boolean
+}
+
+export type Approvals = {
+	approvals: Approval[]
+	approval_state: string
+}
+
+const approvalsData: Approvals = reactive({
+	approvals: [],
+	approval_state: '',
 })
 
 onMounted(async () => {
@@ -46,8 +69,8 @@ const fetchApprovalsAndRoles = async () => {
 	const response = await frappe.xcall('approvals.approvals.api.fetch_approvals_and_roles', { doc: cur_frm.doc })
 	approvalsData.approvals = response.approvals
 	approvalsData.approval_state = response.approval_state
-	let workflowStateField = frappe.workflow.state_fields[cur_frm.doc.doctype]
-	if(cur_frm.doc[workflowStateField] == approvalsData.approval_state){
+	const workflowStateField = frappe.workflow.state_fields[cur_frm.doc.doctype]
+	if (cur_frm.doc[workflowStateField] == approvalsData.approval_state) {
 		cur_frm.set_read_only()
 	}
 }
@@ -65,7 +88,7 @@ const addApprover = async () => {
 }
 
 const removeApprover = async () => {
-	const userApprovals = approvalsData.value
+	const userApprovals = approvalsData.approvals
 		.filter(approval => {
 			return approval.approval_role == 'User Approval'
 		})
@@ -76,7 +99,7 @@ const removeApprover = async () => {
 	if (user.user.includes('@')) {
 		username = user.user
 	} else {
-		username = approvalsData.value
+		username = approvalsData.approvals
 			.filter(approval => {
 				return approval.assigned_to_user == user.user
 			})

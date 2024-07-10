@@ -61,7 +61,7 @@ def create_test_data():
 	create_client_scripts(settings)
 	create_purchase_orders(settings)
 	create_invoices(settings)
-	dismiss_onboarding()
+	dismiss_onboarding(settings)
 
 
 def create_suppliers(settings):
@@ -183,7 +183,7 @@ def create_workflows(settings=None):
 			ws.workflow_action_name = state.get("action")
 			ws.save()
 		doc = frappe.new_doc("Workflow")
-		doc.update(**workflow)
+		doc.update(workflow)
 		doc.save()
 
 
@@ -191,7 +191,7 @@ def create_purchase_orders(settings=None):
 	for supplier in suppliers:
 		po = frappe.new_doc("Purchase Order")
 		po.company = settings.company
-		po.transaction_date = po.required_date = settings.day
+		po.transaction_date = po.schedule_date = settings.day
 		po.supplier = supplier[0]
 		po.append(
 			"items",

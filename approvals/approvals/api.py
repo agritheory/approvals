@@ -3,8 +3,11 @@ import json
 import frappe
 from frappe.model.document import Document
 from frappe import _
+from frappe.utils import cint, get_datetime
 from frappe.desk.form.utils import add_comment
 from frappe.model.workflow import get_workflow_name
+from frappe.query_builder import DocType
+from frappe.utils.data import get_url_to_form
 from frappe.share import add as add_share
 
 
@@ -64,8 +67,8 @@ def fetch_approvals_and_roles(doc: Document, method: str | None = None):
 		i["role"] for i in frappe.get_all("Has Role", {"parent": frappe.session.user}, "role")
 	]
 	assignments = {
-		a["role"] if a["role"] else a["owner"]: a["owner"]
-		for a in frappe.get_all("ToDo", {"reference_name": doc.name}, ["owner", "role"])
+		a["role"] if a["role"] else a["allocated_to"]: a["allocated_to"]
+		for a in frappe.get_all("ToDo", {"reference_name": doc.name}, ["allocated_to", "role"])
 	}
 	add_roles = []
 	for role in roles:
@@ -111,6 +114,7 @@ def approve_document(
 		todo = frappe.get_doc("ToDo", todo)
 		todo.status = "Closed"
 		todo.save(ignore_permissions=True)
+		frappe.db.commit()
 
 	checked_all = check_all_document_approvals(doc, method, include_role=role)
 	if checked_all:
@@ -240,4 +244,80 @@ def create_approval_notification(doc: Document, user: str):
 			_(
 				"Approval notification delivery failed. Please setup a default Email Account from Setup > Email > Email Account"
 			),
+		)
+
+
+@frappe.whitelist()
+def send_reminder_email():
+	if not frappe.conf.get("approvals", {}).get("send_reminder_email"):
+		return
+
+	reminder_email_hour = frappe.get_value(
+		"Document Approval Settings", "Document Approval Settings", "reminder_email_hour"
+	)
+	if get_datetime().hour != cint(reminder_email_hour):
+		return
+
+	ToDo = DocType("ToDo")
+	UserDocumentApproval = DocType("User Document Approval")
+	DocumentApproval = DocType("Document Approval")
+
+	todos = (
+		frappe.qb.from_(ToDo)
+		.select(
+			ToDo.allocated_to.as_("approver"),
+			ToDo.reference_type.as_("doctype"),
+			ToDo.reference_name.as_("name"),
+		)
+		.where(
+			(ToDo.status == "Open")
+			& (ToDo.document_approval_rule.isnotnull())
+			& (ToDo.document_approval_rule != "")
+		)
+	).run(as_dict=True)
+
+	assignments = (
+		frappe.qb.from_(UserDocumentApproval)
+		.left_join(DocumentApproval)
+		.on(
+			(UserDocumentApproval.approver == DocumentApproval.approver)
+			& (UserDocumentApproval.reference_doctype == DocumentApproval.reference_doctype)
+			& (UserDocumentApproval.reference_name == DocumentApproval.reference_name)
+		)
+		.where(DocumentApproval.name.isnull())
+		.select(
+			UserDocumentApproval.approver,
+			UserDocumentApproval.reference_doctype.as_("doctype"),
+			UserDocumentApproval.reference_name.as_("name"),
+		)
+	).run(as_dict=True)
+
+	pending_approval = todos + assignments
+
+	approvers = {}
+	for pending in pending_approval:
+		user = pending["approver"]
+		if user not in approvers:
+			approvers[user] = []
+		approvers[user].append(
+			frappe._dict(
+				{
+					"doctype": pending["doctype"],
+					"name": pending["name"],
+					"url": get_url_to_form(pending["doctype"], pending["name"]),
+				}
+			)
+		)
+
+	email_template = frappe.get_doc("Email Template", "Pending Approval")
+
+	for approver_email, approver_data in approvers.items():
+		approver_data = {"documents": approver_data}
+		frappe.sendmail(
+			recipients=approver_email,
+			subject=email_template.subject,
+			message=frappe.render_template(email_template.response_html, approver_data),
+			add_unsubscribe_link=False,
+			reference_doctype=None,
+			reference_name=None,
 		)

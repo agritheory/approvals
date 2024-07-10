@@ -19,6 +19,7 @@ class UserDocumentApproval(Document):
 
 		todo = frappe.new_doc("ToDo")
 		todo.owner = self.approver
+		todo.allocated_to = self.approver
 		todo.reference_type = self.reference_doctype
 		todo.reference_name = self.reference_name
 		todo.assigned_by = "Administrator"
@@ -37,6 +38,6 @@ class UserDocumentApproval(Document):
 
 	def remove_todo(self):
 		if todo := frappe.get_value(
-			"ToDo", {"reference_name": self.reference_name, "owner": self.approver}, "name"
+			"ToDo", {"reference_name": self.reference_name, "allocated_to": self.approver}, "name"
 		):
 			frappe.delete_doc("ToDo", todo, force=True)

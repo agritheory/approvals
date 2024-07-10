@@ -21,11 +21,18 @@
 			"fieldtype": "Link",
 			"label": "Fallback Approver Role",
 			"options": "Role"
+		},
+		{
+			"default": "0",
+			"fieldname": "reminder_email_hour",
+			"fieldtype": "Select",
+			"label": "Reminder Email Hour",
+			"options": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23"
 		}
 	],
 	"issingle": 1,
 	"links": [],
-	"modified": "2021-10-25 20:26:18.034069",
+	"modified": "2024-07-10 09:24:54.617924",
 	"modified_by": "Administrator",
 	"module": "Approvals",
 	"name": "Document Approval Settings",

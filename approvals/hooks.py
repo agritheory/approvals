@@ -65,7 +65,7 @@ app_include_js = ["/assets/approvals/dist/js/approvals.js"]
 # ------------
 
 # before_install = "approvals.install.before_install"
-# after_install = "approvals.install.after_install"
+after_install = "approvals.install.after_install"
 
 # Uninstallation
 # ------------
@@ -114,23 +114,21 @@ app_include_js = ["/assets/approvals/dist/js/approvals.js"]
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"approvals.tasks.all"
-# 	],
-# 	"daily": [
-# 		"approvals.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"approvals.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"approvals.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"approvals.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	# 	"all": [
+	# 		"approvals.tasks.all"
+	# 	],
+	# 	"daily": [
+	# 		"approvals.tasks.daily"
+	# 	],
+	"hourly": ["approvals.tasks.hourly"],
+	# 	"weekly": [
+	# 		"approvals.tasks.weekly"
+	# 	],
+	# 	"monthly": [
+	# 		"approvals.tasks.monthly"
+	# 	],
+}
 
 # Testing
 # -------

@@ -56,7 +56,12 @@ class DocumentApprovalRule(Document):
 			user = users[index % len(users)]
 		if frappe.get_value(
 			"ToDo",
-			{"role": self.approval_role, "owner": user, "reference_name": doc.name, "status": "Open"},
+			{
+				"role": self.approval_role,
+				"allocated_to": user,
+				"reference_name": doc.name,
+				"status": "Open",
+			},
 		):
 			return
 		todo = frappe.new_doc("ToDo")
@@ -69,6 +74,7 @@ class DocumentApprovalRule(Document):
 		todo.date = today()
 		todo.status = "Open"
 		todo.priority = "Medium"
+		todo.document_approval_rule = self.name
 		todo.description = (
 			self.get_message(doc) if self.message else "A document has been assigned to you"
 		)

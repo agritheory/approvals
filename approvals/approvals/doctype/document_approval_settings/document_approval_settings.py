@@ -9,7 +9,7 @@ class DocumentApprovalSettings(Document):
 		try:
 			json.loads(self.settings)
 		except Exception:
-			frappe.throw("Invalid JSON")
+			frappe.throw(frappe._("Invalid JSON"))
 
 	def get_settings(self):
 		settings = json.loads(self.settings)

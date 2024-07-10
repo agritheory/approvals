@@ -14,7 +14,7 @@ frappe.get_form_sidebar_extension = () => {
 	return `<div id="approvals-section"></div>`
 }
 
-approvals.load_approvals = () => {
+approvals.load_approvals = frm => {
 	const approvals_section = document.getElementById('approvals-section')
 	const app = createApp(ApprovalList)
 	app.mount(approvals_section!)

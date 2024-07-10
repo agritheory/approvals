@@ -9,6 +9,8 @@
   "section_break_2",
   "fallback_approver_role",
   "reminder_email_hour"
+  "column_break_gpcfo",
+  "fallback_approver"
  ],
  "fields": [
   {
@@ -33,11 +35,21 @@
    "fieldtype": "Select",
    "label": "Reminder Email Hour",
    "options": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23"
+  },
+  {
+   "fieldname": "column_break_gpcfo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "fallback_approver",
+   "fieldtype": "Link",
+   "label": "Fallback Approver",
+   "options": "User"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-07-03 14:00:57.079816",
+ "modified": "2024-07-09 17:37:01.946049",
  "modified_by": "Administrator",
  "module": "Approvals",
  "name": "Document Approval Settings",

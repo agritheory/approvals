@@ -7,6 +7,7 @@
 				:key="index"
 				:approval="approval"
 				:approvalStateName="approvalsData.approval_state"
+				:workflowExists="approvalsData.workflowExists"
 				@documentapproval="refreshApprovals" />
 		</ul>
 
@@ -49,7 +50,8 @@ export type Approval = {
 
 export type Approvals = {
 	approvals: Approval[]
-	approval_state: string
+	approval_state: string,
+	workflowExists?: boolean
 }
 
 const approvalsData: Approvals = reactive({
@@ -69,6 +71,7 @@ const fetchApprovalsAndRoles = async () => {
 	const response = await frappe.xcall('approvals.approvals.api.fetch_approvals_and_roles', { doc: cur_frm.doc })
 	approvalsData.approvals = response.approvals
 	approvalsData.approval_state = response.approval_state
+	approvalsData.workflowExists = true ? response.workflow_exists : false
 	const workflowStateField = frappe.workflow.state_fields[cur_frm.doc.doctype]
 	if (cur_frm.doc[workflowStateField] == approvalsData.approval_state) {
 		cur_frm.set_read_only()

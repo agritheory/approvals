@@ -40,6 +40,7 @@ const emit = defineEmits(['documentapproval'])
 const props = defineProps<{
 	approval: Approval
 	approvalStateName?: string
+	workflowExists?: boolean
 }>()
 
 const isApproveable = computed(() => {
@@ -70,12 +71,23 @@ const status = computed(() => {
 })
 
 const approve = async () => {
-	await frappe.xcall('approvals.approvals.api.approve_document', {
-		doc: cur_frm.doc,
-		role: props.approval.approval_role,
-		user: frappe.session.user,
-	})
-	emit('documentapproval')
+	const approveDocument = async () => {
+		await frappe.xcall('approvals.approvals.api.approve_document', {
+			doc: cur_frm.doc,
+			role: props.approval.approval_role,
+			user: frappe.session.user,
+		});
+		emit('documentapproval');
+	};
+
+	if (!props.workflowExists && cur_frm.meta.is_submittable) {
+		frappe.confirm(
+			'Permanently Submit ' + cur_frm.doc.name + '?',
+			approveDocument
+		);
+	} else {
+		await approveDocument();
+	}
 }
 
 const reject = async () => {

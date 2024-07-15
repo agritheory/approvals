@@ -1,19 +1,22 @@
-[project]
+[tool.poetry]
+version = "14.2.1"
 name = "approvals"
-authors = [
-    { name = "AgriTheory", email = "support@agritheory.dev"}
-]
+authors = ["AgriTheory <support@agritheory.dev>"]
 description = "Customizable Approval Workflows"
-requires-python = ">=3.10"
 readme = "README.md"
-dynamic = ["version"]
-dependencies = [
-    "pytest"
-]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.2"
 
 [build-system]
-requires = ["flit_core >=3.4,<4"]
-build-backend = "flit_core.buildapi"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+addopts = "--cov = approvals --cov-report term --cov-report xml"
 
 [tool.black]
 line-length = 99

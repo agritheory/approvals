@@ -34,6 +34,7 @@ import type { Approval } from './ApprovalList.vue'
 declare const approvals: any
 declare const cur_frm: any
 declare const frappe: any
+declare const __: any
 
 const emit = defineEmits(['documentapproval'])
 
@@ -81,8 +82,8 @@ const approve = async () => {
 	};
 
 	if (!props.workflowExists && cur_frm.meta.is_submittable) {
-		frappe.confirm(
-			'Permanently Submit ' + cur_frm.doc.name + '?',
+		frappe.confirm(__
+			(`Permanently Submit ${cur_frm.doc.name}?`),
 			approveDocument
 		);
 	} else {

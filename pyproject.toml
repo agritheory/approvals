@@ -10,13 +10,14 @@ python = "^3.10"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
+pytest-cov = "^5.0.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
-addopts = "--cov = approvals --cov-report term --cov-report xml"
+addopts = "--cov=approvals --cov-report term-missing"
 
 [tool.black]
 line-length = 99

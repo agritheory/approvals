@@ -1,7 +1,9 @@
+# Copyright (c) 2024, AgriTheory and contributors
+# For license information, please see license.txt
+
 import pytest
 import frappe
-from playwright.sync_api import Page, expect
-from frappe.utils.data import get_url
+from frappe.utils.data import get_url_to_form
 
 from playwright.sync_api import sync_playwright
 
@@ -16,33 +18,41 @@ def stock_manager_user():
 	pass
 
 
+@pytest.fixture
+def purchase_invoice_07():
+	return f"http://localhost:{frappe.conf(frappe.local.site).webserver_port}"
+
+
 def test_non_workflow_approval():
-	# frappe.set_user(stock_manager_user.usr)
-	doc = frappe.get_doc("Purchase Invoice", "ACC-PINV-2024-00007")
+	doc = frappe.get_doc("Purchase Invoice", "ACC-PINV-2024-00007-15")
 	assert doc.docstatus == 0
 
 	with sync_playwright() as p:
-		browser = p.firefox.launch()
-		context = browser.new_context(
-			base_url=f"http://localhost:{frappe.get_conf(frappe.local.site).webserver_port}"
-		)
-		page = browser.new_page()
+		browser = p.firefox.launch(headless=False)
+		context = browser.new_context()
+
+		# Login via API
 		api_request_context = context.request
-		page = context.new_page()
-		response = api_request_context.get(
-			f"{context.base_url}{doc.get_url()}",
-			headers={
+		login_url = f"{frappe.utils.get_url()}/api/method/login"
+		login_response = api_request_context.post(
+			login_url,
+			data={
 				"usr": "Administrator",
 				"pwd": "admin",
 			},
 		)
-		page.goto(purchase_invoice_07)
-		print(page.title())
+		assert login_response.ok, "Login failed"
+
+		invoice_url = get_url_to_form(doc.doctype, doc.name)
+		page = context.new_page()
+		page.goto(invoice_url)
+		page.wait_for_selector("#approve-btn")
+		approve_button = page.query_selector("#approve-btn")
+		approve_button.click()
+		page.wait_for_selector(".btn-modal-primary")
+		yes_button = page.query_selector(".btn-modal-primary")
+		yes_button.click()
 		browser.close()
 
-	# TODO:
-	# click on approve button
-	# click on confirm dialog
-
 	doc.reload()
-	assert doc.docstatus == 1
+	assert doc.status == "Approved"

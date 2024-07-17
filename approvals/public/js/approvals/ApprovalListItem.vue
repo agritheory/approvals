@@ -5,8 +5,9 @@
 		</div>
 
 		<div v-if="isApproveable">
-			<button @click="approve" :disabled="!status" :class="status ? 'btn btn-disabled' : 'btn'">APPROVE</button>
+			<button id="approve-btn" @click="approve" :disabled="!status" :class="status ? 'btn btn-disabled' : 'btn'">APPROVE</button>
 			<button
+				id="reject-btn"
 				@click="reject"
 				:disabled="!status"
 				:class="status ? 'btn btn-disabled button-reject' : 'btn button-reject'">

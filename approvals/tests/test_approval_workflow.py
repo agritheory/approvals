@@ -1,3 +1,6 @@
+# Copyright (c) 2024, AgriTheory and contributors
+# For license information, please see license.txt
+
 import frappe
 from frappe.utils import flt
 from frappe.model.workflow import apply_workflow
@@ -9,7 +12,7 @@ Approval Rules:
 - PO less than 200, no approvals required
 - PO, Stock Manager mmckay@cfc.com 200.00 < doc.grand_total < 500.00
 - PO, Sales Manager arivers@cfc.com 500.00 < doc.grand_total < 1000.00
-- PO, Accounts Manager mbritt@cfc.co doc.grand_total < 1000
+- PO, Accounts Manager mbritt@cfc.co doc.grand_total > 1000
 """
 
 

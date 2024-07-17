@@ -48,7 +48,7 @@ class DocumentApprovalRule(Document):
 		# except:
 		# 	frappe.throw(f'Error parsing approval rule conditions for {self.title}')
 
-	def get_message(self, doc):
+	def get_message(self, doc: Document):
 		return frappe.render_template(self.message, doc.__dict__)
 
 	def assign_user(self, doc: Document):
@@ -61,6 +61,7 @@ class DocumentApprovalRule(Document):
 				approval_state = frappe.get_cached_value("Workflow", workflow_name, "approval_state")
 				if doc.get(workflow_state_field) != approval_state:
 					return
+
 		users = get_users(self.approval_role)
 		# get index of current user
 		if not users:
@@ -105,7 +106,7 @@ class DocumentApprovalRule(Document):
 
 
 @frappe.whitelist()
-def get_users(role):
+def get_users(role: str):
 	return [
 		i["parent"]
 		for i in frappe.db.sql(

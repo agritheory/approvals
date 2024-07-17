@@ -1,9 +1,9 @@
 import json
 
 import frappe
-from frappe.model.document import Document
 from frappe import _
 from frappe.desk.form.utils import add_comment
+from frappe.model.document import Document
 from frappe.model.workflow import get_workflow_name
 from frappe.share import add as add_share
 
@@ -54,7 +54,7 @@ def get_document_approvals(doc: Document, method: str | None = None):
 
 
 @frappe.whitelist()
-def fetch_approvals_and_roles(doc: Document, method: str | None = None):
+def fetch_approvals_and_roles(doc: Document | str, method: str | None = None):
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	if doc.get("__islocal"):
 		return
@@ -96,7 +96,7 @@ def fetch_approvals_and_roles(doc: Document, method: str | None = None):
 
 @frappe.whitelist()
 def approve_document(
-	doc: Document, method: str | None = None, role: str | None = None, user: str | None = None
+	doc: Document | str, method: str | None = None, role: str | None = None, user: str | None = None
 ):
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	approval = frappe.new_doc("Document Approval")
@@ -148,7 +148,7 @@ def set_status_to_approved(doc: Document, method: str | None = None, automatic=F
 
 
 @frappe.whitelist()
-def reject_document(doc: Document, role=None, comment: str = "", method: str | None = None):
+def reject_document(doc: Document | str, role=None, comment: str = "", method: str | None = None):
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	doc = frappe.get_doc(doc.doctype, doc.name)
 	doc.save(ignore_permissions=True)
@@ -186,13 +186,13 @@ def assign_approvers(doc: Document, method: str | None = None):
 
 
 @frappe.whitelist()
-def add_user_approval(doc: Document, method: str | None = None, user: str | None = None):
+def add_user_approval(doc: Document | str, method: str | None = None, user: str | None = None):
 	if not user:
 		return
+	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	if not frappe.has_permission(doc.doctype, ptype="read", user=user, doc=doc.name):
 		add_share(doc.doctype, doc.name, user, read=True, write=True, share=True)
 
-	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	uda = frappe.new_doc("User Document Approval")
 	uda.reference_doctype = doc.doctype
 	uda.reference_name = doc.name
@@ -202,7 +202,7 @@ def add_user_approval(doc: Document, method: str | None = None, user: str | None
 
 
 @frappe.whitelist()
-def remove_user_approval(doc: Document, method: str | None = None, user=None):
+def remove_user_approval(doc: Document | str, method: str | None = None, user=None):
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	user_approval = frappe.get_doc(
 		"User Document Approval",

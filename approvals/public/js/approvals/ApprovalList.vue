@@ -7,6 +7,7 @@
 				:key="index"
 				:approval="approval"
 				:approvalStateName="approvalsData.approval_state"
+				:workflowExists="approvalsData.workflowExists"
 				@documentapproval="refreshApprovals" />
 		</ul>
 

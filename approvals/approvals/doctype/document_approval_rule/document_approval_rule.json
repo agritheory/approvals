@@ -12,6 +12,7 @@
   "column_break_3",
   "primary_assignee",
   "last_user",
+  "assign_users",
   "section_break_6",
   "condition",
   "section_break_4",
@@ -80,10 +81,16 @@
    "fieldname": "enabled",
    "fieldtype": "Check",
    "label": "Enabled"
+  },
+  {
+   "default": "1",
+   "fieldname": "assign_users",
+   "fieldtype": "Check",
+   "label": "Automatically Assign Users?"
   }
  ],
  "links": [],
- "modified": "2024-07-01 14:06:51.974558",
+ "modified": "2024-07-09 09:33:59.721972",
  "modified_by": "Administrator",
  "module": "Approvals",
  "name": "Document Approval Rule",

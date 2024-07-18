@@ -8,8 +8,8 @@ class DocumentApprovalSettings(Document):
 	def validate(self):
 		try:
 			json.loads(self.settings)
-		except Exception as e:
-			frappe.throw("Invalid JSON")
+		except Exception:
+			frappe.throw(frappe._("Invalid JSON"))
 
 	def get_settings(self):
 		settings = json.loads(self.settings)

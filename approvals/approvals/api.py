@@ -1,3 +1,6 @@
+# Copyright (c) 2024, AgriTheory and contributors
+# For license information, please see license.txt
+
 import json
 
 import frappe
@@ -14,6 +17,8 @@ from frappe.share import add as add_share
 @frappe.whitelist()
 def get_approval_roles(doc: Document, method: str | None = None):
 	settings = frappe.get_cached_doc("Document Approval Settings")
+	if doc.doctype not in settings.doctypes:
+		return []
 
 	roles = [
 		role
@@ -59,6 +64,10 @@ def get_document_approvals(doc: Document, method: str | None = None):
 @frappe.whitelist()
 def fetch_approvals_and_roles(doc: Document, method: str | None = None):
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
+	settings = frappe.get_cached_doc("Document Approval Settings")
+	if not (doc.doctype in settings.doctypes):
+		return
+
 	if doc.get("__islocal"):
 		return
 	roles = get_approval_roles(doc)

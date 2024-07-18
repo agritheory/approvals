@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div v-show="approvalsData.approvals.length">
 		<h4>Approvals</h4>
 		<ul class="list-unstyled">
 			<ApprovalListItem
@@ -67,6 +67,8 @@ const isDraft = computed(() => {
 
 const fetchApprovalsAndRoles = async () => {
 	const response = await frappe.xcall('approvals.approvals.api.fetch_approvals_and_roles', { doc: cur_frm.doc })
+	console.log(response)
+	if(!response) { return }
 	approvalsData.approvals = response.approvals
 	approvalsData.approval_state = response.approval_state
 	const workflowStateField = frappe.workflow.state_fields[cur_frm.doc.doctype]

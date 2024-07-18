@@ -1,6 +1,5 @@
 import frappe
 import frappe.cache_manager
-from frappe import _, get_all, get_value
 from frappe.model.document import Document
 from frappe.utils.data import today
 

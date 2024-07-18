@@ -5,8 +5,9 @@
 		</div>
 
 		<div v-if="isApproveable">
-			<button @click="approve" :disabled="!status" :class="status ? 'btn btn-disabled' : 'btn'">APPROVE</button>
+			<button id="approve-btn" @click="approve" :disabled="!status" :class="status ? 'btn btn-disabled' : 'btn'">APPROVE</button>
 			<button
+				id="reject-btn"
 				@click="reject"
 				:disabled="!status"
 				:class="status ? 'btn btn-disabled button-reject' : 'btn button-reject'">
@@ -34,12 +35,14 @@ import type { Approval } from './ApprovalList.vue'
 declare const approvals: any
 declare const cur_frm: any
 declare const frappe: any
+declare const __: any
 
 const emit = defineEmits(['documentapproval'])
 
 const props = defineProps<{
 	approval: Approval
 	approvalStateName?: string
+	workflowExists?: boolean
 }>()
 
 const isApproveable = computed(() => {
@@ -70,12 +73,23 @@ const status = computed(() => {
 })
 
 const approve = async () => {
-	await frappe.xcall('approvals.approvals.api.approve_document', {
-		doc: cur_frm.doc,
-		role: props.approval.approval_role,
-		user: frappe.session.user,
-	})
-	emit('documentapproval')
+	const approveDocument = async () => {
+		await frappe.xcall('approvals.approvals.api.approve_document', {
+			doc: cur_frm.doc,
+			role: props.approval.approval_role,
+			user: frappe.session.user,
+		});
+		emit('documentapproval');
+	};
+
+	if (!props.workflowExists && cur_frm.meta.is_submittable) {
+		frappe.confirm(__
+			(`Permanently Submit ${cur_frm.doc.name}?`),
+			approveDocument
+		);
+	} else {
+		await approveDocument();
+	}
 }
 
 const reject = async () => {

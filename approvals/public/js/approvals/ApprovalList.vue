@@ -46,6 +46,7 @@ export type Approval = {
 	assigned_to_user?: string
 	assigned_username?: string
 	user_has_approval_role?: boolean
+	document_approval_rule?: string
 }
 
 export type Approvals = {

@@ -10,6 +10,7 @@
   "enabled",
   "column_break_3",
   "primary_assignee",
+  "primary_rejection_user",
   "last_user",
   "assign_users",
   "section_break_6",
@@ -86,10 +87,16 @@
    "fieldname": "assign_users",
    "fieldtype": "Check",
    "label": "Automatically Assign Users?"
+  },
+  {
+   "fieldname": "primary_rejection_user",
+   "fieldtype": "Link",
+   "label": "Primary Rejection User",
+   "options": "User"
   }
  ],
  "links": [],
- "modified": "2024-07-09 09:33:59.721972",
+ "modified": "2024-07-19 08:17:52.417505",
  "modified_by": "Administrator",
  "module": "Approvals",
  "name": "Document Approval Rule",

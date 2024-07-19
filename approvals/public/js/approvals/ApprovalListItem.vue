@@ -98,6 +98,7 @@ const reject = async () => {
 		doc: cur_frm.doc,
 		role: props.approval.approval_role,
 		comment: response.rejection_reason,
+		document_approval_rule: props.approval.document_approval_rule,
 	})
 	emit('documentapproval')
 }

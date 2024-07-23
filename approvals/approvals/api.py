@@ -25,13 +25,12 @@ def get_approval_roles(doc: Document, method: str | None = None):
 		if document_approval_rule.apply(doc):
 			roles.append((document_approval_rule.approval_role, document_approval_rule.name))
 
-	# TODO: document_approval_rule for user_approvals and fallback_approver
 	user_approvals = frappe.get_all(
 		"User Document Approval",
 		{"reference_doctype": doc.doctype, "reference_name": doc.name},
 		pluck="approver",
 	)
-
+	user_approvals = [(ua, None) for ua in user_approvals]
 	roles.extend(user_approvals)
 
 	if not roles:
@@ -40,7 +39,7 @@ def get_approval_roles(doc: Document, method: str | None = None):
 			frappe.throw(
 				_("No approvers found. Please set a fallback approver role in Document Approval Settings.")
 			)
-		roles.append(fallback_approver)
+		roles.append((fallback_approver, None))
 	return roles
 
 
@@ -73,14 +72,8 @@ def fetch_approvals_and_roles(doc: Document, method: str | None = None):
 	}
 	add_roles = []
 	for element in roles:
-		# TODO: all elements should have the same data structure
-		if len(element) > 1:
-			role = element[0]
-			document_approval_rule = element[1]
-		else:
-			role = element
-			document_approval_rule = ""
-
+		role = element[0]
+		document_approval_rule = element[1] or ""
 		assigned_user = (
 			frappe.get_value("User", assignments.get(role, role), "full_name") or "Unassigned"
 		)

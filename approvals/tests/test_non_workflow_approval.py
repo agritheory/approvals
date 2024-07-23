@@ -5,7 +5,6 @@ import pytest
 import frappe
 from frappe.utils.data import get_url_to_form
 from frappe.utils import getdate
-from frappe.utils.password import update_password
 
 from playwright.sync_api import sync_playwright
 

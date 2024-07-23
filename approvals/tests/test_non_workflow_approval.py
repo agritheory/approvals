@@ -4,23 +4,15 @@
 import pytest
 import frappe
 from frappe.utils.data import get_url_to_form
+from frappe.utils import getdate
+from frappe.utils.password import update_password
 
 from playwright.sync_api import sync_playwright
 
 
 @pytest.fixture
-def admin_user():
+def purchase_manager_user():
 	pass
-
-
-@pytest.fixture
-def stock_manager_user():
-	pass
-
-
-@pytest.fixture
-def purchase_invoice_07():
-	return f"http://localhost:{frappe.conf(frappe.local.site).webserver_port}"
 
 
 def test_non_workflow_approval():
@@ -52,7 +44,13 @@ def test_non_workflow_approval():
 		page.wait_for_selector(".btn-modal-primary")
 		yes_button = page.query_selector(".btn-modal-primary")
 		yes_button.click()
+		page.wait_for_timeout(2000)  # wait for 2 seconds
 		browser.close()
 
 	doc.reload()
-	assert doc.status == "Approved"
+	today = getdate()
+
+	if doc.due_date < today:
+		assert doc.status == "Overdue"
+	elif doc.due_date >= today:
+		assert doc.status == "Unpaid"

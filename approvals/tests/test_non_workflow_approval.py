@@ -15,11 +15,11 @@ def purchase_manager_user():
 
 
 def test_non_workflow_approval():
-	doc = frappe.get_doc("Purchase Invoice", "ACC-PINV-2024-00007")
+	doc = frappe.get_doc("Purchase Invoice", "ACC-PINV-2024-00016")
 	assert doc.docstatus == 0
 
 	with sync_playwright() as p:
-		browser = p.firefox.launch(headless=False)
+		browser = p.firefox.launch()
 		context = browser.new_context()
 
 		# Login via API

@@ -15,7 +15,7 @@ def purchase_manager_user():
 
 
 def test_non_workflow_approval():
-	doc = frappe.get_doc("Purchase Invoice", "ACC-PINV-2024-00016")
+	doc = frappe.get_doc("Purchase Invoice", "ACC-PINV-2024-00007")
 	assert doc.docstatus == 0
 
 	with sync_playwright() as p:

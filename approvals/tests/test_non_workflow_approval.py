@@ -37,10 +37,10 @@ def test_non_workflow_approval():
 		invoice_url = get_url_to_form(doc.doctype, doc.name)
 		page = context.new_page()
 		page.goto(invoice_url)
-		page.wait_for_selector("#approve-btn", state="attached")
+		page.wait_for_timeout(2000)
 		approve_button = page.query_selector("#approve-btn")
 		approve_button.click()
-		page.wait_for_selector(".btn-modal-primary", state="attached")
+		page.wait_for_selector(".btn-modal-primary")
 		yes_button = page.query_selector(".btn-modal-primary")
 		yes_button.click()
 		page.wait_for_timeout(2000)  # wait for 2 seconds

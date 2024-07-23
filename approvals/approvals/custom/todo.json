@@ -53,23 +53,6 @@
   "custom_perms": [],
   "doctype": "ToDo",
   "links": [],
-  "property_setters": [
-    {
-      "creation": "2024-07-02 07:06:32.403355",
-      "doc_type": "ToDo",
-      "docstatus": 0,
-      "doctype_or_field": "DocType",
-      "idx": 0,
-      "is_system_generated": 0,
-      "modified": "2024-07-02 07:06:32.403355",
-      "modified_by": "Administrator",
-      "module": "Approvals",
-      "name": "ToDo-main-field_order",
-      "owner": "Administrator",
-      "property": "field_order",
-      "property_type": "Data",
-      "value": "[\"description_and_status\", \"status\", \"priority\", \"column_break_2\", \"color\", \"date\", \"allocated_to\", \"description_section\", \"description\", \"section_break_6\", \"reference_type\", \"reference_name\", null, \"column_break_10\", \"role\", \"assigned_by\", \"assigned_by_full_name\", \"sender\", \"assignment_rule\"]"
-    }
-  ],
+  "property_setters": [],
   "sync_on_migrate": 1
 }

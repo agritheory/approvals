@@ -13,7 +13,7 @@
 				@click="reject"
 				:disabled="!status"
 				:class="status ? 'btn btn-disabled button-reject' : 'btn button-reject'">
-				REJECT
+				{{ translate('REJECT') }}
 			</button>
 		</div>
 
@@ -21,8 +21,8 @@
 			<span v-if="approval.approved">{{ approval.approver }} - Approved</span>
 			<span v-else>{{
 				approval.assigned_to_user === 'Unassigned'
-					? approval.assigned_to_user
-					: `${approval.assigned_to_user} - Assigned`
+					? translate(approval.assigned_to_user)
+					: `${approval.assigned_to_user} - ${translate('Assigned')}`
 			}}</span>
 		</div>
 	</li>
@@ -34,10 +34,13 @@ import { computed } from 'vue'
 import type { Approval } from './ApprovalList.vue'
 
 // typescript declarations for FrappeJS
+interface FrappeWindow extends Window {
+	__: any
+}
 declare const approvals: any
 declare const cur_frm: any
 declare const frappe: any
-declare const __: any
+declare const window: FrappeWindow
 
 const emit = defineEmits(['documentapproval'])
 
@@ -74,6 +77,10 @@ const status = computed(() => {
 		return true
 	}
 })
+
+const translate = (text: string) => {
+	return window.__(text)
+}
 
 const approve = async () => {
 	const approveDocument = async () => {

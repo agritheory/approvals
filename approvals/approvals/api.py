@@ -65,9 +65,8 @@ def get_document_approvals(doc: Document, method: str | None = None):
 def fetch_approvals_and_roles(doc: Document, method: str | None = None):
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	settings = frappe.get_cached_doc("Document Approval Settings")
-	if not (doc.doctype in settings.doctypes):
+	if doc.doctype not in settings.doctypes:
 		return
-
 	if doc.get("__islocal"):
 		return
 	roles = get_approval_roles(doc)

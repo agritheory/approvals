@@ -28,8 +28,8 @@ def test_non_workflow_approval():
 		login_response = api_request_context.post(
 			login_url,
 			data={
-				"usr": "Administrator",
-				"pwd": "admin",
+				"usr": "mbritt@cfc.co",
+				"pwd": "Admin@123",
 			},
 		)
 		assert login_response.ok, "Login failed"

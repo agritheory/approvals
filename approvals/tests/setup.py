@@ -231,6 +231,7 @@ def create_employees(settings, only_create=None):
 		user.last_name = empl.last_name
 		user.send_welcome_email = 0
 		user.enabled = 1
+		user.new_password = "Admin@123"
 		user.language = settings.language
 		user.time_zone = settings.time_zone
 		for r in employee.get("roles", []):

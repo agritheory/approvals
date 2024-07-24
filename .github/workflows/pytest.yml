@@ -97,6 +97,7 @@ jobs:
           source env/bin/activate
           cd apps/approvals
           poetry install
+          playwright install --with-deps
           pytest --cov=approvals --cov-report=xml --disable-warnings -s | tee pytest-coverage.txt
 
       - name: Pytest coverage comment

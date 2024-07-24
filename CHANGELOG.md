@@ -1,5 +1,89 @@
 # CHANGELOG
 
+## v14.2.2 (2024-07-24)
+
+### Ci
+
+* ci: install playwright before running tests (#58) ([`4042765`](https://github.com/agritheory/approvals/commit/404276548465c0e9053db3be1f8631d9e9bcd86f))
+
+### Fix
+
+* fix: translate approval labels (#61)
+
+Co-authored-by: Rohan Bansal &lt;rohan@agritheory.dev&gt; ([`29ce726`](https://github.com/agritheory/approvals/commit/29ce726f5939bffed95554ed8ae7897433b0c58a))
+
+### Refactor
+
+* refactor: pyproject.toml to poetry (#49)
+
+* refactor: pyproject.toml to poetry
+
+* fix: add pytest-cov as a dev dependency ([`92cb558`](https://github.com/agritheory/approvals/commit/92cb55844209efe29f58d89360767a5e0bbee770))
+
+* refactor: added typing (#31)
+
+* refactor: added typing
+
+* refactor: added typing
+
+* refactor: added typing in document approval rule ([`50e8077`](https://github.com/agritheory/approvals/commit/50e8077004cdb9fa5fdab333a336c3ebabf5efac))
+
+### Unknown
+
+* Draft: feat: confirm to submit for doctypes where workflow does not exist (#48)
+
+* feat: confirm to submit for doctypes where workflow does not exist
+
+* fix: use string substitution
+
+* wip: add playwright
+
+* fix: update test case for test_non_workflow_approval
+
+---------
+
+Co-authored-by: Tyler Matteson &lt;tyler@agritheory.com&gt; ([`32f180d`](https://github.com/agritheory/approvals/commit/32f180d568785d28603735d725f5c4cd3196b2e9))
+
+* Reminder Email (#27)
+
+* fix: query and added missing commit
+
+* feat: Pending Approval Email Template
+
+* feat: add pending approval email template
+
+* feat: Document Approval Rule link in ToDo
+
+* fix: remove scheduler hook
+
+* fix: ToDo in UserDocumentApproval
+
+* feat: send reminder email logic
+
+* feat: send reminder email logic
+
+* feat: email reminder hour settings
+
+* chore: merge
+
+* chore: merge
+
+* fix: settings layout ([`02c613e`](https://github.com/agritheory/approvals/commit/02c613e57f4ac3ec599b6a6f46b693babfe93ccb))
+
+* Workflow Integration (#39)
+
+* wip: add workflow integration
+
+* wip: workflow integration
+
+* wip: approval workflow with tests
+
+* fix: add typing to Vue files
+
+---------
+
+Co-authored-by: Rohan Bansal &lt;rohan@agritheory.dev&gt; ([`a9abbe8`](https://github.com/agritheory/approvals/commit/a9abbe85d81e926dfddef3a5539500e7a0d4a426))
+
 ## v14.2.1 (2024-07-08)
 
 ### Chore

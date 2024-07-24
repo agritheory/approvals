@@ -16,8 +16,10 @@
   "section_break_6",
   "condition",
   "section_break_4",
-  "message",
-  "title"
+  "approval_notification",
+  "title",
+  "column_break_mv7fp",
+  "rejection_notification"
  ],
  "fields": [
   {
@@ -50,11 +52,6 @@
    "fieldtype": "Link",
    "label": "Last user",
    "options": "User"
-  },
-  {
-   "fieldname": "message",
-   "fieldtype": "Code",
-   "label": "Message"
   },
   {
    "fieldname": "primary_assignee",
@@ -93,10 +90,26 @@
    "fieldtype": "Link",
    "label": "Primary Rejection User",
    "options": "User"
+  },
+  {
+   "fieldname": "approval_notification",
+   "fieldtype": "Link",
+   "label": "Approval Notification",
+   "options": "Notification"
+  },
+  {
+   "fieldname": "column_break_mv7fp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "rejection_notification",
+   "fieldtype": "Link",
+   "label": "Rejection Notification",
+   "options": "Notification"
   }
  ],
  "links": [],
- "modified": "2024-07-19 08:17:52.417505",
+ "modified": "2024-07-23 09:21:59.233966",
  "modified_by": "Administrator",
  "module": "Approvals",
  "name": "Document Approval Rule",

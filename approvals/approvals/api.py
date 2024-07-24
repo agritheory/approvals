@@ -243,7 +243,9 @@ def remove_user_approval(doc: Document, method: str | None = None, user=None):
 
 
 @frappe.whitelist()
-def create_approval_notification(doc: Document, user: str, rejection: bool = False):
+def create_approval_notification(
+	doc: Document, user: str, notification_name: str, rejection: bool = False
+):
 	no = frappe.new_doc("Notification Log")
 	no.flags.ignore_permissions = True
 	no.owner = "Administrator"

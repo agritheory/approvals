@@ -49,7 +49,10 @@ class DocumentApprovalRule(Document):
 		# 	frappe.throw(f'Error parsing approval rule conditions for {self.title}')
 
 	def get_message(self, doc: Document):
-		return frappe.render_template(self.message, doc.__dict__)
+		if not self.approval_notification:
+			return None
+		message = frappe.get_value("Notification", self.approval_notification, "message")
+		return frappe.render_template(message, {"doc": doc})
 
 	def assign_user(self, doc: Document, rejection=False):
 		if doc.meta:
@@ -108,14 +111,13 @@ class DocumentApprovalRule(Document):
 			todo.status = "Open"
 			todo.priority = "Medium"
 			todo.document_approval_rule = self.name
-			todo.description = (
-				self.get_message(doc) if self.message else frappe._("A document has been assigned to you")
-			)
+			todo.description = self.get_message(doc) or frappe._("A document has been assigned to you")
+			todo.description = frappe._("A document has been assigned to you")
 			todo.save(ignore_permissions=True)
-			if rejection:
-				create_approval_notification(doc, self.primary_rejection_user, True)
-			elif self.message:
-				create_approval_notification(doc, user)
+			if rejection and self.rejection_notification:
+				create_approval_notification(doc, user, self.rejection_notification, True)
+			if not rejection and self.approval_notification:
+				create_approval_notification(doc, user, self.approval_notification)
 
 
 @frappe.whitelist()

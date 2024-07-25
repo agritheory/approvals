@@ -38,14 +38,19 @@ def test_non_workflow_approval():
 		page = context.new_page()
 		page.goto(invoice_url)
 		page.wait_for_timeout(2000)
+
 		# page.wait_for_selector("#approve-btn")
 		# approve_button = page.query_selector("#approve-btn")
 		# approve_button.click()
 		# page.wait_for_selector(".btn-modal-primary")
 		# yes_button = page.query_selector(".btn-modal-primary")
 		# yes_button.click()
-		page.get_by_role("button", name="APPROVE").click()
-		page.get_by_role("button", name="Yes").click()
+
+		approve_button = page.locator("#approve-btn")
+		approve_button.click()
+		yes_button = page.locator(".btn-modal-primary")
+		yes_button.click()
+
 		page.wait_for_timeout(2000)  # wait for 2 seconds
 		browser.close()
 

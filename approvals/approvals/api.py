@@ -3,33 +3,34 @@ import json
 import frappe
 from frappe import _
 from frappe.desk.form.utils import add_comment
+from frappe.model.document import Document
 from frappe.model.workflow import get_workflow_name
 from frappe.query_builder import DocType
 from frappe.utils import cint, get_datetime
 from frappe.utils.data import get_url_to_form
+from frappe.share import add as add_share
 
 
 @frappe.whitelist()
-def get_approval_roles(doc, method=None):
-	settings = frappe.get_doc("Document Approval Settings")
+def get_approval_roles(doc: Document, method: str | None = None):
+	settings = frappe.get_cached_doc("Document Approval Settings")
 
 	roles = [
-		i["approval_role"]
-		for i in frappe.get_all(
-			"Document Approval Rule", {"approval_doctype": doc.doctype}, "approval_role"
+		role
+		for role in frappe.get_all(
+			"Document Approval Rule", filters={"approval_doctype": doc.doctype}, pluck="approval_role"
 		)
 		if frappe.get_cached_doc(
-			"Document Approval Rule", {"approval_doctype": doc.doctype, "approval_role": i["approval_role"]}
+			"Document Approval Rule", {"approval_doctype": doc.doctype, "approval_role": role}
 		).apply(doc)
 	]
-	user_approvals = [
-		a["approver"]
-		for a in frappe.get_all(
-			"User Document Approval",
-			{"reference_doctype": doc.doctype, "reference_name": doc.name},
-			"approver",
-		)
-	]
+
+	user_approvals = frappe.get_all(
+		"User Document Approval",
+		{"reference_doctype": doc.doctype, "reference_name": doc.name},
+		pluck="approver",
+	)
+
 	roles.extend(user_approvals)
 
 	if not roles:
@@ -43,7 +44,7 @@ def get_approval_roles(doc, method=None):
 
 
 @frappe.whitelist()
-def get_document_approvals(doc, method=None):
+def get_document_approvals(doc: Document, method: str | None = None):
 	approvers = frappe.get_all(
 		"Document Approval",
 		{"reference_doctype": doc.doctype, "reference_name": doc.name},
@@ -56,7 +57,7 @@ def get_document_approvals(doc, method=None):
 
 
 @frappe.whitelist()
-def fetch_approvals_and_roles(doc, method=None):
+def fetch_approvals_and_roles(doc: Document | str, method: str | None = None):
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	if doc.get("__islocal"):
 		return
@@ -92,15 +93,14 @@ def fetch_approvals_and_roles(doc, method=None):
 			}
 		)
 		add_roles.append(_role)
-	approval_state = (
-		frappe.get_value("Workflow", get_workflow_name(doc.doctype), "custom_approval_state")
-		or "Pending"
-	)
+	approval_state = frappe.get_value("Workflow", get_workflow_name(doc.doctype), "approval_state")
 	return {"approvals": add_roles, "approval_state": approval_state}
 
 
 @frappe.whitelist()
-def approve_document(doc, method=None, role=None, user=None):
+def approve_document(
+	doc: Document | str, method: str | None = None, role: str | None = None, user: str | None = None
+):
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	approval = frappe.new_doc("Document Approval")
 	approval.reference_doctype = doc.doctype
@@ -116,7 +116,7 @@ def approve_document(doc, method=None, role=None, user=None):
 		todo.save(ignore_permissions=True)
 		frappe.db.commit()
 
-	checked_all = check_all_document_approvals(doc, method, include_role=role, user=user)
+	checked_all = check_all_document_approvals(doc, method, include_role=role)
 	if checked_all:
 		doc = frappe.get_doc(doc.doctype, doc.name)
 		if doc.meta.is_submittable:
@@ -130,7 +130,7 @@ def approve_document(doc, method=None, role=None, user=None):
 
 
 @frappe.whitelist()
-def check_all_document_approvals(doc, method=None, include_role=None, user=None):
+def check_all_document_approvals(doc: Document, method: str | None = None, include_role=None):
 	if method != "before_submit" and not include_role:
 		return False
 	roles = get_approval_roles(doc)
@@ -144,7 +144,7 @@ def check_all_document_approvals(doc, method=None, include_role=None, user=None)
 
 
 @frappe.whitelist()
-def set_status_to_approved(doc, method=None, automatic=False):
+def set_status_to_approved(doc: Document, method: str | None = None, automatic=False):
 	if doc.status != "Approved":
 		return
 	if not check_all_document_approvals(doc, method, automatic):
@@ -152,7 +152,7 @@ def set_status_to_approved(doc, method=None, automatic=False):
 
 
 @frappe.whitelist()
-def reject_document(doc, role=None, comment="", method=None):
+def reject_document(doc: Document | str, role=None, comment: str = "", method: str | None = None):
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	doc = frappe.get_doc(doc.doctype, doc.name)
 	doc.save(ignore_permissions=True)
@@ -163,7 +163,7 @@ def reject_document(doc, role=None, comment="", method=None):
 
 
 @frappe.whitelist()
-def revoke_approvals_on_reject(doc, method=None):
+def revoke_approvals_on_reject(doc: Document, method: str | None = None):
 	for approval in frappe.get_all(
 		"Document Approval", filters={"reference_doctype": doc.doctype, "reference_name": doc.name}
 	):
@@ -175,27 +175,28 @@ def revoke_approvals_on_reject(doc, method=None):
 
 
 @frappe.whitelist()
-def assign_approvers(doc, method=None):
-	roles = [
-		{"approval_role": i["approval_role"]}
-		for i in frappe.get_all(
-			"Document Approval Rule", {"approval_doctype": doc.doctype}, "approval_role"
-		)
-	]
+def assign_approvers(doc: Document, method: str | None = None):
+	roles = frappe.get_all(
+		"Document Approval Rule", {"approval_doctype": doc.doctype}, pluck="approval_role"
+	)
+
 	for role in roles:
 		approval_rule = frappe.get_cached_doc(
 			"Document Approval Rule",
-			{"approval_doctype": doc.doctype, "approval_role": role["approval_role"]},
+			{"approval_doctype": doc.doctype, "approval_role": role},
 		)
 		if approval_rule.apply(doc):
 			approval_rule.assign_user(doc)
 
 
 @frappe.whitelist()
-def add_user_approval(doc, method=None, user=None):
+def add_user_approval(doc: Document | str, method: str | None = None, user: str | None = None):
 	if not user:
 		return
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
+	if not frappe.has_permission(doc.doctype, ptype="read", user=user, doc=doc.name):
+		add_share(doc.doctype, doc.name, user, read=True, write=True, share=True)
+
 	uda = frappe.new_doc("User Document Approval")
 	uda.reference_doctype = doc.doctype
 	uda.reference_name = doc.name
@@ -205,7 +206,7 @@ def add_user_approval(doc, method=None, user=None):
 
 
 @frappe.whitelist()
-def remove_user_approval(doc, method=None, user=None):
+def remove_user_approval(doc: Document | str, method: str | None = None, user=None):
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	user_approval = frappe.get_doc(
 		"User Document Approval",
@@ -224,7 +225,7 @@ def remove_user_approval(doc, method=None, user=None):
 
 
 @frappe.whitelist()
-def create_approval_notification(doc, user):
+def create_approval_notification(doc: Document, user: str):
 	no = frappe.new_doc("Notification Log")
 	no.flags.ignore_permissions = True
 	no.owner = "Administrator"

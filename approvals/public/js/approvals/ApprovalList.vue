@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div v-show="approvalsData.approvals.length">
 		<h4>Approvals</h4>
 		<ul class="list-unstyled">
 			<ApprovalListItem
@@ -77,6 +77,7 @@ const translate = (text: string) => {
 
 const fetchApprovalsAndRoles = async () => {
 	const response = await frappe.xcall('approvals.approvals.api.fetch_approvals_and_roles', { doc: cur_frm.doc })
+	if (!response) { return }
 	approvalsData.approvals = response.approvals
 	approvalsData.approval_state = response.approval_state
 	approvalsData.workflowExists = response.workflow_exists

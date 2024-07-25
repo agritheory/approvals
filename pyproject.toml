@@ -1,5 +1,5 @@
 [tool.poetry]
-version = "14.2.1"
+version = "14.2.2"
 name = "approvals"
 authors = ["AgriTheory <support@agritheory.dev>"]
 description = "Customizable Approval Workflows"

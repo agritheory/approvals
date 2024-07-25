@@ -21,7 +21,7 @@
 				v-if="approvalsData.approvals.length > 0"
 				class="text-muted"
 				@click="removeApprover"
-				style="position: relative">
+				style="position: relative">	
 				{{ translate("Remove Approver") }}
 				<i class="remove-approver">×</i>
 			</a>
@@ -50,6 +50,7 @@ export type Approval = {
 	assigned_to_user?: string
 	assigned_username?: string
 	user_has_approval_role?: boolean
+	document_approval_rule?: string
 }
 
 export type Approvals = {

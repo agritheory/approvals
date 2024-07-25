@@ -20,22 +20,22 @@ def get_approval_roles(doc: Document, method: str | None = None):
 	if doc.doctype not in settings.doctypes:
 		return []
 
-	roles = [
-		role
-		for role in frappe.get_all(
-			"Document Approval Rule", filters={"approval_doctype": doc.doctype}, pluck="approval_role"
+	roles = []
+	for document_approval_rule_name in frappe.get_all(
+		"Document Approval Rule", filters={"approval_doctype": doc.doctype}, pluck="name"
+	):
+		document_approval_rule = frappe.get_cached_doc(
+			"Document Approval Rule", document_approval_rule_name
 		)
-		if frappe.get_cached_doc(
-			"Document Approval Rule", {"approval_doctype": doc.doctype, "approval_role": role}
-		).apply(doc)
-	]
+		if document_approval_rule.apply(doc):
+			roles.append((document_approval_rule.approval_role, document_approval_rule.name))
 
 	user_approvals = frappe.get_all(
 		"User Document Approval",
 		{"reference_doctype": doc.doctype, "reference_name": doc.name},
 		pluck="approver",
 	)
-
+	user_approvals = [(user_approval, None) for user_approval in user_approvals]
 	roles.extend(user_approvals)
 
 	if not roles:
@@ -44,7 +44,7 @@ def get_approval_roles(doc: Document, method: str | None = None):
 			frappe.throw(
 				_("No approvers found. Please set a fallback approver role in Document Approval Settings.")
 			)
-		roles.append(fallback_approver)
+		roles.append((fallback_approver, None))
 	return roles
 
 
@@ -79,7 +79,9 @@ def fetch_approvals_and_roles(doc: Document, method: str | None = None):
 		for a in frappe.get_all("ToDo", {"reference_name": doc.name}, ["allocated_to", "role"])
 	}
 	add_roles = []
-	for role in roles:
+	for element in roles:
+		role = element[0]
+		document_approval_rule = element[1]
 		assigned_user = (
 			frappe.get_value("User", assignments.get(role, role), "full_name") or "Unassigned"
 		)
@@ -98,6 +100,7 @@ def fetch_approvals_and_roles(doc: Document, method: str | None = None):
 				"approver": approver,
 				"assigned_to_user": assigned_user,
 				"assigned_username": assignments.get(role, role),
+				"document_approval_rule": document_approval_rule,
 			}
 		)
 		add_roles.append(_role)
@@ -165,13 +168,34 @@ def set_status_to_approved(doc: Document, method: str | None = None, automatic=F
 
 
 @frappe.whitelist()
-def reject_document(doc: Document, role=None, comment: str = "", method: str | None = None):
+def reject_document(
+	doc: Document,
+	role=None,
+	comment: str = "",
+	document_approval_rule: str = "",
+	method: str | None = None,
+):
+	from approvals.approvals.doctype.document_approval_rule.document_approval_rule import get_users
+
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	doc = frappe.get_doc(doc.doctype, doc.name)
 	doc.save(ignore_permissions=True)
 	doc.set_status(update=True, status="Rejected")
 	rejection = add_comment(doc.doctype, doc.name, comment, frappe.session.user, frappe.session.user)
 	revoke_approvals_on_reject(doc, method)
+
+	if document_approval_rule:
+		document_approval_rule = frappe.get_doc("Document Approval Rule", document_approval_rule)
+	else:
+		settings = frappe.get_cached_doc("Document Approval Settings")
+		users = get_users(settings.fallback_approver_role)
+		if not users:
+			return
+
+		document_approval_rule = frappe.new_doc("Document Approval Rule")
+		document_approval_rule.primary_rejection_user = users[0]
+
+	document_approval_rule.assign_user(doc=doc, rejection=True)
 	return rejection
 
 
@@ -238,17 +262,23 @@ def remove_user_approval(doc: Document, method: str | None = None, user=None):
 
 
 @frappe.whitelist()
-def create_approval_notification(doc: Document, user: str):
+def create_approval_notification(doc: Document, user: str, rejection: bool = False):
 	no = frappe.new_doc("Notification Log")
 	no.flags.ignore_permissions = True
 	no.owner = "Administrator"
 	no.for_user = user
-	no.subject = f"A {doc.doctype} requires your approval"
+	if rejection:
+		no.subject = f"A {doc.doctype} was rejected"
+	else:
+		no.subject = f"A {doc.doctype} requires your approval"
 	no.type = "Assignment"
 	no.document_type = doc.doctype
 	no.document_name = doc.name
 	no.from_user = doc.owner
-	no.email_content = f"{doc.doctype} {doc.name} requires your approval"
+	if rejection:
+		no.email_content = f"{doc.doctype} {doc.name} was rejected"
+	else:
+		no.email_content = f"{doc.doctype} {doc.name} requires your approval"
 	try:
 		no.save(ignore_permissions=True)
 	except AttributeError:

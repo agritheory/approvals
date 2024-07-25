@@ -1,3 +1,6 @@
+# Copyright (c) 2024, AgriTheory and contributors
+# For license information, please see license.txt
+
 from . import __version__ as app_version
 
 app_name = "approvals"
@@ -6,7 +9,7 @@ app_publisher = "AgriTheory"
 app_description = "Customizable Approval Workflows"
 app_email = "support@agritheory.dev"
 app_license = "MIT"
-required_apps = ["erpnext", "hrms"]
+required_apps = ["erpnext"]
 
 # Includes in <head>
 # ------------------

@@ -204,11 +204,11 @@ def revoke_approvals_on_reject(doc: Document, method: str | None = None):
 	for approval in frappe.get_all(
 		"Document Approval", filters={"reference_doctype": doc.doctype, "reference_name": doc.name}
 	):
-		frappe.get_doc("Document Approval", approval).delete()
+		frappe.get_doc("Document Approval", approval).delete(ignore_permissions=True)
 	for approval in frappe.get_all(
 		"User Document Approval", filters={"reference_doctype": doc.doctype, "reference_name": doc.name}
 	):
-		frappe.get_doc("User Document Approval", approval).delete()
+		frappe.get_doc("User Document Approval", approval).delete(ignore_permissions=True)
 
 
 @frappe.whitelist()

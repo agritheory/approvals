@@ -187,12 +187,14 @@ def reject_document(
 	if document_approval_rule:
 		document_approval_rule = frappe.get_doc("Document Approval Rule", document_approval_rule)
 	else:
+		document_approval_rule = frappe.new_doc("Document Approval Rule")
+
+	if not document_approval_rule.primary_rejection_user:
 		settings = frappe.get_cached_doc("Document Approval Settings")
 		users = get_users(settings.fallback_approver_role)
 		if not users:
-			return
+			return rejection
 
-		document_approval_rule = frappe.new_doc("Document Approval Rule")
 		document_approval_rule.primary_rejection_user = users[0]
 
 	document_approval_rule.assign_user(doc=doc, rejection=True)

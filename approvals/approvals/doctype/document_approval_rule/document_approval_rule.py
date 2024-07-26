@@ -1,3 +1,4 @@
+import ast
 import frappe
 from frappe.model.document import Document
 from frappe.share import add as add_share
@@ -9,6 +10,36 @@ from approvals.approvals.api import create_approval_notification
 class DocumentApprovalRule(Document):
 	def validate(self):
 		self.title = f"{self.approval_doctype} - {self.approval_role}"
+
+	def is_syntax_valid_and_returning_bool(self):
+		from RestrictedPython import compile_restricted
+
+		if not self.condition:
+			return True
+
+		try:
+			compile_restricted(self.condition)
+		except Exception as e:
+			frappe.throw(f"Error parsing approval rule condition:<br> <code>{e}</code>")
+
+		tree = ast.parse(self.condition)
+		last_statement = tree.body[-1]
+
+		if isinstance(last_statement, ast.Expr):
+			return_expr = last_statement.value
+		elif isinstance(last_statement, ast.Return):
+			return_expr = last_statement.value
+		else:
+			frappe.throw("Condition should returns a boolean value")
+
+		bool_exprs = (ast.Compare, ast.BoolOp, ast.UnaryOp)
+		bool_values = (ast.Constant,)
+
+		if isinstance(return_expr, bool_exprs) or (
+			isinstance(return_expr, bool_values) and isinstance(return_expr.value, bool)
+		):
+			return True
+		frappe.throw("Condition should returns a boolean value")
 
 	def apply(
 		self,

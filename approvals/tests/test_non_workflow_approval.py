@@ -36,6 +36,7 @@ def test_non_workflow_approval():
 
 		invoice_url = get_url_to_form(doc.doctype, doc.name)
 		page = context.new_page()
+		page.add_init_script("/assets/approvals/dist/js/approvals.js")
 		page.goto(invoice_url)
 		page.wait_for_timeout(2000)
 

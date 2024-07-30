@@ -264,35 +264,6 @@ def remove_user_approval(doc: Document, method: str | None = None, user=None):
 
 
 @frappe.whitelist()
-def create_approval_notification(doc: Document, user: str, rejection: bool = False):
-	no = frappe.new_doc("Notification Log")
-	no.flags.ignore_permissions = True
-	no.owner = "Administrator"
-	no.for_user = user
-	if rejection:
-		no.subject = f"A {doc.doctype} was rejected"
-	else:
-		no.subject = f"A {doc.doctype} requires your approval"
-	no.type = "Assignment"
-	no.document_type = doc.doctype
-	no.document_name = doc.name
-	no.from_user = doc.owner
-	if rejection:
-		no.email_content = f"{doc.doctype} {doc.name} was rejected"
-	else:
-		no.email_content = f"{doc.doctype} {doc.name} requires your approval"
-	try:
-		no.save(ignore_permissions=True)
-	except AttributeError:
-		# missing outgoing email account error
-		frappe.msgprint(
-			_(
-				"Approval notification delivery failed. Please setup a default Email Account from Setup > Email > Email Account"
-			),
-		)
-
-
-@frappe.whitelist()
 def send_reminder_email():
 	if not frappe.conf.get("approvals", {}).get("send_reminder_email"):
 		return

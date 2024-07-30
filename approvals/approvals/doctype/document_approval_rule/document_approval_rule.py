@@ -3,8 +3,6 @@ from frappe.model.document import Document
 from frappe.share import add as add_share
 from frappe.utils import today
 
-from approvals.approvals.api import create_approval_notification
-
 
 class DocumentApprovalRule(Document):
 	def validate(self):
@@ -112,8 +110,6 @@ class DocumentApprovalRule(Document):
 				self.get_message(doc) if self.message else frappe._("A document has been assigned to you")
 			)
 			todo.save(ignore_permissions=True)
-			if self.message or rejection:
-				create_approval_notification(doc, user)
 
 
 @frappe.whitelist()

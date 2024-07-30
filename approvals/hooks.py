@@ -106,13 +106,11 @@ after_install = "approvals.install.after_install"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Customer": {
+		"on_update": "approvals.approvals.api.set_approved_credit_limit",
+	}
+}
 
 # Scheduled Tasks
 # ---------------

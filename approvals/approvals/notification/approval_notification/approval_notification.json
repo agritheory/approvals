@@ -7,7 +7,7 @@
 	"docstatus": 0,
 	"doctype": "Notification",
 	"document_type": "ToDo",
-	"enabled": 1,
+	"enabled": 0,
 	"event": "New",
 	"idx": 0,
 	"is_standard": 1,

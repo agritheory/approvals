@@ -1,0 +1,4 @@
+[pre_model_sync]
+approvals.patches.add_pending_approval_email_template # Francisco Roldan 07/001/24
+
+[post_model_sync]

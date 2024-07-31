@@ -106,6 +106,7 @@ class DocumentApprovalRule(Document):
 			todo.status = "Open"
 			todo.priority = "Medium"
 			todo.document_approval_rule = self.name
+			todo.rejection = rejection
 			todo.description = (
 				self.get_message(doc) if self.message else frappe._("A document has been assigned to you")
 			)

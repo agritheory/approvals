@@ -1,0 +1,31 @@
+{
+	"attach_print": 0,
+	"channel": "Email",
+	"condition": "((doc.document_approval_rule != None or doc.document_approval_rule != \"\") or (doc.user_document_approval != None or doc.user_document_approval != \"\")) and doc.rejection != 1 ",
+	"creation": "2024-07-30 11:23:16.029255",
+	"days_in_advance": 0,
+	"docstatus": 0,
+	"doctype": "Notification",
+	"document_type": "ToDo",
+	"enabled": 1,
+	"event": "New",
+	"idx": 0,
+	"is_standard": 1,
+	"message": "{{ doc.reference_type }} {{ doc.reference_name }} requires your approval.\n",
+	"message_type": "Markdown",
+	"modified": "2024-07-31 09:02:11.089452",
+	"modified_by": "Administrator",
+	"module": "Approvals",
+	"name": "Approval Notification",
+	"owner": "Administrator",
+	"recipients": [
+		{
+			"receiver_by_document_field": "allocated_to"
+		}
+	],
+	"send_system_notification": 1,
+	"send_to_all_assignees": 0,
+	"sender": "",
+	"sender_email": "",
+	"subject": "A {{ doc.reference_type }} requires your approval"
+}

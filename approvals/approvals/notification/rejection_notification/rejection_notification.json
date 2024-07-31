@@ -1,0 +1,31 @@
+{
+	"attach_print": 0,
+	"channel": "Email",
+	"condition": "doc.rejection == 1",
+	"creation": "2024-07-31 08:51:06.938479",
+	"days_in_advance": 0,
+	"docstatus": 0,
+	"doctype": "Notification",
+	"document_type": "ToDo",
+	"enabled": 1,
+	"event": "New",
+	"idx": 0,
+	"is_standard": 1,
+	"message": "{{ doc.reference_type }} {{ doc.reference_name }} was rejected.\n",
+	"message_type": "Markdown",
+	"modified": "2024-07-31 09:02:22.561536",
+	"modified_by": "Administrator",
+	"module": "Approvals",
+	"name": "Rejection Notification",
+	"owner": "Administrator",
+	"recipients": [
+		{
+			"receiver_by_document_field": "allocated_to"
+		}
+	],
+	"send_system_notification": 1,
+	"send_to_all_assignees": 0,
+	"sender": "",
+	"sender_email": "",
+	"subject": "A {{ doc.reference_type }} was rejected"
+}

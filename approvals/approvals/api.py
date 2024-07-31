@@ -172,7 +172,7 @@ def reject_document(
 	doc: Document,
 	role=None,
 	comment: str = "",
-	document_approval_rule: str = "",
+	document_approval_rule_name: str = "",
 	method: str | None = None,
 ):
 	from approvals.approvals.doctype.document_approval_rule.document_approval_rule import get_users
@@ -184,8 +184,8 @@ def reject_document(
 	rejection = add_comment(doc.doctype, doc.name, comment, frappe.session.user, frappe.session.user)
 	revoke_approvals_on_reject(doc, method)
 
-	if document_approval_rule:
-		document_approval_rule = frappe.get_doc("Document Approval Rule", document_approval_rule)
+	if document_approval_rule_name:
+		document_approval_rule = frappe.get_doc("Document Approval Rule", document_approval_rule_name)
 	else:
 		document_approval_rule = frappe.new_doc("Document Approval Rule")
 

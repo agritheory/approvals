@@ -17,11 +17,11 @@ frappe.get_form_sidebar_extension = () => {
 	return `<div id="approvals-section"></div>`
 }
 
-$(document).on("form-refresh", (event, frm) => {
+$(document).on('form-refresh', (event, frm) => {
 	frappe.ui.form.on(frm.doctype, {
 		refresh: frm => {
 			approvals.load_approvals(frm)
-		}
+		},
 	})
 })
 

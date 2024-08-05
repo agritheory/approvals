@@ -3,12 +3,12 @@ from frappe.model.document import Document
 from frappe.share import add as add_share
 from frappe.utils.data import today
 
-from approvals.approvals.api import create_approval_notification
-
 
 class UserDocumentApproval(Document):
 	def validate(self):
 		self.title = f"{self.reference_name} - {self.approver}"
+
+	def after_insert(self):
 		self.add_todo()
 
 	def on_trash(self):
@@ -26,15 +26,9 @@ class UserDocumentApproval(Document):
 		todo.date = today()
 		todo.status = "Open"
 		todo.priority = "Medium"
-		todo.description = "A document requires your approval"
+		todo.description = frappe._("A document requires your approval")
+		todo.user_document_approval = self.name
 		todo.save(ignore_permissions=True)
-
-		create_approval_notification(
-			frappe._dict(
-				{"doctype": self.reference_doctype, "name": self.reference_name, "owner": frappe.session.user}
-			),
-			self.approver,
-		)
 
 	def remove_todo(self):
 		if todo := frappe.get_value(

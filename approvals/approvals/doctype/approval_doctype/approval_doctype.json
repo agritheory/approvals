@@ -1,0 +1,29 @@
+{
+	"actions": [],
+	"creation": "2024-07-18 12:37:04.668456",
+	"doctype": "DocType",
+	"editable_grid": 1,
+	"engine": "InnoDB",
+	"field_order": ["approval_doctype"],
+	"fields": [
+		{
+			"fieldname": "approval_doctype",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"label": "Approval DocType",
+			"options": "DocType"
+		}
+	],
+	"index_web_pages_for_search": 1,
+	"istable": 1,
+	"links": [],
+	"modified": "2024-07-18 12:45:24.897346",
+	"modified_by": "Administrator",
+	"module": "Approvals",
+	"name": "Approval DocType",
+	"owner": "Administrator",
+	"permissions": [],
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": []
+}

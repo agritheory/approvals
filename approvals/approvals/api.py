@@ -139,6 +139,7 @@ def approve_document(
 			doc.submit()
 			doc.set_status(update=True, status="Approved")
 		else:
+			doc.workflow_state = "Approved"
 			doc.save(ignore_permissions=True)
 			doc.set_status(update=True, status="Approved")
 
@@ -337,3 +338,9 @@ def send_reminder_email():
 			reference_doctype=None,
 			reference_name=None,
 		)
+
+
+def set_approved_credit_limit(doc, method):
+	if doc.workflow_state == "Approved":
+		for credit_limit in doc.credit_limits:
+			credit_limit.custom_last_approved_credit_limit = credit_limit.credit_limit

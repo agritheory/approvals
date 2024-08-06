@@ -74,7 +74,12 @@ class DocumentApprovalRule(Document):
 			user = users[index % len(users)]
 		if frappe.get_value(
 			"ToDo",
-			{"role": self.approval_role, "owner": user, "reference_name": doc.name, "status": "Open"},
+			{
+				"role": self.approval_role,
+				"allocated_to": user,
+				"reference_name": doc.name,
+				"status": "Open",
+			},
 		):
 			return
 		if not frappe.has_permission(doc.doctype, ptype="read", user=user, doc=doc.name):
@@ -93,6 +98,7 @@ class DocumentApprovalRule(Document):
 			todo.reference_type = doc.doctype
 			todo.reference_name = doc.name
 			todo.role = self.approval_role
+			todo.document_approval_rule = self.name
 			todo.assigned_by = "Administrator"
 			todo.date = today()
 			todo.status = "Open"

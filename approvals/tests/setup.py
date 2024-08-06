@@ -148,6 +148,18 @@ def create_document_approval_settings(settings=None):
 	for approval_doctype in approval_doctypes:
 		das.append("approval_doctypes", {"approval_doctype": approval_doctype})
 	das.fallback_approver_role = "Accounts Manager"
+	das.append(
+		"approval_doctypes",
+		{
+			"approval_doctype": "Purchase Invoice",
+		},
+	)
+	das.append(
+		"approval_doctypes",
+		{
+			"approval_doctype": "Purchase Order",
+		},
+	)
 	das.save()
 
 

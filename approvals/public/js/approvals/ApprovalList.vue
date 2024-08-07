@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div v-show="approvalsData.approvals.length">
 		<h4>Approvals</h4>
 		<ul class="list-unstyled">
 			<ApprovalListItem
@@ -13,7 +13,7 @@
 
 		<div v-if="isDraft">
 			<a class="text-muted" @click="addApprover">
-				{{ translate("Add Approver") }}
+				{{ translate('Add Approver') }}
 				<i class="octicon octicon-plus" style="margin-left: 2px"></i>
 			</a>
 			<br />
@@ -22,7 +22,7 @@
 				class="text-muted"
 				@click="removeApprover"
 				style="position: relative">
-				{{ translate("Remove Approver") }}
+				{{ translate('Remove Approver') }}
 				<i class="remove-approver">×</i>
 			</a>
 		</div>
@@ -50,11 +50,12 @@ export type Approval = {
 	assigned_to_user?: string
 	assigned_username?: string
 	user_has_approval_role?: boolean
+	document_approval_rule?: string
 }
 
 export type Approvals = {
 	approvals: Approval[]
-	approval_state: string,
+	approval_state: string
 	workflowExists?: boolean
 }
 
@@ -77,6 +78,9 @@ const translate = (text: string) => {
 
 const fetchApprovalsAndRoles = async () => {
 	const response = await frappe.xcall('approvals.approvals.api.fetch_approvals_and_roles', { doc: cur_frm.doc })
+	if (!response) {
+		return
+	}
 	approvalsData.approvals = response.approvals
 	approvalsData.approval_state = response.approval_state
 	approvalsData.workflowExists = response.workflow_exists

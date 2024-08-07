@@ -65,6 +65,13 @@ repos:
       # - id: validate_python_dependencies
       # - id: validate_javascript_dependencies
 
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier
+        entry: npx prettier -w . --config .prettierrc.cjs --ignore-path .prettierignore
+        language: system
+
 ci:
   autoupdate_schedule: weekly
   skip: []

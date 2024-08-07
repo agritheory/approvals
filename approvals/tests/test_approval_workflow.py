@@ -1,3 +1,6 @@
+# Copyright (c) 2024, AgriTheory and contributors
+# For license information, please see license.txt
+
 import frappe
 from frappe.utils import flt
 from frappe.model.workflow import apply_workflow
@@ -7,9 +10,9 @@ from approvals.approvals.api import fetch_approvals_and_roles
 """
 Approval Rules:
 - PO less than 200, no approvals required
-- PO, Stock Manager mmckay@cfc.com 200.00 < doc.grand_total < 500.00
-- PO, Sales Manager arivers@cfc.com 500.00 < doc.grand_total < 1000.00
-- PO, Accounts Manager mbritt@cfc.co doc.grand_total < 1000
+- PO, Stock Manager mmckay@cfc.com 200.00 < doc.grand_total <= 500.00
+- PO, Sales Manager arivers@cfc.com 500.00 < doc.grand_total <= 1000.00
+- PO, Accounts Manager mbritt@cfc.co doc.grand_total > 1000
 """
 
 
@@ -35,11 +38,11 @@ def test_approval_side_effects():
 	for p in purchase_orders:
 		if flt(po.grand_total) < 200.00:
 			assert not frappe.db.exists("ToDo", {"reference_name": po.name})
-		elif 200.00 < flt(po.grand_total) < 500.00:
+		elif 200.00 < flt(po.grand_total) <= 500.00:
 			assert frappe.db.exists("ToDo", {"allocated_to": "mmckay@cfc.co", "reference_name": po.name})
 			assert frappe.db.exists("DocShare", {"user": "mmckay@cfc.co", "share_name": po.name})
 			# assert frappe.db.exists('Notification Log')
-		elif 500.00 < flt(po.grand_total) < 1000.00:
+		elif 500.00 < flt(po.grand_total) <= 1000.00:
 			# assert po._assign == ['arivers@cfc.com']
 			assert frappe.db.exists("ToDo", {"allocated_to": "arivers@cfc.co", "reference_name": po.name})
 			assert frappe.db.exists("DocShare", {"user": "arivers@cfc.co", "share_name": po.name})

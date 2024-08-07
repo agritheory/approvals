@@ -1,3 +1,6 @@
+# Copyright (c) 2024, AgriTheory and contributors
+# For license information, please see license.txt
+
 suppliers = [
 	("Exceptional Grid", "Electricity", "Credit Card", 150.00),
 	("Liu & Loewen Accountants LLP", "Accounting Services", "Check", 500.00),
@@ -31,28 +34,28 @@ document_approval_rules = [
 		"approval_doctype": "Purchase Order",
 		"approval_role": "Stock Manager",
 		"primary_assignee": "mmckay@cfc.co",
-		"condition": "200.00 < doc.grand_total < 500.00",
+		"condition": "200.00 < doc.grand_total <= 500.00",
 		"enabled": 1,
 	},
 	{
 		"approval_doctype": "Purchase Invoice",
 		"approval_role": "Stock Manager",
 		"primary_assignee": "mmckay@cfc.co",
-		"condition": "200.00 < doc.grand_total < 500.00",
+		"condition": "200.00 < doc.grand_total <= 500.00",
 		"enabled": 1,
 	},
 	{
 		"approval_doctype": "Purchase Order",
 		"approval_role": "Sales Manager",
 		"primary_assignee": "arivers@cfc.co",
-		"condition": "500.00 < doc.grand_total < 1000.00",
+		"condition": "500.00 < doc.grand_total <= 1000.00",
 		"enabled": 1,
 	},
 	{
 		"approval_doctype": "Purchase Invoice",
 		"approval_role": "Sales Manager",
 		"primary_assignee": "arivers@cfc.co",
-		"condition": "500.00 < doc.grand_total < 1000.00",
+		"condition": "500.00 < doc.grand_total <= 1000.00",
 		"enabled": 1,
 	},
 ]

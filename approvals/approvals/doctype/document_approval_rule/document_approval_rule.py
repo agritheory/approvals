@@ -4,8 +4,6 @@ from frappe.model.document import Document
 from frappe.share import add as add_share
 from frappe.utils import today
 
-from approvals.approvals.api import create_approval_notification
-
 
 class DocumentApprovalRule(Document):
 	def validate(self):
@@ -82,7 +80,7 @@ class DocumentApprovalRule(Document):
 	def get_message(self, doc: Document):
 		return frappe.render_template(self.message, doc.__dict__)
 
-	def assign_user(self, doc: Document):
+	def assign_user(self, doc: Document, rejection: bool = False):
 		if doc.meta:
 			workflow_name = doc.meta.get_workflow()
 			if workflow_name:
@@ -92,16 +90,21 @@ class DocumentApprovalRule(Document):
 				approval_state = frappe.get_cached_value("Workflow", workflow_name, "approval_state")
 				if doc.get(workflow_state_field) != approval_state:
 					return
-		users = get_users(self.approval_role)
-		# get index of current user
-		if not users:
-			frappe.throw(f"No users are assigned this approval role: {self.approval_role}")
-		if self.primary_assignee:
-			self.last_user = self.primary_assignee
-			user = self.primary_assignee
+
+		if rejection:
+			user = self.primary_rejection_user
 		else:
-			index = users.index(self.last_user) if self.last_user and self.last_user in users else 0
-			user = users[index % len(users)]
+			users = get_users(self.approval_role)
+			# get index of current user
+			if not users:
+				frappe.throw(f"No users are assigned this approval role: {self.approval_role}")
+			if self.primary_assignee:
+				self.last_user = self.primary_assignee
+				user = self.primary_assignee
+			else:
+				index = users.index(self.last_user) if self.last_user and self.last_user in users else 0
+				user = users[index % len(users)]
+
 		if frappe.get_value(
 			"ToDo",
 			{
@@ -134,12 +137,11 @@ class DocumentApprovalRule(Document):
 			todo.status = "Open"
 			todo.priority = "Medium"
 			todo.document_approval_rule = self.name
+			todo.rejection = rejection
 			todo.description = (
 				self.get_message(doc) if self.message else frappe._("A document has been assigned to you")
 			)
 			todo.save(ignore_permissions=True)
-			if self.message:
-				create_approval_notification(doc, user)
 
 
 @frappe.whitelist()

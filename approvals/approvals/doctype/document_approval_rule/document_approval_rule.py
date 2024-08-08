@@ -1,3 +1,4 @@
+import ast
 import frappe
 from frappe.model.document import Document
 from frappe.share import add as add_share
@@ -8,12 +9,59 @@ class DocumentApprovalRule(Document):
 	def validate(self):
 		self.title = f"{self.approval_doctype} - {self.approval_role}"
 
+	def is_syntax_valid_and_returning_bool(self):
+		from RestrictedPython import compile_restricted
+
+		if not self.condition:
+			return True
+
+		try:
+			compile_restricted(self.condition)
+		except Exception as e:
+			return False, frappe._(f"Error parsing approval rule condition:<br> <code>{e}</code>")
+
+		tree = ast.parse(self.condition)
+		last_statement = tree.body[-1]
+
+		if isinstance(last_statement, ast.Expr):
+			return_expr = last_statement.value
+		elif isinstance(last_statement, ast.Return):
+			return_expr = last_statement.value
+		else:
+			return False, frappe._("Condition should return a boolean value")
+
+		bool_exprs = (ast.Compare, ast.BoolOp, ast.UnaryOp)
+		bool_values = (ast.Constant,)
+
+		if isinstance(return_expr, bool_exprs) or (
+			isinstance(return_expr, bool_values) and isinstance(return_expr.value, bool)
+		):
+			return True, ""
+		return False, frappe._("Condition should return a boolean value")
+
+	@frappe.whitelist()
+	def test_condition(self, doctype: str, docname: str):
+		doc = frappe.get_doc(doctype, docname)
+
+		result, message = self.is_syntax_valid_and_returning_bool()
+		if not result:
+			return message
+
+		try:
+			result = self.apply(doc, dry=True)
+			if result:
+				return frappe._(f"Document Approval Rule applies to {doctype} {docname}")
+			return frappe._(f"Document Approval Rule does not apply to {doctype} {docname}")
+		except Exception as e:
+			return frappe._(f"Error: {e}")
+
 	def apply(
 		self,
 		doc: Document,
 		method: str | None = None,
 		doctype: str | None = None,
 		name: str | None = None,
+		dry: bool = False,
 	):
 		if frappe.flags.in_patch or frappe.flags.in_install or frappe.flags.in_setup_wizard:
 			return False
@@ -40,7 +88,7 @@ class DocumentApprovalRule(Document):
 		settings = frappe.get_doc("Document Approval Settings")
 		eval_locals = {"doc": doc, "settings": settings.get_settings()}
 		result = frappe.safe_eval(self.condition, eval_globals=eval_globals, eval_locals=eval_locals)
-		if result and self.assign_users:
+		if result and self.assign_users and not dry:
 			self.assign_user(doc)
 		return result
 		# except:

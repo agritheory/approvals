@@ -1,5 +1,6 @@
 import ast
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from frappe.share import add as add_share
 from frappe.utils import today
@@ -18,7 +19,7 @@ class DocumentApprovalRule(Document):
 		try:
 			compile_restricted(self.condition)
 		except Exception as e:
-			frappe.throw(f"Error parsing approval rule condition:<br> <code>{e}</code>")
+			return False, _(f"Error parsing approval rule condition:<br> <code>{e}</code>")
 
 		tree = ast.parse(self.condition)
 		last_statement = tree.body[-1]
@@ -28,7 +29,7 @@ class DocumentApprovalRule(Document):
 		elif isinstance(last_statement, ast.Return):
 			return_expr = last_statement.value
 		else:
-			frappe.throw("Condition should returns a boolean value")
+			return False, _("Condition should returns a boolean value")
 
 		bool_exprs = (ast.Compare, ast.BoolOp, ast.UnaryOp)
 		bool_values = (ast.Constant,)
@@ -36,8 +37,24 @@ class DocumentApprovalRule(Document):
 		if isinstance(return_expr, bool_exprs) or (
 			isinstance(return_expr, bool_values) and isinstance(return_expr.value, bool)
 		):
-			return True
-		frappe.throw("Condition should returns a boolean value")
+			return True, ""
+		return False, _("Condition should returns a boolean value")
+
+	@frappe.whitelist()
+	def test_condition(self, doctype: str, docname: str):
+		doc = frappe.get_doc(doctype, docname)
+
+		result, message = self.is_syntax_valid_and_returning_bool()
+		if not result:
+			return message
+
+		try:
+			result = self.apply(doc)
+			if result:
+				return _(f"Document Approval Rule applies to {doctype} {docname}")
+			return _(f"Document Approval Rule not applies to {doctype} {docname}")
+		except Exception as e:
+			return _(f"Error: {e}")
 
 	def apply(
 		self,
@@ -71,8 +88,8 @@ class DocumentApprovalRule(Document):
 		settings = frappe.get_doc("Document Approval Settings")
 		eval_locals = {"doc": doc, "settings": settings.get_settings()}
 		result = frappe.safe_eval(self.condition, eval_globals=eval_globals, eval_locals=eval_locals)
-		if result and self.assign_users:
-			self.assign_user(doc)
+		# if result and self.assign_users:
+		# 	self.assign_user(doc)
 		return result
 		# except:
 		# 	frappe.throw(f'Error parsing approval rule conditions for {self.title}')

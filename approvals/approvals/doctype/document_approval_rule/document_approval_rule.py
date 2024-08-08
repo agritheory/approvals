@@ -49,7 +49,7 @@ class DocumentApprovalRule(Document):
 			return message
 
 		try:
-			result = self.apply(doc)
+			result = self.apply(doc, dry=True)
 			if result:
 				return _(f"Document Approval Rule applies to {doctype} {docname}")
 			return _(f"Document Approval Rule not applies to {doctype} {docname}")
@@ -62,6 +62,7 @@ class DocumentApprovalRule(Document):
 		method: str | None = None,
 		doctype: str | None = None,
 		name: str | None = None,
+		dry: bool = False,
 	):
 		if frappe.flags.in_patch or frappe.flags.in_install or frappe.flags.in_setup_wizard:
 			return False
@@ -88,8 +89,8 @@ class DocumentApprovalRule(Document):
 		settings = frappe.get_doc("Document Approval Settings")
 		eval_locals = {"doc": doc, "settings": settings.get_settings()}
 		result = frappe.safe_eval(self.condition, eval_globals=eval_globals, eval_locals=eval_locals)
-		# if result and self.assign_users:
-		# 	self.assign_user(doc)
+		if result and self.assign_users and not dry:
+			self.assign_user(doc)
 		return result
 		# except:
 		# 	frappe.throw(f'Error parsing approval rule conditions for {self.title}')

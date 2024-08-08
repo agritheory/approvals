@@ -1,6 +1,5 @@
 import ast
 import frappe
-from frappe import _
 from frappe.model.document import Document
 from frappe.share import add as add_share
 from frappe.utils import today
@@ -19,7 +18,7 @@ class DocumentApprovalRule(Document):
 		try:
 			compile_restricted(self.condition)
 		except Exception as e:
-			return False, _(f"Error parsing approval rule condition:<br> <code>{e}</code>")
+			return False, frappe._(f"Error parsing approval rule condition:<br> <code>{e}</code>")
 
 		tree = ast.parse(self.condition)
 		last_statement = tree.body[-1]
@@ -29,7 +28,7 @@ class DocumentApprovalRule(Document):
 		elif isinstance(last_statement, ast.Return):
 			return_expr = last_statement.value
 		else:
-			return False, _("Condition should returns a boolean value")
+			return False, frappe._("Condition should return a boolean value")
 
 		bool_exprs = (ast.Compare, ast.BoolOp, ast.UnaryOp)
 		bool_values = (ast.Constant,)
@@ -38,7 +37,7 @@ class DocumentApprovalRule(Document):
 			isinstance(return_expr, bool_values) and isinstance(return_expr.value, bool)
 		):
 			return True, ""
-		return False, _("Condition should returns a boolean value")
+		return False, frappe._("Condition should return a boolean value")
 
 	@frappe.whitelist()
 	def test_condition(self, doctype: str, docname: str):
@@ -51,10 +50,10 @@ class DocumentApprovalRule(Document):
 		try:
 			result = self.apply(doc, dry=True)
 			if result:
-				return _(f"Document Approval Rule applies to {doctype} {docname}")
-			return _(f"Document Approval Rule not applies to {doctype} {docname}")
+				return frappe._(f"Document Approval Rule applies to {doctype} {docname}")
+			return frappe._(f"Document Approval Rule does not apply to {doctype} {docname}")
 		except Exception as e:
-			return _(f"Error: {e}")
+			return frappe._(f"Error: {e}")
 
 	def apply(
 		self,

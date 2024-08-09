@@ -1,3 +1,6 @@
+# Copyright (c) 2024, AgriTheory and contributors
+# For license information, please see license.txt
+
 import datetime
 import os
 
@@ -58,7 +61,6 @@ def create_test_data():
 	create_items(settings)
 	create_document_approval_settings(settings)
 	create_pi_document_approval_rules(settings)
-	create_client_scripts(settings)
 	create_purchase_orders(settings)
 	create_invoices(settings)
 	dismiss_onboarding(settings)
@@ -142,6 +144,9 @@ def create_pi_document_approval_rules(settings=None):
 def create_document_approval_settings(settings=None):
 	das = frappe.get_doc("Document Approval Settings", "Document Approval Settings")
 	das.settings = "{}"  # Invalid JSON error if left blank in UI
+	approval_doctypes = ["Purchase Order", "Purchase Invoice"]
+	for approval_doctype in approval_doctypes:
+		das.append("approval_doctypes", {"approval_doctype": approval_doctype})
 	das.fallback_approver_role = "Accounts Manager"
 	das.append(
 		"approval_doctypes",
@@ -156,22 +161,6 @@ def create_document_approval_settings(settings=None):
 		},
 	)
 	das.save()
-
-
-def create_client_scripts(settings=None):
-	cs = frappe.new_doc("Client Script")
-	cs.dt = cs.name = "Purchase Invoice"
-	cs.apply_to = "Form"
-	cs.enabled = 1
-	cs.script = "frappe.ui.form.on('Purchase Invoice', {refresh(frm) {frappe.provide('approvals').load_approvals(frm)}})"
-	cs.save()
-
-	cs = frappe.new_doc("Client Script")
-	cs.dt = cs.name = "Purchase Order"
-	cs.apply_to = "Form"
-	cs.enabled = 1
-	cs.script = "frappe.ui.form.on('Purchase Order', {refresh(frm) {frappe.provide('approvals').load_approvals(frm)}})"
-	cs.save()
 
 
 def dismiss_onboarding(settings=None):
@@ -243,6 +232,7 @@ def create_employees(settings, only_create=None):
 		user.last_name = empl.last_name
 		user.send_welcome_email = 0
 		user.enabled = 1
+		user.new_password = "Admin@123"
 		user.language = settings.language
 		user.time_zone = settings.time_zone
 		for r in employee.get("roles", []):

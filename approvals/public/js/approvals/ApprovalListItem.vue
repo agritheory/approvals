@@ -48,6 +48,7 @@ const props = defineProps<{
 	approval: Approval
 	approvalStateName?: string
 	workflowExists?: boolean
+	require_rejection_reason?: boolean
 }>()
 
 const isApproveable = computed(() => {
@@ -99,11 +100,16 @@ const approve = async () => {
 }
 
 const reject = async () => {
-	const response = await approvals.provide_rejection_reason(cur_frm)
+	let rejection_reason = ""
+	console.log("require_rejection_reason", props.require_rejection_reason)
+	if (props.require_rejection_reason) {
+		const response = await approvals.provide_rejection_reason(cur_frm)
+		rejection_reason = response.rejection_reason
+	}
 	await frappe.xcall('approvals.approvals.api.reject_document', {
 		doc: cur_frm.doc,
 		role: props.approval.approval_role,
-		comment: response.rejection_reason,
+		comment: rejection_reason,
 		document_approval_rule_name: props.approval.document_approval_rule,
 	})
 	emit('documentapproval')

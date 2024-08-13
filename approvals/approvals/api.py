@@ -106,10 +106,17 @@ def fetch_approvals_and_roles(doc: Document, method: str | None = None):
 		add_roles.append(_role)
 	approval_state = frappe.get_value("Workflow", get_workflow_name(doc.doctype), "approval_state")
 	workflow_exists = frappe.db.exists("Workflow", get_workflow_name(doc.doctype))
+	require_rejection_reason = True
+	if workflow_exists:
+		require_rejection_reason = bool(
+			cint(frappe.get_value("Workflow", get_workflow_name(doc.doctype), "require_rejection_reason"))
+		)
+
 	return {
 		"approvals": add_roles,
 		"approval_state": approval_state,
 		"workflow_exists": workflow_exists,
+		"require_rejection_reason": require_rejection_reason,
 	}
 
 
@@ -181,7 +188,8 @@ def reject_document(
 	doc = frappe.get_doc(doc.doctype, doc.name)
 	doc.save(ignore_permissions=True)
 	doc.set_status(update=True, status="Rejected")
-	rejection = add_comment(doc.doctype, doc.name, comment, frappe.session.user, frappe.session.user)
+	if comment:
+		rejection = add_comment(doc.doctype, doc.name, comment, frappe.session.user, frappe.session.user)
 	revoke_approvals_on_reject(doc, method)
 
 	if document_approval_rule_name:

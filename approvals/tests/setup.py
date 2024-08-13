@@ -143,6 +143,18 @@ def create_document_approval_settings(settings=None):
 	das = frappe.get_doc("Document Approval Settings", "Document Approval Settings")
 	das.settings = "{}"  # Invalid JSON error if left blank in UI
 	das.fallback_approver_role = "Accounts Manager"
+	das.append(
+		"approval_doctypes",
+		{
+			"approval_doctype": "Purchase Invoice",
+		},
+	)
+	das.append(
+		"approval_doctypes",
+		{
+			"approval_doctype": "Purchase Order",
+		},
+	)
 	das.save()
 
 

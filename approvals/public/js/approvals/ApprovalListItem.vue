@@ -5,13 +5,15 @@
 		</div>
 
 		<div v-if="isApproveable">
-			<button id="approve-btn" @click="approve" :disabled="!status" :class="status ? 'btn btn-disabled' : 'btn'">{{ translate("APPROVE") }}</button>
+			<button id="approve-btn" @click="approve" :disabled="!status" :class="status ? 'btn btn-disabled' : 'btn'">
+				{{ translate('APPROVE') }}
+			</button>
 			<button
 				id="reject-btn"
 				@click="reject"
 				:disabled="!status"
 				:class="status ? 'btn btn-disabled button-reject' : 'btn button-reject'">
-				{{ translate("REJECT") }}
+				{{ translate('REJECT') }}
 			</button>
 		</div>
 
@@ -20,7 +22,7 @@
 			<span v-else>{{
 				approval.assigned_to_user === 'Unassigned'
 					? translate(approval.assigned_to_user)
-					: `${approval.assigned_to_user} - ${translate("Assigned")}`
+					: `${approval.assigned_to_user} - ${translate('Assigned')}`
 			}}</span>
 		</div>
 	</li>
@@ -85,17 +87,14 @@ const approve = async () => {
 			doc: cur_frm.doc,
 			role: props.approval.approval_role,
 			user: frappe.session.user,
-		});
-		emit('documentapproval');
-	};
+		})
+		emit('documentapproval')
+	}
 
 	if (!props.workflowExists && cur_frm.meta.is_submittable) {
-		frappe.confirm(
-			translate(`Permanently Submit ${cur_frm.doc.name}?`),
-			approveDocument
-		);
+		frappe.confirm(translate(`Permanently Submit ${cur_frm.doc.name}?`), approveDocument)
 	} else {
-		await approveDocument();
+		await approveDocument()
 	}
 }
 
@@ -105,6 +104,7 @@ const reject = async () => {
 		doc: cur_frm.doc,
 		role: props.approval.approval_role,
 		comment: response.rejection_reason,
+		document_approval_rule_name: props.approval.document_approval_rule,
 	})
 	emit('documentapproval')
 }
@@ -130,7 +130,9 @@ button {
 button:hover:enabled {
 	color: var(--dark-green-avatar-color);
 	font-weight: bold;
-	box-shadow: rgba(0, 0, 0, 0.05) 0px 0.5px 0px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px,
+	box-shadow:
+		rgba(0, 0, 0, 0.05) 0px 0.5px 0px 0px,
+		rgba(0, 0, 0, 0.08) 0px 0px 0px 1px,
 		rgba(0, 0, 0, 0.05) 0px 2px 4px 0px;
 }
 

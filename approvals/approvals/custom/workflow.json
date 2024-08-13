@@ -223,7 +223,7 @@
 			"mandatory_depends_on": null,
 			"modified": "2024-08-13 10:41:06.322974",
 			"modified_by": "Administrator",
-			"module": null,
+			"module": "Approvals",
 			"name": "Workflow-require_rejection_reason",
 			"no_copy": 0,
 			"non_negative": 0,

@@ -188,6 +188,7 @@ def reject_document(
 	doc = frappe.get_doc(doc.doctype, doc.name)
 	doc.save(ignore_permissions=True)
 	doc.set_status(update=True, status="Rejected")
+	rejection = None
 	if comment:
 		rejection = add_comment(doc.doctype, doc.name, comment, frappe.session.user, frappe.session.user)
 	revoke_approvals_on_reject(doc, method)

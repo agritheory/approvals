@@ -7,7 +7,7 @@ repos:
     rev: v4.6.0
     hooks:
       - id: trailing-whitespace
-        files: 'frappe.*'
+        files: 'approvals.*'
         exclude: '.*json$|.*txt$|.*csv|.*md|.*svg'
       - id: check-yaml
       - id: no-commit-to-branch
@@ -38,12 +38,12 @@ repos:
         # Ignore any files that might contain jinja / bundles
         exclude: |
           (?x)^(
-              frappe/public/dist/.*|
+              approvals/public/dist/.*|
               .*node_modules.*|
               .*boilerplate.*|
-              frappe/www/website_script.js|
-              frappe/templates/includes/.*|
-              frappe/public/js/lib/.*
+              approvals/www/website_script.js|
+              approvals/templates/includes/.*|
+              approvals/public/js/lib/.*
           )$
 
   - repo: https://github.com/PyCQA/flake8
@@ -53,7 +53,7 @@ repos:
         additional_dependencies: ['flake8-bugbear']
 
   - repo: https://github.com/agritheory/test_utils
-    rev: v0.14.1
+    rev: v0.15.0
     hooks:
       - id: update_pre_commit_config
       - id: validate_copyright

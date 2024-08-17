@@ -1,4 +1,3 @@
-[project]
 [tool.poetry]
 version = "15.1.0"
 name = "approvals"

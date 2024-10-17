@@ -139,6 +139,7 @@ def approve_document(
 			doc.submit()
 			doc.set_status(update=True, status="Approved")
 		else:
+			doc.workflow_state = "Approved"
 			doc.save(ignore_permissions=True)
 			doc.set_status(update=True, status="Approved")
 

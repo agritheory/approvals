@@ -30,13 +30,6 @@ repos:
     hooks:
       - id: black
 
-  - repo: local
-    hooks:
-      - id: prettier
-        name: prettier
-        entry: npx prettier . --write --ignore-path .prettierignore
-        language: node
-
   - repo: https://github.com/PyCQA/flake8
     rev: 7.0.0
     hooks:
@@ -58,7 +51,7 @@ repos:
           - tomli
 
   - repo: https://github.com/agritheory/test_utils
-    rev: v0.15.0
+    rev: v0.16.0
     hooks:
       - id: update_pre_commit_config
       - id: validate_copyright
@@ -68,7 +61,13 @@ repos:
         args: ['--app', 'approvals']
       - id: validate_customizations
       - id: validate_python_dependencies
-      - id: validate_javascript_dependencies
+
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier
+        entry: npx prettier . --write --ignore-path .prettierignore
+        language: node
 
 ci:
   autoupdate_schedule: weekly

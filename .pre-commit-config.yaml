@@ -25,32 +25,16 @@ repos:
       - id: pyupgrade
         args: ['--py310-plus']
 
-  - repo: https://github.com/frappe/black
+  - repo: https://github.com/agritheory/black
     rev: 951ccf4d5bb0d692b457a5ebc4215d755618eb68
     hooks:
       - id: black
-
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
-    hooks:
-      - id: prettier
-        types_or: [javascript]
-        # Ignore any files that might contain jinja / bundles
-        exclude: |
-          (?x)^(
-              approvals/public/dist/.*|
-              .*node_modules.*|
-              .*boilerplate.*|
-              approvals/www/website_script.js|
-              approvals/templates/includes/.*|
-              approvals/public/js/lib/.*
-          )$
 
   - repo: https://github.com/PyCQA/flake8
     rev: 7.0.0
     hooks:
       - id: flake8
-        additional_dependencies: ['flake8-bugbear',]
+        additional_dependencies: ['flake8-bugbear']
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.10.0
@@ -59,14 +43,31 @@ repos:
         exclude: ^tests/
         args: [--ignore-missing-imports]
 
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.3.0
+    hooks:
+      - id: codespell
+        additional_dependencies:
+          - tomli
+
+  - repo: https://github.com/agritheory/test_utils
+    rev: v0.16.0
+    hooks:
+      - id: update_pre_commit_config
+      - id: validate_copyright
+        files: '\.(js|ts|py|md)$'
+        args: ['--app', 'approvals']
+      - id: clean_customized_doctypes
+        args: ['--app', 'approvals']
+      - id: validate_customizations
+      - id: validate_python_dependencies
+
   - repo: local
     hooks:
-      - id: validate_customizations
-        always_run: true
-        name: .github/validate_customizations.py
-        entry: python .github/validate_customizations.py
-        language: system
-        types: [python]
+      - id: prettier
+        name: prettier
+        entry: npx prettier . --write --ignore-path .prettierignore
+        language: node
 
 ci:
   autoupdate_schedule: weekly

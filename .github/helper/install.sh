@@ -59,6 +59,7 @@ bench setup requirements --dev
 # echo "SITE LIST-APPS:"
 # bench list-apps
 
+bench build --app approvals
 bench start &> bench_run_logs.txt &
 CI=Yes &
 bench execute 'approvals.tests.setup.before_test'

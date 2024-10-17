@@ -168,7 +168,7 @@ def check_all_document_approvals(doc: Document, method: str | None = None, inclu
 
 @frappe.whitelist()
 def set_status_to_approved(doc: Document, method: str | None = None, automatic=False):
-	if doc.status != "Approved":
+	if doc.meta.is_submittable and doc.docstatus != 1:
 		return
 	if not check_all_document_approvals(doc, method, automatic):
 		frappe.throw("All Approvers are required to Submit this document")

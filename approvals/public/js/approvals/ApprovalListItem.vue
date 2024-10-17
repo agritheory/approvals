@@ -109,7 +109,9 @@ button {
 button:hover:enabled {
 	color: var(--dark-green-avatar-color);
 	font-weight: bold;
-	box-shadow: rgba(0, 0, 0, 0.05) 0px 0.5px 0px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px,
+	box-shadow:
+		rgba(0, 0, 0, 0.05) 0px 0.5px 0px 0px,
+		rgba(0, 0, 0, 0.08) 0px 0px 0px 1px,
 		rgba(0, 0, 0, 0.05) 0px 2px 4px 0px;
 }
 

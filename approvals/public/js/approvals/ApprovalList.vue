@@ -57,6 +57,7 @@ export type Approvals = {
 	approvals: Approval[]
 	approval_state: string
 	workflowExists?: boolean
+	require_rejection_reason?: boolean
 }
 
 const approvalsData: Approvals = reactive({
@@ -84,6 +85,7 @@ const fetchApprovalsAndRoles = async () => {
 	approvalsData.approvals = response.approvals
 	approvalsData.approval_state = response.approval_state
 	approvalsData.workflowExists = response.workflow_exists
+	approvalsData.require_rejection_reason = response.require_rejection_reason
 	const workflowStateField = frappe.workflow.state_fields[cur_frm.doc.doctype]
 	if (cur_frm.doc[workflowStateField] == approvalsData.approval_state) {
 		cur_frm.set_read_only()

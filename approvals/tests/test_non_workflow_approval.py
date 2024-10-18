@@ -4,23 +4,14 @@
 import pytest
 import frappe
 from frappe.utils.data import get_url_to_form
+from frappe.utils import getdate
 
 from playwright.sync_api import sync_playwright
 
 
 @pytest.fixture
-def admin_user():
+def purchase_manager_user():
 	pass
-
-
-@pytest.fixture
-def stock_manager_user():
-	pass
-
-
-@pytest.fixture
-def purchase_invoice_07():
-	return f"http://localhost:{frappe.conf(frappe.local.site).webserver_port}"
 
 
 def test_non_workflow_approval():
@@ -28,7 +19,7 @@ def test_non_workflow_approval():
 	assert doc.docstatus == 0
 
 	with sync_playwright() as p:
-		browser = p.firefox.launch(headless=False)
+		browser = p.firefox.launch()
 		context = browser.new_context()
 
 		# Login via API
@@ -37,22 +28,37 @@ def test_non_workflow_approval():
 		login_response = api_request_context.post(
 			login_url,
 			data={
-				"usr": "Administrator",
-				"pwd": "admin",
+				"usr": "mbritt@cfc.co",
+				"pwd": "Admin@123",
 			},
 		)
 		assert login_response.ok, "Login failed"
 
 		invoice_url = get_url_to_form(doc.doctype, doc.name)
 		page = context.new_page()
+		page.add_init_script("../../../../sites/assets/approvals/dist/js/approvals.js")
 		page.goto(invoice_url)
-		page.wait_for_selector("#approve-btn")
-		approve_button = page.query_selector("#approve-btn")
+		page.wait_for_timeout(2000)
+
+		# page.wait_for_selector("#approve-btn")
+		# approve_button = page.query_selector("#approve-btn")
+		# approve_button.click()
+		# page.wait_for_selector(".btn-modal-primary")
+		# yes_button = page.query_selector(".btn-modal-primary")
+		# yes_button.click()
+
+		approve_button = page.locator("#approve-btn")
 		approve_button.click()
-		page.wait_for_selector(".btn-modal-primary")
-		yes_button = page.query_selector(".btn-modal-primary")
+		yes_button = page.locator(".btn-modal-primary")
 		yes_button.click()
+
+		page.wait_for_timeout(2000)  # wait for 2 seconds
 		browser.close()
 
 	doc.reload()
-	assert doc.status == "Approved"
+	today = getdate()
+
+	if doc.due_date < today:
+		assert doc.status == "Overdue"
+	elif doc.due_date >= today:
+		assert doc.status == "Unpaid"

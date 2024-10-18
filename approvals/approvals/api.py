@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import json
+from typing import TYPE_CHECKING
 
 import frappe
 from frappe import _
@@ -12,6 +13,13 @@ from frappe.query_builder import DocType
 from frappe.utils import cint, get_datetime
 from frappe.utils.data import get_url_to_form
 from frappe.share import add as add_share
+
+from approvals.approvals.utils import add_approval_comment
+
+if TYPE_CHECKING:
+	from approvals.approvals.doctype.document_approval_rule.document_approval_rule import (
+		DocumentApprovalRule,
+	)
 
 
 @frappe.whitelist()
@@ -61,7 +69,7 @@ def get_document_approvals(doc: Document, method: str | None = None):
 
 @frappe.whitelist()
 def fetch_approvals_and_roles(doc: Document | str, method: str | None = None):
-	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
+	doc = frappe.get_doc(json.loads(doc)) if isinstance(doc, str) else doc
 	if doc.get("__islocal"):
 		return
 	roles = get_approval_roles(doc)
@@ -116,7 +124,7 @@ def fetch_approvals_and_roles(doc: Document | str, method: str | None = None):
 def approve_document(
 	doc: Document | str, method: str | None = None, role: str | None = None, user: str | None = None
 ):
-	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
+	doc = frappe.get_doc(json.loads(doc)) if isinstance(doc, str) else doc
 	approval = frappe.new_doc("Document Approval")
 	approval.reference_doctype = doc.doctype
 	approval.reference_name = doc.name
@@ -124,6 +132,16 @@ def approve_document(
 	approval.approval_role = role if role != "User Approval" else None
 	approval.user_approval = "User Approval" if role == "User Approval" else None
 	approval.save(ignore_permissions=True)
+
+	# TODO: is this required?
+	add_approval_comment(
+		doc.doctype,
+		doc.name,
+		f"Document approved by <b>{frappe.session.user}</b>",
+		subject="Document approved",
+		comment_type="Info",
+	)
+
 	todo = frappe.get_value("ToDo", {"reference_name": doc.name, "role": role}, "name")
 	if todo:
 		todo = frappe.get_doc("ToDo", todo)
@@ -168,9 +186,9 @@ def set_status_to_approved(doc: Document, method: str | None = None, automatic=F
 
 @frappe.whitelist()
 def reject_document(doc: Document | str, role=None, comment: str = "", method: str | None = None):
-	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
-	doc = frappe.get_doc(doc.doctype, doc.name)
+	doc = frappe.get_doc(json.loads(doc)) if isinstance(doc, str) else doc
 	doc.save(ignore_permissions=True)
+	# TODO: should we check if this method exists before calling?
 	doc.set_status(update=True, status="Rejected")
 	if comment:
 		rejection = add_comment(doc.doctype, doc.name, comment, frappe.session.user, frappe.session.user)
@@ -197,7 +215,7 @@ def assign_approvers(doc: Document, method: str | None = None):
 	)
 
 	for role in roles:
-		approval_rule = frappe.get_cached_doc(
+		approval_rule: "DocumentApprovalRule" = frappe.get_cached_doc(
 			"Document Approval Rule",
 			{"approval_doctype": doc.doctype, "approval_role": role},
 		)
@@ -209,7 +227,7 @@ def assign_approvers(doc: Document, method: str | None = None):
 def add_user_approval(doc: Document | str, method: str | None = None, user: str | None = None):
 	if not user:
 		return
-	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
+	doc = frappe.get_doc(json.loads(doc)) if isinstance(doc, str) else doc
 	if not frappe.has_permission(doc.doctype, ptype="read", user=user, doc=doc.name):
 		add_share(doc.doctype, doc.name, user, read=True, write=True, share=True)
 
@@ -218,42 +236,53 @@ def add_user_approval(doc: Document | str, method: str | None = None, user: str 
 	uda.reference_name = doc.name
 	uda.approver = user
 	uda.save(ignore_permissions=True)
-	frappe.db.commit()
+
+	add_approval_comment(
+		doc.doctype,
+		doc.name,
+		f"<b>{user}<b> added as approver by <b>{frappe.session.user}</b>",
+		subject="Approver added",
+		comment_type="Info",
+	)
 
 
 @frappe.whitelist()
 def remove_user_approval(doc: Document | str, method: str | None = None, user=None):
-	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
+	doc = frappe.get_doc(json.loads(doc)) if isinstance(doc, str) else doc
 	user_approval = frappe.get_doc(
 		"User Document Approval",
 		{"reference_doctype": doc.doctype, "reference_name": doc.name, "approver": user},
 	)
 	user_approval.delete()
-	removal = frappe.new_doc("Comment")
-	removal.reference_doctype = doc.doctype
-	removal.reference_name = doc.name
-	removal.comment_type = "Info"
-	removal.comment_email = frappe.session.user
-	removal.content = f"<b>{user}<b> removed as approver by <b>{frappe.session.user}</b>"
-	removal.subject = "Approver removed"
-	removal.save(ignore_permissions=True)
-	return
+
+	add_approval_comment(
+		doc.doctype,
+		doc.name,
+		f"<b>{user}<b> removed as approver by <b>{frappe.session.user}</b>",
+		subject="Approver removed",
+		comment_type="Info",
+	)
 
 
 @frappe.whitelist()
-def create_approval_notification(doc: Document, user: str):
-	no = frappe.new_doc("Notification Log")
-	no.flags.ignore_permissions = True
-	no.owner = "Administrator"
-	no.for_user = user
-	no.subject = f"A {doc.doctype} requires your approval"
-	no.type = "Assignment"
-	no.document_type = doc.doctype
-	no.document_name = doc.name
-	no.from_user = doc.owner
-	no.email_content = f"{doc.doctype} {doc.name} requires your approval"
+def create_approval_notification(doc: Document | frappe._dict, user):
+	log = frappe.new_doc("Notification Log")
+	log.flags.ignore_permissions = True
+	log.update(
+		{
+			"document_name": doc.name,
+			"document_type": doc.doctype,
+			"email_content": f"{doc.doctype} {doc.name} requires your approval",
+			"for_user": user,
+			"from_user": doc.owner,
+			"owner": "Administrator",
+			"subject": f"A {doc.doctype} requires your approval",
+			"type": "Assignment",
+		}
+	)
+
 	try:
-		no.save(ignore_permissions=True)
+		log.save(ignore_permissions=True)
 	except AttributeError:
 		# missing outgoing email account error
 		frappe.msgprint(

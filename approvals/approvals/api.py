@@ -1,3 +1,6 @@
+# Copyright (c) 2024, AgriTheory and contributors
+# For license information, please see license.txt
+
 import json
 from typing import TYPE_CHECKING
 
@@ -110,7 +113,6 @@ def fetch_approvals_and_roles(doc: Document | str, method: str | None = None):
     approval_state = frappe.get_value("Workflow", get_workflow_name(doc.doctype), "approval_state")
     return {"approvals": add_roles, "approval_state": approval_state}
 
-
 @frappe.whitelist()
 def approve_document(
     doc: Document | str,
@@ -200,7 +202,6 @@ def reject_document(doc: Document | str, role=None, comment: str = "", method: s
 
     revoke_approvals_on_reject(doc, method)
     return rejection
-
 
 @frappe.whitelist()
 def revoke_approvals_on_reject(doc: Document, method: str | None = None):

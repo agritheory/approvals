@@ -1,8 +1,62 @@
 # CHANGELOG
 
+
+## v15.2.0 (2024-10-17)
+
+### Features
+
+* feat: require rejection reason in workflow (#73)
+
+Co-authored-by: fproldan <franciscoproldan@gmail.com> ([`a33e1d9`](https://github.com/agritheory/approvals/commit/a33e1d97e266bd0cacc250f38f8a36f538c6afb7))
+
+### Refactoring
+
+* refactor: pyproject to poetry(v15) (#71)
+
+* refactor: pyproject to poetry(v15)
+
+* refactor: pyproject to poetry(v14)
+
+* fix: remove js dependency check
+
+---------
+
+Co-authored-by: Tyler Matteson <tyler@agritheory.com> ([`f3ce58a`](https://github.com/agritheory/approvals/commit/f3ce58af1df7e0fa83ca8c946abe22384d7d8b0a))
+
+* refactor: added typing(v15) (#46) ([`f92a21d`](https://github.com/agritheory/approvals/commit/f92a21db34a67558e9ed1479d0c95f29c3379ee2))
+
+### Unknown
+
+* [Backport] Reminder Email (#47)
+
+* chore: backport
+
+* chore: backport ([`087fb1f`](https://github.com/agritheory/approvals/commit/087fb1f79e380fa973f60873afb63c04939b1975))
+
+* Workflow integration v15 (#44)
+
+* wip: add workflow integration
+
+* wip: add workflow integration
+
+* wip: approval workflow with tests
+
+* fix: add typing to Vue files
+
+* fix: tests cleanup
+
+* fix: build entry point
+
+* fix: clean up python typing
+
+---------
+
+Co-authored-by: Rohan Bansal <rohan@agritheory.dev> ([`9c92ca0`](https://github.com/agritheory/approvals/commit/9c92ca0a08c6e0823d740ed9f70dbef9722787d4))
+
+
 ## v15.1.0 (2024-07-01)
 
-### Feature
+### Features
 
 * feat: format vue files to composition API (v15) (#20)
 
@@ -20,12 +74,13 @@
 
 ---------
 
-Co-authored-by: Rohan Bansal &lt;rohan@agritheory.dev&gt;
-Co-authored-by: Tyler Matteson &lt;tyler@agritheory.com&gt; ([`bd44a6b`](https://github.com/agritheory/approvals/commit/bd44a6b7b39e766d18893d7b015c3571e0e03a87))
+Co-authored-by: Rohan Bansal <rohan@agritheory.dev>
+Co-authored-by: Tyler Matteson <tyler@agritheory.com> ([`bd44a6b`](https://github.com/agritheory/approvals/commit/bd44a6b7b39e766d18893d7b015c3571e0e03a87))
+
 
 ## v15.0.1 (2024-06-13)
 
-### Ci
+### Continuous Integration
 
 * ci: update conftest for json (#12) ([`8d43518`](https://github.com/agritheory/approvals/commit/8d435186242f47f0842a0abc22487f0bd80a7bc5))
 
@@ -33,15 +88,16 @@ Co-authored-by: Tyler Matteson &lt;tyler@agritheory.com&gt; ([`bd44a6b`](https:/
 
 * ci: add app names in get-app call ([`546dc18`](https://github.com/agritheory/approvals/commit/546dc18d47cfe549277d345be043bec06d18704f))
 
-### Fix
+### Fixes
 
 * fix: enable server script before creating invoices (#19)
 
-Co-authored-by: Rohan Bansal &lt;rohan@agritheory.dev&gt; ([`baa41d5`](https://github.com/agritheory/approvals/commit/baa41d54e38d4a36d6bc25b4627eddb3d4a66d5a))
+Co-authored-by: Rohan Bansal <rohan@agritheory.dev> ([`baa41d5`](https://github.com/agritheory/approvals/commit/baa41d54e38d4a36d6bc25b4627eddb3d4a66d5a))
+
 
 ## v15.0.0 (2024-03-19)
 
-### Ci
+### Continuous Integration
 
 * ci: remove extra echos ([`d39e09a`](https://github.com/agritheory/approvals/commit/d39e09a410ae3611eb05e4aac957606ce6c23469))
 
@@ -63,15 +119,16 @@ Co-authored-by: Rohan Bansal &lt;rohan@agritheory.dev&gt; ([`baa41d5`](https://g
 
 * ci: cache fix test ([`2980408`](https://github.com/agritheory/approvals/commit/298040846a52c3e369b5e2767749421f4f3acd5e))
 
-## v14.1.0 (2023-06-08)
 
-### Chore
+## v1.0.0 (2023-06-08)
+
+### Chores
 
 * chore: prettier ([`0eb602d`](https://github.com/agritheory/approvals/commit/0eb602d0d80e7afc9ba67f3c4d0ac3f078c356ef))
 
 * chore: black codebase ([`8604520`](https://github.com/agritheory/approvals/commit/860452040ad55ce9b769c079098ca760d654dd06))
 
-### Ci
+### Continuous Integration
 
 * ci: add lint and release ([`2595bf2`](https://github.com/agritheory/approvals/commit/2595bf2517c8448280f4fa1b952ddabafb1ed60f))
 
@@ -79,7 +136,7 @@ Co-authored-by: Rohan Bansal &lt;rohan@agritheory.dev&gt; ([`baa41d5`](https://g
 
 * docs: update readme ([`84566ac`](https://github.com/agritheory/approvals/commit/84566ac4abce9dd2c39d67142aa0fdf1870ca5ea))
 
-### Feature
+### Features
 
 * feat: add function to dismiss onboarding in tests ([`b0a4a31`](https://github.com/agritheory/approvals/commit/b0a4a316690dc249b9056dba7498376b38bfe3f5))
 
@@ -95,13 +152,13 @@ Co-authored-by: Rohan Bansal &lt;rohan@agritheory.dev&gt; ([`baa41d5`](https://g
 
 * feat: Initialize App ([`3ec2926`](https://github.com/agritheory/approvals/commit/3ec292695c9a96fbd6b9505fcf0395b20e6ad9ba))
 
-### Fix
+### Fixes
 
 * fix: re-word remove approver dialog title ([`459cc9b`](https://github.com/agritheory/approvals/commit/459cc9bd772b466eaede3fab84c4bdb1bb565a4e))
 
 * fix: flip docstatus flag ([`8d92d74`](https://github.com/agritheory/approvals/commit/8d92d742346a602815217efd8bfc92605e857f25))
 
-### Test
+### Testing
 
 * test: iterating on CI ([`ad1abb3`](https://github.com/agritheory/approvals/commit/ad1abb3ed9e0569edd9aa982657915d8b73e8ef5))
 

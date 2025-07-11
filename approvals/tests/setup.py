@@ -1,3 +1,6 @@
+# Copyright (c) 2025, AgriTheory and contributors
+# For license information, please see license.txt
+
 import datetime
 import os
 
@@ -47,7 +50,9 @@ def create_test_data():
 	settings = frappe._dict(
 		{
 			"day": datetime.date(
-				int(frappe.defaults.get_defaults().get("fiscal_year", datetime.datetime.now().year)), 1, 1
+				int(frappe.defaults.get_defaults().get("fiscal_year", datetime.datetime.now().year)),
+				1,
+				1,
 			),
 			"company": frappe.defaults.get_defaults().get("company"),
 		}
@@ -83,13 +88,21 @@ def create_items(settings):
 		item.item_group = "Services"
 		item.stock_uom = "Nos"
 		item.maintain_stock = 0
-		item.is_sales_item, item.is_sub_contracted_item, item.include_item_in_manufacturing = 0, 0, 0
+		item.is_sales_item, item.is_sub_contracted_item, item.include_item_in_manufacturing = (
+			0,
+			0,
+			0,
+		)
 		item.grant_commission = 0
 		item.is_purchase_item = 1
 		item.append("supplier_items", {"supplier": supplier[0]})
 		item.append(
 			"item_defaults",
-			{"company": settings.company, "default_warehouse": "", "default_supplier": supplier[0]},
+			{
+				"company": settings.company,
+				"default_warehouse": "",
+				"default_supplier": supplier[0],
+			},
 		)
 		item.save()
 

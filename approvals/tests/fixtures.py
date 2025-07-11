@@ -1,3 +1,6 @@
+# Copyright (c) 2025, AgriTheory and contributors
+# For license information, please see license.txt
+
 suppliers = [
 	("Exceptional Grid", "Electricity", "Credit Card", 150.00),
 	("Liu & Loewen Accountants LLP", "Accounting Services", "Check", 500.00),

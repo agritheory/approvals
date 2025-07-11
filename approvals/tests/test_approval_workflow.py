@@ -1,6 +1,3 @@
-# Copyright (c) 2025, AgriTheory and contributors
-# For license information, please see license.txt
-
 import frappe
 from frappe.utils import flt
 from frappe.model.workflow import apply_workflow
@@ -27,10 +24,7 @@ def send_po_for_approval():
 def test_approval_side_effects():
 	send_po_for_approval()
 	frappe.set_value(
-		"Document Approval Settings",
-		"Document Approval Settings",
-		"fallback_approver",
-		"mbritt@cfc.co",
+		"Document Approval Settings", "Document Approval Settings", "fallback_approver", "mbritt@cfc.co"
 	)
 	purchase_orders = frappe.get_all("Purchase Order", {"docstatus": 0})
 	for p in purchase_orders:

@@ -1,3 +1,6 @@
+# Copyright (c) 2025, AgriTheory and contributors
+# For license information, please see license.txt
+
 import json
 
 import frappe
@@ -9,6 +12,7 @@ from frappe.model.workflow import get_workflow_name
 from frappe.query_builder import DocType
 from frappe.utils.data import get_url_to_form
 from frappe.share import add as add_share
+from frappe.model.workflow import apply_workflow
 
 
 @frappe.whitelist()
@@ -18,7 +22,9 @@ def get_approval_roles(doc: Document, method: str | None = None):
 	roles = [
 		role
 		for role in frappe.get_all(
-			"Document Approval Rule", filters={"approval_doctype": doc.doctype}, pluck="approval_role"
+			"Document Approval Rule",
+			filters={"approval_doctype": doc.doctype},
+			pluck="approval_role",
 		)
 		if frappe.get_cached_doc(
 			"Document Approval Rule", {"approval_doctype": doc.doctype, "approval_role": role}
@@ -128,10 +134,15 @@ def approve_document(
 			doc.submit()
 			doc.set_status(update=True, status="Approved")
 		else:
-			doc.workflow_state = "Approved"
+			workflow = frappe.db.get_value("Workflow", {"document_type": doc.doctype})
+			if workflow:
+				approved_workflow_state = frappe.db.get_value(
+					"Workflow Document State",
+					{"parent": workflow, "is_approved_state_for_non_submittable_document": 1},
+					"state",
+				)
+			apply_workflow(doc, action=approved_workflow_state)
 			doc.save(ignore_permissions=True)
-			doc.set_status(update=True, status="Approved")
-
 	return approval
 
 
@@ -175,7 +186,8 @@ def revoke_approvals_on_reject(doc: Document, method: str | None = None):
 	):
 		frappe.get_doc("Document Approval", approval).delete()
 	for approval in frappe.get_all(
-		"User Document Approval", filters={"reference_doctype": doc.doctype, "reference_name": doc.name}
+		"User Document Approval",
+		filters={"reference_doctype": doc.doctype, "reference_name": doc.name},
 	):
 		frappe.get_doc("User Document Approval", approval).delete()
 

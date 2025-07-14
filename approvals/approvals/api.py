@@ -13,8 +13,7 @@ from frappe.query_builder import DocType
 from frappe.utils import cint, get_datetime
 from frappe.utils.data import get_url_to_form
 from frappe.share import add as add_share
-
-from approvals.approvals.utils import add_approval_comment
+from frappe.model.workflow import apply_workflow
 
 if TYPE_CHECKING:
 	from approvals.approvals.doctype.document_approval_rule.document_approval_rule import (
@@ -29,7 +28,9 @@ def get_approval_roles(doc: Document, method: str | None = None):
 	roles = [
 		role
 		for role in frappe.get_all(
-			"Document Approval Rule", filters={"approval_doctype": doc.doctype}, pluck="approval_role"
+			"Document Approval Rule",
+			filters={"approval_doctype": doc.doctype},
+			pluck="approval_role",
 		)
 		if frappe.get_cached_doc(
 			"Document Approval Rule", {"approval_doctype": doc.doctype, "approval_role": role}
@@ -107,9 +108,13 @@ def fetch_approvals_and_roles(doc: Document | str, method: str | None = None):
 	approval_state = frappe.get_value("Workflow", get_workflow_name(doc.doctype), "approval_state")
 	return {"approvals": add_roles, "approval_state": approval_state}
 
+
 @frappe.whitelist()
 def approve_document(
-	doc: Document | str, method: str | None = None, role: str | None = None, user: str | None = None
+	doc: Document | str,
+	method: str | None = None,
+	role: str | None = None,
+	user: str | None = None,
 ):
 	doc = frappe.get_doc(json.loads(doc)) if isinstance(doc, str) else doc
 	approval = frappe.new_doc("Document Approval")
@@ -121,12 +126,10 @@ def approve_document(
 	approval.save(ignore_permissions=True)
 
 	# TODO: is this required?
-	add_approval_comment(
-		doc.doctype,
-		doc.name,
-		f"Document approved by <b>{frappe.session.user}</b>",
-		subject="Document approved",
-		comment_type="Info",
+	doc.add_comment(
+		comment_type="Comment",
+		text=f"Document approved by <b>{frappe.session.user}</b>",
+		comment_by=user,
 	)
 
 	todo = frappe.get_value("ToDo", {"reference_name": doc.name, "role": role}, "name")
@@ -175,11 +178,29 @@ def set_status_to_approved(doc: Document, method: str | None = None, automatic=F
 def reject_document(doc: Document | str, role=None, comment: str = "", method: str | None = None):
 	doc = frappe.get_doc(json.loads(doc)) if isinstance(doc, str) else doc
 	doc.save(ignore_permissions=True)
-	# TODO: should we check if this method exists before calling?
-	doc.set_status(update=True, status="Rejected")
-	rejection = add_comment(doc.doctype, doc.name, comment, frappe.session.user, frappe.session.user)
+
+	workflow = frappe.db.get_value("Workflow", {"document_type": doc.doctype})
+
+	if workflow:
+		try:
+			apply_workflow(doc, action="Reject")
+		except Exception as e:
+			frappe.log_error(
+				f"Workflow transition failed for {doc.doctype} {doc.name} with error: {str(e)}"
+			)
+			frappe.throw(f"Could not apply 'Reject' workflow action: {str(e)}")
+	else:
+		frappe.msgprint(f"No workflow found for {doc.doctype}. Status not changed.")
+
+	rejection = doc.add_comment(
+		comment_type="Comment",
+		text=comment or f"Document rejected by <b>{frappe.session.user}</b>",
+		comment_by=frappe.session.user,
+	)
+
 	revoke_approvals_on_reject(doc, method)
 	return rejection
+
 
 @frappe.whitelist()
 def revoke_approvals_on_reject(doc: Document, method: str | None = None):
@@ -188,7 +209,8 @@ def revoke_approvals_on_reject(doc: Document, method: str | None = None):
 	):
 		frappe.get_doc("Document Approval", approval).delete()
 	for approval in frappe.get_all(
-		"User Document Approval", filters={"reference_doctype": doc.doctype, "reference_name": doc.name}
+		"User Document Approval",
+		filters={"reference_doctype": doc.doctype, "reference_name": doc.name},
 	):
 		frappe.get_doc("User Document Approval", approval).delete()
 
@@ -222,12 +244,10 @@ def add_user_approval(doc: Document | str, method: str | None = None, user: str 
 	uda.approver = user
 	uda.save(ignore_permissions=True)
 
-	add_approval_comment(
-		doc.doctype,
-		doc.name,
-		f"<b>{user}<b> added as approver by <b>{frappe.session.user}</b>",
-		subject="Approver added",
-		comment_type="Info",
+	doc.add_comment(
+		comment_type="Comment",
+		text=f"<b>{user}<b> added as approver by <b>{frappe.session.user}</b>",
+		comment_by=user,
 	)
 
 
@@ -240,12 +260,10 @@ def remove_user_approval(doc: Document | str, method: str | None = None, user=No
 	)
 	user_approval.delete()
 
-	add_approval_comment(
-		doc.doctype,
-		doc.name,
-		f"<b>{user}<b> removed as approver by <b>{frappe.session.user}</b>",
-		subject="Approver removed",
-		comment_type="Info",
+	doc.add_comment(
+		comment_type="Comment",
+		text=f"<b>{user}<b> removed as approver by <b>{frappe.session.user}</b>",
+		comment_by=user,
 	)
 
 

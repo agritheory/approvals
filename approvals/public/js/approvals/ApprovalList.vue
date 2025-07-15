@@ -69,6 +69,8 @@ const isDraft = computed(() => {
 
 const fetchApprovalsAndRoles = async () => {
 	const response = await frappe.xcall('approvals.approvals.api.fetch_approvals_and_roles', { doc: cur_frm.doc })
+	console.log(response.require_rejection_reason)
+	console.log(response.approvals)
 	approvalsData.approvals = response.approvals
 	approvalsData.approval_state = response.approval_state
 	approvalsData.workflowExists = response.workflow_exists

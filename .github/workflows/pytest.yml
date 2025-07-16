@@ -80,12 +80,12 @@ jobs:
         working-directory: /home/runner/frappe-bench
         run: |
           source env/bin/activate
-          cd apps/beam
+          cd apps/approvals
           poetry install
-          pytest --cov=beam --cov-report=xml --disable-warnings -s | tee pytest-coverage.txt
+          pytest --cov=approvals --cov-report=xml --disable-warnings -s | tee pytest-coverage.txt
 
       - name: Pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main
         with:
-          pytest-coverage-path: /home/runner/frappe-bench/apps/beam/pytest-coverage.txt
-          pytest-xml-coverage-path: /home/runner/frappe-bench/apps/beam/coverage.xml
+          pytest-coverage-path: /home/runner/frappe-bench/apps/approvals/pytest-coverage.txt
+          pytest-xml-coverage-path: /home/runner/frappe-bench/apps/approvals/coverage.xml

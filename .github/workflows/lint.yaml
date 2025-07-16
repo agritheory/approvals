@@ -28,7 +28,7 @@ jobs:
         run: pip install mypy
 
       - name: Install mypy types
-        run: mypy ./beam/. --install-types --non-interactive
+        run: mypy ./approvals/. --install-types --non-interactive
 
       - name: Run mypy
         uses: sasanquaneuf/mypy-github-action@releases/v1

@@ -10,7 +10,7 @@ on:
       - version-14
       - version-15
 env:
-    BRANCH_NAME: ${{ github.base_ref || github.ref_name }}
+  BRANCH_NAME: ${{ github.base_ref || github.ref_name }}
 
 jobs:
   tests:
@@ -33,42 +33,30 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
           check-latest: true
-          cache: 'yarn'  # Replaces `Get yarn cache directory path` and `yarn-cache` steps
+          cache: 'yarn' # Replaces `Get yarn cache directory path` and `yarn-cache` steps
 
       - name: Add to Hosts
         run: echo "127.0.0.1 test_site" | sudo tee -a /etc/hosts
 
       - name: Cache pip
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/*requirements.txt', '**/pyproject.toml', '**/setup.py', '**/setup.cfg') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
-
-      - name: Cache node modules
-        uses: actions/cache@v2
-        env:
-          cache-name: cache-node-modules
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
             ${{ runner.os }}-
 
       - name: Install Poetry
@@ -94,7 +82,6 @@ jobs:
           source env/bin/activate
           cd apps/approvals
           poetry install
-          playwright install --with-deps
           pytest --cov=approvals --cov-report=xml --disable-warnings -s | tee pytest-coverage.txt
 
       - name: Pytest coverage comment

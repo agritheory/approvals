@@ -1,3 +1,6 @@
+# Copyright (c) 2025, AgriTheory and contributors
+# For license information, please see license.txt
+
 import frappe
 from frappe.model.document import Document
 from frappe.utils.data import today
@@ -21,6 +24,9 @@ class DocumentApprovalRule(Document):
 			return False
 
 		if not self.enabled:
+			return False
+
+		if self.skip_for_auto_repeat and doc.get("auto_repeat"):
 			return False
 
 		if not self.condition:

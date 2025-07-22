@@ -5,8 +5,6 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils.data import today
 from frappe.share import add as add_share
-from frappe.modules.utils import load_attr
-
 from approvals.approvals.api import create_approval_notification
 
 
@@ -49,11 +47,12 @@ class DocumentApprovalRule(Document):
 		hook = frappe.get_hooks("approval_condition_environment")
 		if hook:
 			for path in hook:
-				func = load_attr(path)
+				func = frappe.get_attr(path)
 				if callable(func):
 					extra_context = func()
 				if isinstance(extra_context, dict):
 					eval_locals.update(extra_context)
+
 		result = frappe.safe_eval(self.condition, eval_globals=eval_globals, eval_locals=eval_locals)
 		if result and self.assign_users:
 			self.assign_user(doc)

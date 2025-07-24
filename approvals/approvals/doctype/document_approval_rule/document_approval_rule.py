@@ -1,4 +1,3 @@
-
 # Copyright (c) 2025, AgriTheory and contributors
 # For license information, please see license.txt
 
@@ -7,7 +6,6 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils.data import today
 from frappe.share import add as add_share
-
 from approvals.approvals.api import create_approval_notification
 
 

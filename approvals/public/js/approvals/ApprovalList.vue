@@ -50,7 +50,7 @@ export type Approval = {
 
 export type Approvals = {
 	approvals: Approval[]
-	approval_state: string,
+	approval_state: string
 	workflowExists?: boolean
 	require_rejection_reason?: boolean
 }

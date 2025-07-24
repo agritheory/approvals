@@ -1,3 +1,6 @@
+# Copyright (c) 2025, AgriTheory and contributors
+# For license information, please see license.txt
+
 import ast
 import frappe
 from frappe.model.document import Document
@@ -108,7 +111,7 @@ class DocumentApprovalRule(Document):
 				approval_state = frappe.get_cached_value("Workflow", workflow_name, "approval_state")
 				if doc.get(workflow_state_field) != approval_state:
 					return
-        
+
 		users = get_users(self.approval_role)
 		# get index of current user
 		if not users:

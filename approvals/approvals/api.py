@@ -1,15 +1,15 @@
-# Copyright (c) 2025, AgriTheory and contributors
+# Copyright (c) 2024, AgriTheory and contributors
 # For license information, please see license.txt
 
 import json
 
 import frappe
-from frappe.model.document import Document
 from frappe import _
-from frappe.utils import cint, get_datetime
 from frappe.desk.form.utils import add_comment
+from frappe.model.document import Document
 from frappe.model.workflow import get_workflow_name
 from frappe.query_builder import DocType
+from frappe.utils import cint, get_datetime
 from frappe.utils.data import get_url_to_form
 from frappe.share import add as add_share
 from frappe.model.workflow import apply_workflow
@@ -22,9 +22,7 @@ def get_approval_roles(doc: Document, method: str | None = None):
 	roles = [
 		role
 		for role in frappe.get_all(
-			"Document Approval Rule",
-			filters={"approval_doctype": doc.doctype},
-			pluck="approval_role",
+			"Document Approval Rule", filters={"approval_doctype": doc.doctype}, pluck="approval_role"
 		)
 		if frappe.get_cached_doc(
 			"Document Approval Rule", {"approval_doctype": doc.doctype, "approval_role": role}
@@ -63,7 +61,7 @@ def get_document_approvals(doc: Document, method: str | None = None):
 
 
 @frappe.whitelist()
-def fetch_approvals_and_roles(doc: Document, method: str | None = None):
+def fetch_approvals_and_roles(doc: Document | str, method: str | None = None):
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	if doc.get("__islocal"):
 		return
@@ -101,16 +99,23 @@ def fetch_approvals_and_roles(doc: Document, method: str | None = None):
 		add_roles.append(_role)
 	approval_state = frappe.get_value("Workflow", get_workflow_name(doc.doctype), "approval_state")
 	workflow_exists = frappe.db.exists("Workflow", get_workflow_name(doc.doctype))
+	require_rejection_reason = True
+	if workflow_exists:
+		require_rejection_reason = bool(
+			cint(frappe.get_value("Workflow", get_workflow_name(doc.doctype), "require_rejection_reason"))
+		)
+
 	return {
 		"approvals": add_roles,
 		"approval_state": approval_state,
 		"workflow_exists": workflow_exists,
+		"require_rejection_reason": require_rejection_reason,
 	}
 
 
 @frappe.whitelist()
 def approve_document(
-	doc: Document, method: str | None = None, role: str | None = None, user: str | None = None
+	doc: Document | str, method: str | None = None, role: str | None = None, user: str | None = None
 ):
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	approval = frappe.new_doc("Document Approval")
@@ -143,6 +148,7 @@ def approve_document(
 				)
 			apply_workflow(doc, action=approved_workflow_state)
 			doc.save(ignore_permissions=True)
+
 	return approval
 
 
@@ -169,12 +175,13 @@ def set_status_to_approved(doc: Document, method: str | None = None, automatic=F
 
 
 @frappe.whitelist()
-def reject_document(doc: Document, role=None, comment: str = "", method: str | None = None):
+def reject_document(doc: Document | str, role=None, comment: str = "", method: str | None = None):
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	doc = frappe.get_doc(doc.doctype, doc.name)
 	doc.save(ignore_permissions=True)
 	doc.set_status(update=True, status="Rejected")
-	rejection = add_comment(doc.doctype, doc.name, comment, frappe.session.user, frappe.session.user)
+	if comment:
+		rejection = add_comment(doc.doctype, doc.name, comment, frappe.session.user, frappe.session.user)
 	revoke_approvals_on_reject(doc, method)
 	return rejection
 
@@ -208,7 +215,7 @@ def assign_approvers(doc: Document, method: str | None = None):
 
 
 @frappe.whitelist()
-def add_user_approval(doc: Document, method: str | None = None, user: str | None = None):
+def add_user_approval(doc: Document | str, method: str | None = None, user: str | None = None):
 	if not user:
 		return
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
@@ -224,7 +231,7 @@ def add_user_approval(doc: Document, method: str | None = None, user: str | None
 
 
 @frappe.whitelist()
-def remove_user_approval(doc: Document, method: str | None = None, user=None):
+def remove_user_approval(doc: Document | str, method: str | None = None, user=None):
 	doc = frappe._dict(json.loads(doc)) if isinstance(doc, str) else doc
 	user_approval = frappe.get_doc(
 		"User Document Approval",

@@ -1,3 +1,6 @@
+# Copyright (c) 2025, AgriTheory and contributors
+# For license information, please see license.txt
+
 import frappe
 from frappe.model.document import Document
 from frappe.share import add as add_share
@@ -28,16 +31,14 @@ class UserDocumentApproval(Document):
 		todo.priority = "Medium"
 		todo.description = "A document requires your approval"
 		todo.save(ignore_permissions=True)
-
 		create_approval_notification(
-			frappe._dict(
-				{"doctype": self.reference_doctype, "name": self.reference_name, "owner": frappe.session.user}
-			),
+			self,
 			self.approver,
 		)
 
 	def remove_todo(self):
-		if todo := frappe.get_value(
+		todo = frappe.get_value(
 			"ToDo", {"reference_name": self.reference_name, "allocated_to": self.approver}, "name"
-		):
-			frappe.delete_doc("ToDo", todo, force=True)
+		)
+		if todo:
+			frappe.get_doc("ToDo", todo).delete(ignore_permissions=True)

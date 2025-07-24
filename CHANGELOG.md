@@ -1,69 +1,111 @@
 # CHANGELOG
 
-## v14.2.1 (2024-07-08)
 
-### Chore
+## v15.2.0 (2024-10-17)
 
-* chore: fix backport ([`ad4bfa2`](https://github.com/agritheory/approvals/commit/ad4bfa24210fdd4a042b0de54a3558defc078393))
+### Features
 
-* chore: backport ([`2a11834`](https://github.com/agritheory/approvals/commit/2a11834ca863cbe1136cf95c6ba975b457a8df15))
+* feat: require rejection reason in workflow (#73)
 
-### Ci
+Co-authored-by: fproldan <franciscoproldan@gmail.com> ([`a33e1d9`](https://github.com/agritheory/approvals/commit/a33e1d97e266bd0cacc250f38f8a36f538c6afb7))
 
-* ci: fix version numbering (#30) ([`2caf35a`](https://github.com/agritheory/approvals/commit/2caf35a9a7ddbd1c2c98a9163ff9cd0c376b13e4))
+### Refactoring
 
-### Fix
+* refactor: pyproject to poetry(v15) (#71)
 
-* fix: allow approvers to view non-role documents (#26)
+* refactor: pyproject to poetry(v15)
 
-* fix: handle case where fallback approver is not set
+* refactor: pyproject to poetry(v14)
 
-* fix: throw error on missing fallback approval role
-
-* fix: allow approvers to view non-role documents
-
-* fix: use wildcard permissions for approvals
-
-* fix: recursion permission checks
-
-* fix: share documents with approvers
-
-* fix: replace SQL with ORM
-
-* fix: remove permission controller hook
-
-* style: pre-commit fixes
-
-* fix: alias add to add_share
+* fix: remove js dependency check
 
 ---------
 
-Co-authored-by: Rohan Bansal &lt;rohan@agritheory.dev&gt;
-Co-authored-by: Tyler Matteson &lt;tyler@agritheory.com&gt; ([`3b16714`](https://github.com/agritheory/approvals/commit/3b167143d74558b4cef2ade136f5a6981cb9f356))
+Co-authored-by: Tyler Matteson <tyler@agritheory.com> ([`f3ce58a`](https://github.com/agritheory/approvals/commit/f3ce58af1df7e0fa83ca8c946abe22384d7d8b0a))
+
+* refactor: added typing(v15) (#46) ([`f92a21d`](https://github.com/agritheory/approvals/commit/f92a21db34a67558e9ed1479d0c95f29c3379ee2))
 
 ### Unknown
 
-* Merge pull request #33 from agritheory/fix_backport
+* [Backport] Reminder Email (#47)
 
-chore: fix backport ([`2b307c7`](https://github.com/agritheory/approvals/commit/2b307c76a78ffc8f2f30d2e746c8d2f40d2df49a))
+* chore: backport
 
-* Merge pull request #32 from agritheory/backport
+* chore: backport ([`087fb1f`](https://github.com/agritheory/approvals/commit/087fb1f79e380fa973f60873afb63c04939b1975))
 
-chore: backport ([`4c62a18`](https://github.com/agritheory/approvals/commit/4c62a18353c2b93fe2572683dae6a3f5c34be706))
+* Workflow integration v15 (#44)
 
-## v14.2.0 (2024-07-02)
+* wip: add workflow integration
 
-### Chore
+* wip: add workflow integration
 
-* chore: conform code changes (#2)
+* wip: approval workflow with tests
 
-* chore: conform code changes
+* fix: add typing to Vue files
 
-* chore: port v13 changes
+* fix: tests cleanup
 
-* wip: integrate workflow status ([`4c5c641`](https://github.com/agritheory/approvals/commit/4c5c6410b6b571e15e9c4d236cdaddf61fe1d4b8))
+* fix: build entry point
 
-### Ci
+* fix: clean up python typing
+
+---------
+
+Co-authored-by: Rohan Bansal <rohan@agritheory.dev> ([`9c92ca0`](https://github.com/agritheory/approvals/commit/9c92ca0a08c6e0823d740ed9f70dbef9722787d4))
+
+
+## v15.1.0 (2024-07-01)
+
+### Features
+
+* feat: format vue files to composition API (v15) (#20)
+
+* feat: format vue files to composition API
+
+* feat: use vite as builder for approvals
+
+* fix: typing issue
+
+* fix: include css, reverse show/hide of status
+
+* feat: add naming format for Document Approval Rule
+
+* fix: handle case where fallback approver is not set
+
+---------
+
+Co-authored-by: Rohan Bansal <rohan@agritheory.dev>
+Co-authored-by: Tyler Matteson <tyler@agritheory.com> ([`bd44a6b`](https://github.com/agritheory/approvals/commit/bd44a6b7b39e766d18893d7b015c3571e0e03a87))
+
+
+## v15.0.1 (2024-06-13)
+
+### Continuous Integration
+
+* ci: update conftest for json (#12) ([`8d43518`](https://github.com/agritheory/approvals/commit/8d435186242f47f0842a0abc22487f0bd80a7bc5))
+
+* ci: update versions, mypy to pre-commit ([`dda57eb`](https://github.com/agritheory/approvals/commit/dda57eb073eb8ceb357b47229eef922cd953bfba))
+
+* ci: add app names in get-app call ([`546dc18`](https://github.com/agritheory/approvals/commit/546dc18d47cfe549277d345be043bec06d18704f))
+
+### Fixes
+
+* fix: enable server script before creating invoices (#19)
+
+Co-authored-by: Rohan Bansal <rohan@agritheory.dev> ([`baa41d5`](https://github.com/agritheory/approvals/commit/baa41d54e38d4a36d6bc25b4627eddb3d4a66d5a))
+
+
+## v15.0.0 (2024-03-19)
+
+### Continuous Integration
+
+* ci: remove extra echos ([`d39e09a`](https://github.com/agritheory/approvals/commit/d39e09a410ae3611eb05e4aac957606ce6c23469))
+
+* ci: enable server scripts ([`a164d6a`](https://github.com/agritheory/approvals/commit/a164d6a049402d85236416d49ae58b35cd62049f))
+
+* ci: remove resolve dependencies ([`e1fa6ad`](https://github.com/agritheory/approvals/commit/e1fa6ad2d2f793b008a5651aceb6932aca0a23ef))
+
+* ci: update for v-15 ([`a3aed39`](https://github.com/agritheory/approvals/commit/a3aed398a308171ee541ade62ebd26220fe34e32))
 
 * ci: remove testing artifacts, fix cache and hrms errors (#8) ([`6373545`](https://github.com/agritheory/approvals/commit/63735454c6cdf1c3a39574c24a4cef8fc7cbdefd))
 
@@ -77,53 +119,16 @@ chore: backport ([`4c62a18`](https://github.com/agritheory/approvals/commit/4c62
 
 * ci: cache fix test ([`2980408`](https://github.com/agritheory/approvals/commit/298040846a52c3e369b5e2767749421f4f3acd5e))
 
-### Feature
-
-* feat: format vue files to composition API (v14) (#23)
-
-* feat: use vite as builder for approvals
-
-* ci: update pytest runner
-
-* fix: update approvals file type
-
-* fix: handle errors
-
-* ci: update runner dependencies
-
-* fix: include css, reverse show/hide of status
-
----------
-
-Co-authored-by: Rohan Bansal &lt;rohan@agritheory.dev&gt;
-Co-authored-by: Tyler Matteson &lt;tyler@agritheory.com&gt; ([`82ddfce`](https://github.com/agritheory/approvals/commit/82ddfce82c552d447e41bcef3bbbb4e21345350b))
-
-### Fix
-
-* fix: handle case where fallback approver is not set (#25)
-
-* fix: handle case where fallback approver is not set
-
-* fix: throw error on missing fallback approval role
-
----------
-
-Co-authored-by: Rohan Bansal &lt;rohan@agritheory.dev&gt;
-Co-authored-by: Tyler Matteson &lt;tyler@agritheory.com&gt; ([`ebed7f1`](https://github.com/agritheory/approvals/commit/ebed7f1d14c81346eeb01429bea00972f35f471d))
-
-* fix: enable server script before creating invoices (#22)
-
-Co-authored-by: Rohan Bansal &lt;rohan@agritheory.dev&gt; ([`c99c9c2`](https://github.com/agritheory/approvals/commit/c99c9c27ddcc866cc1e5ed161ed5bd0086ed9578))
 
 ## v1.0.0 (2023-06-08)
 
-### Chore
+### Chores
 
 * chore: prettier ([`0eb602d`](https://github.com/agritheory/approvals/commit/0eb602d0d80e7afc9ba67f3c4d0ac3f078c356ef))
 
 * chore: black codebase ([`8604520`](https://github.com/agritheory/approvals/commit/860452040ad55ce9b769c079098ca760d654dd06))
 
-### Ci
+### Continuous Integration
 
 * ci: add lint and release ([`2595bf2`](https://github.com/agritheory/approvals/commit/2595bf2517c8448280f4fa1b952ddabafb1ed60f))
 
@@ -131,7 +136,7 @@ Co-authored-by: Rohan Bansal &lt;rohan@agritheory.dev&gt; ([`c99c9c2`](https://g
 
 * docs: update readme ([`84566ac`](https://github.com/agritheory/approvals/commit/84566ac4abce9dd2c39d67142aa0fdf1870ca5ea))
 
-### Feature
+### Features
 
 * feat: add function to dismiss onboarding in tests ([`b0a4a31`](https://github.com/agritheory/approvals/commit/b0a4a316690dc249b9056dba7498376b38bfe3f5))
 
@@ -147,13 +152,13 @@ Co-authored-by: Rohan Bansal &lt;rohan@agritheory.dev&gt; ([`c99c9c2`](https://g
 
 * feat: Initialize App ([`3ec2926`](https://github.com/agritheory/approvals/commit/3ec292695c9a96fbd6b9505fcf0395b20e6ad9ba))
 
-### Fix
+### Fixes
 
 * fix: re-word remove approver dialog title ([`459cc9b`](https://github.com/agritheory/approvals/commit/459cc9bd772b466eaede3fab84c4bdb1bb565a4e))
 
 * fix: flip docstatus flag ([`8d92d74`](https://github.com/agritheory/approvals/commit/8d92d742346a602815217efd8bfc92605e857f25))
 
-### Test
+### Testing
 
 * test: iterating on CI ([`ad1abb3`](https://github.com/agritheory/approvals/commit/ad1abb3ed9e0569edd9aa982657915d8b73e8ef5))
 

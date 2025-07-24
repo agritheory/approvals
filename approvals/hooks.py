@@ -115,21 +115,19 @@ after_install = "approvals.install.after_install"
 # ---------------
 
 scheduler_events = {
-	# "all": [
-	# 	"approvals.tasks.all"
-	# ],
-	# "daily": [
-	# 	"approvals.tasks.daily"
-	# ],
-	"hourly": [
-		"approvals.approvals.api.send_reminder_email",
-	],
-	# "weekly": [
-	# 	"approvals.tasks.weekly"
-	# ],
-	# "monthly": [
-	# 	"approvals.tasks.monthly"
-	# ],
+	# 	"all": [
+	# 		"approvals.tasks.all"
+	# 	],
+	# 	"daily": [
+	# 		"approvals.tasks.daily"
+	# 	],
+	"hourly": ["approvals.tasks.hourly"],
+	# 	"weekly": [
+	# 		"approvals.tasks.weekly"
+	# 	],
+	# 	"monthly": [
+	# 		"approvals.tasks.monthly"
+	# 	],
 }
 
 # Testing

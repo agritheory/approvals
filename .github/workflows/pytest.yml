@@ -10,7 +10,7 @@ on:
       - version-14
       - version-15
 env:
-    BRANCH_NAME: ${{ github.base_ref || github.ref_name }}
+  BRANCH_NAME: ${{ github.base_ref || github.ref_name }}
 
 jobs:
   tests:
@@ -45,7 +45,7 @@ jobs:
         with:
           node-version: 18
           check-latest: true
-          cache: 'yarn'  # Replaces `Get yarn cache directory path` and `yarn-cache` steps
+          cache: 'yarn' # Replaces `Get yarn cache directory path` and `yarn-cache` steps
 
       - name: Add to Hosts
         run: echo "127.0.0.1 test_site" | sudo tee -a /etc/hosts

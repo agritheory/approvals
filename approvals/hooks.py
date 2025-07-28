@@ -9,7 +9,7 @@ app_publisher = "AgriTheory"
 app_description = "Customizable Approval Workflows"
 app_email = "support@agritheory.dev"
 app_license = "MIT"
-required_apps = ["erpnext"]
+required_apps = ["erpnext", "hrms"]
 
 # Includes in <head>
 # ------------------
@@ -116,19 +116,19 @@ doc_events = {
 # ---------------
 
 scheduler_events = {
-    # 	"all": [
-    # 		"approvals.tasks.all"
-    # 	],
-    # 	"daily": [
-    # 		"approvals.tasks.daily"
-    # 	],
-    "hourly": ["approvals.tasks.hourly"],
-    # 	"weekly": [
-    # 		"approvals.tasks.weekly"
-    # 	],
-    # 	"monthly": [
-    # 		"approvals.tasks.monthly"
-    # 	],
+	# 	"all": [
+	# 		"approvals.tasks.all"
+	# 	],
+	# 	"daily": [
+	# 		"approvals.tasks.daily"
+	# 	],
+	"hourly": ["approvals.tasks.hourly"],
+	# 	"weekly": [
+	# 		"approvals.tasks.weekly"
+	# 	],
+	# 	"monthly": [
+	# 		"approvals.tasks.monthly"
+	# 	],
 }
 
 # Testing

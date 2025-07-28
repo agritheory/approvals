@@ -5,15 +5,12 @@
 		</div>
 
 		<div v-if="isApproveable">
-			<button id="approve-btn" @click="approve" :disabled="!status" :class="status ? 'btn btn-disabled' : 'btn'">
-				APPROVE
-			</button>
+			<button @click="approve" :disabled="!status" :class="status ? 'btn btn-disabled' : 'btn'">APPROVE</button>
 			<button
-				id="reject-btn"
 				@click="reject"
 				:disabled="!status"
 				:class="status ? 'btn btn-disabled button-reject' : 'btn button-reject'">
-				{{ translate('REJECT') }}
+				REJECT
 			</button>
 		</div>
 
@@ -21,8 +18,8 @@
 			<span v-if="approval.approved">{{ approval.approver }} - Approved</span>
 			<span v-else>{{
 				approval.assigned_to_user === 'Unassigned'
-					? translate(approval.assigned_to_user)
-					: `${approval.assigned_to_user} - ${translate('Assigned')}`
+					? approval.assigned_to_user
+					: `${approval.assigned_to_user} - Assigned`
 			}}</span>
 		</div>
 	</li>
@@ -34,13 +31,9 @@ import { computed } from 'vue'
 import type { Approval } from './ApprovalList.vue'
 
 // typescript declarations for FrappeJS
-interface FrappeWindow extends Window {
-	__: any
-}
 declare const approvals: any
 declare const cur_frm: any
 declare const frappe: any
-declare const window: FrappeWindow
 
 const emit = defineEmits(['documentapproval'])
 
@@ -78,25 +71,13 @@ const status = computed(() => {
 	}
 })
 
-const translate = (text: string) => {
-	return window.__(text)
-}
-
 const approve = async () => {
-	const approveDocument = async () => {
-		await frappe.xcall('approvals.approvals.api.approve_document', {
-			doc: cur_frm.doc,
-			role: props.approval.approval_role,
-			user: frappe.session.user,
-		})
-		emit('documentapproval')
-	}
-
-	if (!props.workflowExists && cur_frm.meta.is_submittable) {
-		frappe.confirm(__(`Permanently Submit ${cur_frm.doc.name}?`), approveDocument)
-	} else {
-		await approveDocument()
-	}
+	await frappe.xcall('approvals.approvals.api.approve_document', {
+		doc: cur_frm.doc,
+		role: props.approval.approval_role,
+		user: frappe.session.user,
+	})
+	emit('documentapproval')
 }
 
 const reject = async () => {
@@ -122,6 +103,7 @@ li {
 	margin-bottom: 1em;
 	width: 100%;
 }
+
 button {
 	display: table-cell;
 	text-align: center;
@@ -131,10 +113,13 @@ button {
 	margin-right: 1ch;
 	padding: 4px 10px;
 }
+
 button:hover:enabled {
 	color: var(--dark-green-avatar-color);
 	font-weight: bold;
-	box-shadow: rgba(0, 0, 0, 0.05) 0px 0.5px 0px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px,
+	box-shadow:
+		rgba(0, 0, 0, 0.05) 0px 0.5px 0px 0px,
+		rgba(0, 0, 0, 0.08) 0px 0px 0px 1px,
 		rgba(0, 0, 0, 0.05) 0px 2px 4px 0px;
 }
 
@@ -143,15 +128,18 @@ button:disabled {
 	background: #687178;
 	color: #fff;
 }
+
 div {
 	width: 100%;
 	display: table-row;
 }
+
 .button-reject {
 	background: var(--bg-orange);
 	color: var(--text-on-orange);
 	margin-right: 0px;
 }
+
 .button-reject:hover:enabled {
 	color: var(--text-on-orange);
 	font-weight: bold;

@@ -1,5 +1,5 @@
 <template>
-	<div v-show="approvalsData.approvals.length">
+	<div>
 		<h4>Approvals</h4>
 		<ul class="list-unstyled">
 			<ApprovalListItem
@@ -7,13 +7,12 @@
 				:key="index"
 				:approval="approval"
 				:approvalStateName="approvalsData.approval_state"
-				:workflowExists="approvalsData.workflowExists"
 				@documentapproval="refreshApprovals" />
 		</ul>
 
 		<div v-if="isDraft">
 			<a class="text-muted" @click="addApprover">
-				{{ translate("Add Approver") }}
+				Add Approver
 				<i class="octicon octicon-plus" style="margin-left: 2px"></i>
 			</a>
 			<br />
@@ -22,7 +21,7 @@
 				class="text-muted"
 				@click="removeApprover"
 				style="position: relative">
-				{{ translate("Remove Approver") }}
+				Remove Approver
 				<i class="remove-approver">×</i>
 			</a>
 		</div>
@@ -35,14 +34,10 @@ import { computed, onMounted, reactive } from 'vue'
 import ApprovalListItem from './ApprovalListItem.vue'
 
 // typescript declarations for FrappeJS
-interface FrappeWindow extends Window {
-	__: any
-}
 declare const approvals: any
 declare const cur_dialog: any
 declare const cur_frm: any
 declare const frappe: any
-declare const window: FrappeWindow
 export type Approval = {
 	approval_role?: string
 	approved?: boolean
@@ -72,13 +67,8 @@ const isDraft = computed(() => {
 	return cur_frm.doc.docstatus === 0
 })
 
-const translate = (text: string) => {
-	return window.__(text)
-}
-
 const fetchApprovalsAndRoles = async () => {
 	const response = await frappe.xcall('approvals.approvals.api.fetch_approvals_and_roles', { doc: cur_frm.doc })
-	if (!response) { return }
 	approvalsData.approvals = response.approvals
 	approvalsData.approval_state = response.approval_state
 	approvalsData.workflowExists = response.workflow_exists
@@ -133,6 +123,7 @@ const removeApprover = async () => {
 	margin-bottom: 0px;
 	padding-bottom: 0px;
 }
+
 .remove-approver {
 	position: absolute;
 	bottom: -1px;

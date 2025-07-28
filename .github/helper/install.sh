@@ -49,23 +49,16 @@ bench setup requirements --python
 bench use test_site
 bench set-config -g server_script_enabled 1
 
-bench get-app https://github.com/frappe/erpnext --branch version-14 --resolve-deps --skip-assets
-bench get-app hrms --branch version-14 https://github.com/frappe/hrms.git --skip-assets
-bench get-app approvals "${GITHUB_WORKSPACE}" --skip-assets --resolve-deps
-
-printf '%s\n' 'frappe' 'erpnext' 'hrms' 'approvals' > ~/frappe-bench/sites/apps.txt
-bench setup requirements --python
-
 bench start &> bench_run_logs.txt &
 CI=Yes &
 bench --site test_site reinstall --yes --admin-password admin
 
 bench setup requirements --dev
 
-# echo "BENCH VERSION NUMBERS:"
-# bench version
-# echo "SITE LIST-APPS:"
-# bench list-apps
+echo "BENCH VERSION NUMBERS:"
+bench version
+echo "SITE LIST-APPS:"
+bench list-apps
 
 bench start &> bench_run_logs.txt &
 CI=Yes &

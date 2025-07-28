@@ -1,4 +1,4 @@
-// Copyright (c) 2024, AgriTheory and contributors
+// Copyright (c) 2025, AgriTheory and contributors
 // For license information, please see license.txt
 
 import { createApp } from 'vue'
@@ -16,14 +16,6 @@ frappe.provide('approvals')
 frappe.get_form_sidebar_extension = () => {
 	return `<div id="approvals-section"></div>`
 }
-
-$(document).on("form-refresh", (event, frm) => {
-	frappe.ui.form.on(frm.doctype, {
-		refresh: frm => {
-			approvals.load_approvals(frm)
-		}
-	})
-})
 
 approvals.load_approvals = frm => {
 	const approvals_section = document.getElementById('approvals-section')

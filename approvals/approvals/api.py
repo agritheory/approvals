@@ -106,7 +106,25 @@ def fetch_approvals_and_roles(doc: Document | str, method: str | None = None):
 		)
 		add_roles.append(_role)
 	approval_state = frappe.get_value("Workflow", get_workflow_name(doc.doctype), "approval_state")
-	return {"approvals": add_roles, "approval_state": approval_state}
+	require_rejection_reason = frappe.get_value(
+		"Workflow", get_workflow_name(doc.doctype), "require_rejection_reason"
+	)
+
+	return {
+		"approvals": add_roles,
+		"approval_state": approval_state,
+		"require_rejection_reason": require_rejection_reason,
+	}
+
+
+@frappe.whitelist()
+def check_rejection_reason_required(doc: Document | str, method: str | None = None):
+	document = json.loads(doc)
+	require_rejection_reason = frappe.get_value(
+		"Workflow", get_workflow_name(document["doctype"]), "require_rejection_reason"
+	)
+
+	return require_rejection_reason
 
 
 @frappe.whitelist()

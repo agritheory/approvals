@@ -105,19 +105,25 @@ def fetch_approvals_and_roles(doc: Document, method: str | None = None):
 		)
 		add_roles.append(_role)
 	approval_state = frappe.get_value("Workflow", get_workflow_name(doc.doctype), "approval_state")
-	workflow_exists = frappe.db.exists("Workflow", get_workflow_name(doc.doctype))
-	require_rejection_reason = True
-	if workflow_exists:
-		require_rejection_reason = bool(
-			cint(frappe.get_value("Workflow", get_workflow_name(doc.doctype), "require_rejection_reason"))
-		)
+	require_rejection_reason = frappe.get_value(
+		"Workflow", get_workflow_name(doc.doctype), "require_rejection_reason"
+	)
 
 	return {
 		"approvals": add_roles,
 		"approval_state": approval_state,
-		"workflow_exists": workflow_exists,
 		"require_rejection_reason": require_rejection_reason,
 	}
+
+
+@frappe.whitelist()
+def check_rejection_reason_required(doc: Document | str, method: str | None = None):
+	document = json.loads(doc)
+	require_rejection_reason = frappe.get_value(
+		"Workflow", get_workflow_name(document["doctype"]), "require_rejection_reason"
+	)
+
+	return require_rejection_reason
 
 
 @frappe.whitelist()
@@ -217,7 +223,8 @@ def revoke_approvals_on_reject(doc: Document, method: str | None = None):
 	):
 		frappe.get_doc("Document Approval", approval).delete(ignore_permissions=True)
 	for approval in frappe.get_all(
-		"User Document Approval", filters={"reference_doctype": doc.doctype, "reference_name": doc.name}
+		"User Document Approval",
+		filters={"reference_doctype": doc.doctype, "reference_name": doc.name},
 	):
 		frappe.get_doc("User Document Approval", approval).delete(ignore_permissions=True)
 

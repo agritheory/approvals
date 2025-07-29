@@ -1,3 +1,6 @@
+// Copyright (c) 2025, AgriTheory and contributors
+// For license information, please see license.txt
+
 import vue from '@vitejs/plugin-vue'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { resolve } from 'path'
@@ -33,9 +36,9 @@ export default defineConfig({
 		rollupOptions: {
 			input: resolve(__dirname, './approvals/approvals.ts'),
 			output: {
-				entryFileNames: '[name].[hash].js',
-				chunkFileNames: '[name].[hash].js',
-				assetFileNames: '[name].[ext]',
+				entryFileNames: 'assets/[name].[hash].js',
+				chunkFileNames: 'chunks/[name].[hash].js',
+				assetFileNames: 'assets/[name].[ext]',
 			},
 		},
 	},

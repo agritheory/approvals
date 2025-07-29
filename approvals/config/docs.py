@@ -1,3 +1,6 @@
+# Copyright (c) 2025, AgriTheory and contributors
+# For license information, please see license.txt
+
 """
 Configuration for docs
 """
@@ -8,4 +11,4 @@ Configuration for docs
 
 
 def get_context(context):
-    context.brand_html = "Approvals"
+	context.brand_html = "Approvals"

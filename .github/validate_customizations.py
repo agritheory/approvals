@@ -2,7 +2,6 @@ import json
 import pathlib
 import sys
 
-
 def scrub(txt: str) -> str:
     return txt.replace(" ", "_").replace("-", "_").lower()
 

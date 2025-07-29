@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 
 @frappe.whitelist()
-def get_approval_roles(doc: Document, method: str | None = None):
+def get_approval_roles(doc: Document | frappe._dict, method: str | None = None):
 	settings = frappe.get_cached_doc("Document Approval Settings")
 
 	roles = [
@@ -56,7 +56,7 @@ def get_approval_roles(doc: Document, method: str | None = None):
 
 
 @frappe.whitelist()
-def get_document_approvals(doc: Document, method: str | None = None):
+def get_document_approvals(doc: Document | frappe._dict, method: str | None = None):
 	approvers = frappe.get_all(
 		"Document Approval",
 		{"reference_doctype": doc.doctype, "reference_name": doc.name},

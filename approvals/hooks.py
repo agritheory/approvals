@@ -40,9 +40,6 @@ app_include_js = ["/assets/approvals/dist/js/approvals.js"]
 
 # Home Pages
 # ----------
-approval_condition_environment = (
-	"approvals.approvals.doctype.document_approval_rule.document_approval_rule.get_condition_context"
-)
 
 # application home page (will override Website Settings)
 # home_page = "login"

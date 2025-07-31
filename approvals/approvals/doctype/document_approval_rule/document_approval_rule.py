@@ -100,23 +100,18 @@ class DocumentApprovalRule(Document):
 				f"Error evaluating approval rule condition for {self.title}: {str(e)}",
 				"Document Approval Rule Error",
 			)
-			# Return False on error to be safe
 			return False
 
 	def evaluate_jinja_condition(self, doc: Document):
 		"""Evaluate Jinja-based condition"""
 		try:
-			# Prepare Jinja context
 			context = self.get_jinja_context(doc)
 
 			# Create Jinja environment
 			jinja_env = Environment(loader=BaseLoader(), autoescape=True)
-
-			# Render template
 			template = jinja_env.from_string(self.condition)
 			result = template.render(**context)
 
-			# Convert result to boolean
 			if isinstance(result, str):
 				result = result.strip().lower()
 				return result not in ["false", "0", "", "none", "null"]
@@ -139,10 +134,8 @@ class DocumentApprovalRule(Document):
 
 	def get_jinja_context(self, doc: Document):
 		"""Prepare context for Jinja evaluation"""
-		# Get settings
 		settings = frappe.get_doc("Document Approval Settings")
 
-		# Base context
 		context = {
 			"doc": doc,
 			"settings": settings.get_settings(),
@@ -156,13 +149,8 @@ class DocumentApprovalRule(Document):
 			"all": all,
 		}
 
-		# Add account lists for common use cases
 		context.update(self.get_account_context())
-
-		# Add custom context functions
 		context.update(get_condition_context())
-
-		# Add document-specific context
 		context.update(self.get_document_context(doc))
 
 		return context
@@ -170,22 +158,18 @@ class DocumentApprovalRule(Document):
 	def get_account_context(self):
 		"""Get account-related context variables"""
 		try:
-			# Get expense accounts
 			expense_accounts = frappe.get_all(
 				"Account", filters={"account_type": "Expense Account"}, pluck="name"
 			)
 
-			# Get tax accounts
 			tax_accounts = frappe.get_all(
 				"Account", filters={"account_type": ["in", ["Tax", "Chargeable"]]}, pluck="name"
 			)
 
-			# Get income accounts
 			income_accounts = frappe.get_all(
 				"Account", filters={"account_type": "Income Account"}, pluck="name"
 			)
 
-			# Get asset accounts
 			asset_accounts = frappe.get_all(
 				"Account",
 				filters={"account_type": ["in", ["Fixed Asset", "Current Asset"]]},
@@ -212,7 +196,6 @@ class DocumentApprovalRule(Document):
 		context = {}
 
 		if hasattr(doc, "doctype"):
-			# Add common financial document fields
 			if doc.doctype in [
 				"Purchase Invoice",
 				"Sales Invoice",
@@ -231,7 +214,6 @@ class DocumentApprovalRule(Document):
 					}
 				)
 
-				# Add item count and categories
 				if hasattr(doc, "items") and doc.items:
 					context.update(
 						{

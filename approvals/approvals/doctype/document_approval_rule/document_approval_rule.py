@@ -6,7 +6,6 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils.data import today
 from frappe.share import add as add_share
-
 from approvals.approvals.api import create_approval_notification
 
 
@@ -72,6 +71,9 @@ class DocumentApprovalRule(Document):
 			return False
 
 		if not self.enabled:
+			return False
+
+		if self.skip_for_auto_repeat and doc.get("auto_repeat"):
 			return False
 
 		if not self.condition:

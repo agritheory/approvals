@@ -163,14 +163,14 @@ def create_client_scripts(settings=None):
 	cs.dt = cs.name = "Purchase Invoice"
 	cs.apply_to = "Form"
 	cs.enabled = 1
-	cs.script = "frappe.ui.form.on('Purchase Invoice', {refresh(frm) {frappe.provide('approvals').load_approvals(frm)}})"
+	cs.script = "frappe.ui.form.on('Purchase Invoice', { onload(frm) { frappe.require('approvals.bundle.js', () => { frm.refresh(); frappe.provide('approvals').load_approvals(frm); }) } })"
 	cs.save()
 
 	cs = frappe.new_doc("Client Script")
 	cs.dt = cs.name = "Purchase Order"
 	cs.apply_to = "Form"
 	cs.enabled = 1
-	cs.script = "frappe.ui.form.on('Purchase Order', {refresh(frm) {frappe.provide('approvals').load_approvals(frm)}})"
+	cs.script = "frappe.ui.form.on('Purchase Order', { onload(frm) { frappe.require('approvals.bundle.js', () => { frm.refresh(); frappe.provide('approvals').load_approvals(frm); }) } })"
 	cs.save()
 
 

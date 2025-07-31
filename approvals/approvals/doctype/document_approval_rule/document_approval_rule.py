@@ -15,7 +15,7 @@ class DocumentApprovalRule(Document):
 	def validate(self):
 		self.title = f"{self.approval_doctype} - {self.approval_role}"
 
-		if self.condition and self.is_jinja_condition(self.condition):
+		if self.condition:
 			try:
 				validate_template(self.condition)
 			except Exception as e:

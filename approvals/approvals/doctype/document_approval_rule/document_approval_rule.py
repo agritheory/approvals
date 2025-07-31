@@ -1,6 +1,7 @@
 # Copyright (c) 2025, AgriTheory and contributors
 # For license information, please see license.txt
 
+import ast
 import frappe
 from frappe.model.document import Document
 from frappe.utils.data import today
@@ -21,17 +22,67 @@ class DocumentApprovalRule(Document):
 			except Exception as e:
 				frappe.throw(f"Invalid Jinja condition: {str(e)}")
 
+	def is_syntax_valid_and_returning_bool(self):
+		from RestrictedPython import compile_restricted
+
+		if not self.condition:
+			return True
+
+		try:
+			compile_restricted(self.condition)
+		except Exception as e:
+			return False, frappe._(f"Error parsing approval rule condition:<br> <code>{e}</code>")
+
+		tree = ast.parse(self.condition)
+		last_statement = tree.body[-1]
+
+		if isinstance(last_statement, ast.Expr):
+			return_expr = last_statement.value
+		elif isinstance(last_statement, ast.Return):
+			return_expr = last_statement.value
+		else:
+			return False, frappe._("Condition should return a boolean value")
+
+		bool_exprs = (ast.Compare, ast.BoolOp, ast.UnaryOp)
+		bool_values = (ast.Constant,)
+
+		if isinstance(return_expr, bool_exprs) or (
+			isinstance(return_expr, bool_values) and isinstance(return_expr.value, bool)
+		):
+			return True, ""
+		return False, frappe._("Condition should return a boolean value")
+
+	@frappe.whitelist()
+	def test_condition(self, doctype: str, docname: str):
+		doc = frappe.get_doc(doctype, docname)
+
+		result, message = self.is_syntax_valid_and_returning_bool()
+		if not result:
+			return message
+
+		try:
+			result = self.apply(doc, dry=True)
+			if result:
+				return frappe._(f"Document Approval Rule applies to {doctype} {docname}")
+			return frappe._(f"Document Approval Rule does not apply to {doctype} {docname}")
+		except Exception as e:
+			return frappe._(f"Error: {e}")
+
 	def apply(
 		self,
 		doc: Document,
 		method: str | None = None,
 		doctype: str | None = None,
 		name: str | None = None,
+		dry: bool = False,
 	):
 		if frappe.flags.in_patch or frappe.flags.in_install or frappe.flags.in_setup_wizard:
 			return False
 
 		if not self.enabled:
+			return False
+
+		if self.skip_for_auto_repeat and doc.get("auto_repeat"):
 			return False
 
 		if not self.condition:

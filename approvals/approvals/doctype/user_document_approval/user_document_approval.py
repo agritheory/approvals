@@ -1,3 +1,6 @@
+# Copyright (c) 2025, AgriTheory and contributors
+# For license information, please see license.txt
+
 import frappe
 from frappe.model.document import Document
 from frappe.utils.data import today
@@ -26,9 +29,7 @@ class UserDocumentApproval(Document):
 		todo.description = "A document requires your approval"
 		todo.save(ignore_permissions=True)
 		create_approval_notification(
-			frappe._dict(
-				{"doctype": self.reference_doctype, "name": self.reference_name, "owner": frappe.session.user}
-			),
+			self,
 			self.approver,
 		)
 

@@ -13,6 +13,7 @@
 		"primary_assignee",
 		"last_user",
 		"assign_users",
+		"skip_for_auto_repeat",
 		"section_break_6",
 		"condition",
 		"section_break_4",
@@ -87,10 +88,16 @@
 			"fieldname": "assign_users",
 			"fieldtype": "Check",
 			"label": "Automatically Assign Users?"
+		},
+		{
+			"default": "0",
+			"fieldname": "skip_for_auto_repeat",
+			"fieldtype": "Check",
+			"label": "Skip for Auto Repeat"
 		}
 	],
 	"links": [],
-	"modified": "2024-07-09 09:33:59.721972",
+	"modified": "2025-07-22 06:19:01.366090",
 	"modified_by": "Administrator",
 	"module": "Approvals",
 	"name": "Document Approval Rule",
@@ -119,6 +126,7 @@
 			"share": 1
 		}
 	],
+	"row_format": "Dynamic",
 	"sort_field": "modified",
 	"sort_order": "DESC",
 	"states": [],

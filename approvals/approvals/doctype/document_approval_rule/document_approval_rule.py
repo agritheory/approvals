@@ -73,6 +73,9 @@ class DocumentApprovalRule(Document):
 		if not self.enabled:
 			return False
 
+		if self.skip_for_auto_repeat and doc.get("auto_repeat"):
+			return False
+
 		if not self.condition:
 			return True
 

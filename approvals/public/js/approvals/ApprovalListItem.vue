@@ -83,8 +83,10 @@ const approve = async () => {
 
 const reject = async () => {
 	let rejection_reason = ''
-	console.log('require_rejection_reason', props.require_rejection_reason)
-	if (props.require_rejection_reason) {
+	const response = await frappe.xcall('approvals.approvals.api.check_rejection_reason_required', {
+		doc: cur_frm.doc,
+	})
+	if (response == 1) {
 		const response = await approvals.provide_rejection_reason(cur_frm)
 		rejection_reason = response.rejection_reason
 	}

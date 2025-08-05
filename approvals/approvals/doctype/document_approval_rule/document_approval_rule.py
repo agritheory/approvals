@@ -7,11 +7,20 @@ from frappe.model.document import Document
 from frappe.utils.data import today
 from frappe.share import add as add_share
 from approvals.approvals.api import create_approval_notification
+from frappe import render_template
+from frappe.utils.jinja import validate_template
+from jinja2 import Environment, BaseLoader, TemplateSyntaxError, UndefinedError
 
 
 class DocumentApprovalRule(Document):
 	def validate(self):
 		self.title = f"{self.approval_doctype} - {self.approval_role}"
+
+		if self.condition:
+			try:
+				validate_template(self.condition)
+			except Exception as e:
+				frappe.throw(f"Invalid Jinja condition: {str(e)}")
 
 	def is_syntax_valid_and_returning_bool(self):
 		from RestrictedPython import compile_restricted
@@ -79,27 +88,142 @@ class DocumentApprovalRule(Document):
 		if not self.condition:
 			return True
 
-		# try:
-		eval_globals = frappe._dict(
-			{
-				"frappe": frappe._dict(
-					{
-						"get_value": frappe.db.get_value,
-						"get_all": frappe.db.get_all,
-					}
-				),
-				"any": any,
-				"all": all,
-			}
-		)
+		try:
+			result = self.evaluate_jinja_condition(doc)
+
+			if result and self.assign_users:
+				self.assign_user(doc)
+			return result
+
+		except Exception as e:
+			frappe.log_error(
+				f"Error evaluating approval rule condition for {self.title}: {str(e)}",
+				"Document Approval Rule Error",
+			)
+			return False
+
+	def evaluate_jinja_condition(self, doc: Document):
+		"""Evaluate Jinja-based condition"""
+		try:
+			context = self.get_jinja_context(doc)
+
+			# Create Jinja environment
+			jinja_env = Environment(loader=BaseLoader(), autoescape=True)
+			template = jinja_env.from_string(self.condition)
+			result = template.render(**context)
+
+			if isinstance(result, str):
+				result = result.strip().lower()
+				return result not in ["false", "0", "", "none", "null"]
+
+			return bool(result)
+
+		except TemplateSyntaxError as e:
+			frappe.log_error(
+				f"Jinja syntax error in approval rule {self.name}: {str(e)}",
+				"Document Approval Jinja Error",
+			)
+			return False
+
+		except UndefinedError as e:
+			frappe.log_error(
+				f"Undefined variable in approval rule {self.name}: {str(e)}",
+				"Document Approval Jinja Error",
+			)
+			return False
+
+	def get_jinja_context(self, doc: Document):
+		"""Prepare context for Jinja evaluation"""
 		settings = frappe.get_doc("Document Approval Settings")
-		eval_locals = {"doc": doc, "settings": settings.get_settings()}
-		result = frappe.safe_eval(self.condition, eval_globals=eval_globals, eval_locals=eval_locals)
-		if result and self.assign_users and not dry:
-			self.assign_user(doc)
-		return result
-		# except:
-		# 	frappe.throw(f'Error parsing approval rule conditions for {self.title}')
+
+		context = {
+			"doc": doc,
+			"settings": settings.get_settings(),
+			"frappe": frappe._dict(
+				{
+					"get_value": frappe.db.get_value,
+					"get_all": frappe.db.get_all,
+				}
+			),
+			"any": any,
+			"all": all,
+		}
+
+		context.update(self.get_account_context())
+		context.update(get_condition_context())
+		context.update(self.get_document_context(doc))
+
+		return context
+
+	def get_account_context(self):
+		"""Get account-related context variables"""
+		try:
+			expense_accounts = frappe.get_all(
+				"Account", filters={"account_type": "Expense Account"}, pluck="name"
+			)
+
+			tax_accounts = frappe.get_all(
+				"Account", filters={"account_type": ["in", ["Tax", "Chargeable"]]}, pluck="name"
+			)
+
+			income_accounts = frappe.get_all(
+				"Account", filters={"account_type": "Income Account"}, pluck="name"
+			)
+
+			asset_accounts = frappe.get_all(
+				"Account",
+				filters={"account_type": ["in", ["Fixed Asset", "Current Asset"]]},
+				pluck="name",
+			)
+
+			return {
+				"expense_accounts": expense_accounts,
+				"tax_accounts": tax_accounts,
+				"income_accounts": income_accounts,
+				"asset_accounts": asset_accounts,
+			}
+		except Exception as e:
+			frappe.log_error(f"Error getting account context: {str(e)}")
+			return {
+				"expense_accounts": [],
+				"tax_accounts": [],
+				"income_accounts": [],
+				"asset_accounts": [],
+			}
+
+	def get_document_context(self, doc: Document):
+		"""Get document-specific context variables"""
+		context = {}
+
+		if hasattr(doc, "doctype"):
+			if doc.doctype in [
+				"Purchase Invoice",
+				"Sales Invoice",
+				"Purchase Order",
+				"Sales Order",
+			]:
+				context.update(
+					{
+						"total_amount": getattr(doc, "grand_total", 0),
+						"net_amount": getattr(doc, "net_total", 0),
+						"tax_amount": getattr(doc, "total_taxes_and_charges", 0),
+						"company": getattr(doc, "company", ""),
+						"currency": getattr(doc, "currency", ""),
+						"supplier": getattr(doc, "supplier", ""),
+						"customer": getattr(doc, "customer", ""),
+					}
+				)
+
+				if hasattr(doc, "items") and doc.items:
+					context.update(
+						{
+							"item_count": len(doc.items),
+							"item_codes": [item.item_code for item in doc.items if item.item_code],
+							"item_groups": list({item.item_group for item in doc.items if item.item_group}),
+						}
+					)
+
+		return context
 
 	def get_message(self, doc: Document):
 		return frappe.render_template(self.message, doc.__dict__)
@@ -184,3 +308,15 @@ def get_users(role: str):
 			as_dict=True,
 		)
 	]
+
+
+def account_numbers(*args):
+	"""Returns a list of normalized account numbers"""
+	return list(args)
+
+
+def get_condition_context():
+	"""Get additional context functions for conditions"""
+	return {
+		"account_numbers": account_numbers,
+	}

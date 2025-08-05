@@ -4,14 +4,22 @@ on:
   push:
     branches:
       - version-14
+      - version-15
   pull_request:
     branches:
       - version-14
+      - version-15
+env:
+  BRANCH_NAME: ${{ github.base_ref || github.ref_name }}
 
 jobs:
   tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+      fail-fast: false
     name: Server
-    runs-on: ubuntu-latest
 
     services:
       mariadb:
@@ -35,9 +43,9 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 18
           check-latest: true
-          cache: 'yarn'
+          cache: 'yarn' # Replaces `Get yarn cache directory path` and `yarn-cache` steps
 
       - name: Add to Hosts
         run: echo "127.0.0.1 test_site" | sudo tee -a /etc/hosts
@@ -50,30 +58,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
             ${{ runner.os }}-
-
-      - name: Cache node modules
-        uses: actions/cache@v4
-        env:
-          cache-name: cache-node-modules
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
-
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: 'echo "::set-output name=dir::$(yarn cache dir)"'
-
-      - uses: actions/cache@v4
-        id: yarn-cache
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -88,6 +72,7 @@ jobs:
         env:
           MYSQL_HOST: 'localhost'
           MYSQL_PWD: 'admin'
+          BRANCH_NAME: ${{ env.BRANCH_NAME}}
         run: |
           bash ${{ github.workspace }}/.github/helper/install.sh
 
@@ -97,8 +82,6 @@ jobs:
           source env/bin/activate
           cd apps/approvals
           poetry install
-          playwright install --with-deps
-          bench build --app approvals
           pytest --cov=approvals --cov-report=xml --disable-warnings -s | tee pytest-coverage.txt
 
       - name: Pytest coverage comment

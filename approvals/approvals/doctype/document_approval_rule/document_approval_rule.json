@@ -17,7 +17,9 @@
 		"condition",
 		"section_break_4",
 		"message",
-		"title"
+		"title",
+		"section_break_lilq",
+		"condition_help"
 	],
 	"fields": [
 		{
@@ -93,10 +95,26 @@
 			"fieldtype": "Link",
 			"label": "Primary Rejection User",
 			"options": "User"
+		},
+		{
+			"default": "0",
+			"fieldname": "skip_for_auto_repeat",
+			"fieldtype": "Check",
+			"label": "Skip for Auto Repeat"
+		},
+		{
+			"fieldname": "section_break_lilq",
+			"fieldtype": "Section Break"
+		},
+		{
+			"fieldname": "condition_help",
+			"fieldtype": "HTML",
+			"label": "Condition Help",
+			"options": "<h4>Condition Example</h4>\n\n\n<h4>Basic field value check:</h4>\n<pre>{{ doc.total_amount &gt; 10000 }}\n</pre>\n<h4>Complex nested condition:</h4>\n<pre>{{ \n  any([i.expense_account in account_numbers('12345', '1.2.3.4') for i in doc.items]) or \n  any([i.account_head in account_numbers('12345', '1.2.3.4') for i in doc.taxes]) \n}}</pre>\n<h4>How to get fieldnames</h4>\n\n<p>The fieldnames you can use in your condition are the fields in the document from which you are using for approval. You can find out the fields of any documents via Setup &gt; Customize Form View and selecting the document type (e.g. Purchase Order)</p>\n\n<h4>Templating</h4>\n\n<p>Templates are compiled using the Jinja Templating Language. To learn more about Jinja, <a class=\"strong\" href=\"http://jinja.pocoo.org/docs/dev/templates/\">read this documentation.</a></p>\n"
 		}
 	],
 	"links": [],
-	"modified": "2024-07-25 09:24:46.626438",
+	"modified": "2025-07-31 04:59:06.977356",
 	"modified_by": "Administrator",
 	"module": "Approvals",
 	"name": "Document Approval Rule",

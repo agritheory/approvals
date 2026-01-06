@@ -1,5 +1,11 @@
-from setuptools import setup
+# Copyright (c) 2026, AgriTheory and contributors
+# For license information, please see license.txt
 
-name = "approvals"
+from setuptools import setup, find_packages
 
-setup()
+setup(
+	name="approvals",
+	packages=find_packages(),
+	include_package_data=True,
+	zip_safe=False,
+)

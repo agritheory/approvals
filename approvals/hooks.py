@@ -124,7 +124,7 @@ scheduler_events = {
 	# 	"daily": [
 	# 		"approvals.tasks.daily"
 	# 	],
-	"hourly": ["approvals.tasks.hourly"],
+	# "hourly": ["approvals.tasks.hourly"],
 	# 	"weekly": [
 	# 		"approvals.tasks.weekly"
 	# 	],

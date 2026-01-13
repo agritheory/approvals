@@ -1,3 +1,12 @@
+[project]
+name = "approvals"
+authors = [
+    { name = "AgriTheory", email = "support@agritheory.dev" }
+]
+description = "Customizable Approval Workflows"
+requires-python = ">=3.10"
+readme = "README.md"
+
 [tool.poetry]
 version = "15.3.3"
 name = "approvals"

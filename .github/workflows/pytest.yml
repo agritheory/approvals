@@ -61,6 +61,8 @@ jobs:
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
+        with:
+          version: 1.8.2 
 
       - name: Install JS Dependencies
         run: yarn --prefer-offline

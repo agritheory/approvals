@@ -1,5 +1,6 @@
 [project]
 name = "approvals"
+version = "15.3.3"
 authors = [
     { name = "AgriTheory", email = "support@agritheory.dev" }
 ]

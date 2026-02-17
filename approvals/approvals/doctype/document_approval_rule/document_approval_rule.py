@@ -290,24 +290,25 @@ class DocumentApprovalRule(Document):
 
 @frappe.whitelist()
 def get_users(role: str):
-	return [
-		i["parent"]
-		for i in frappe.db.sql(
-			"""
-	SELECT `tabHas Role`.parent
-	FROM `tabHas Role`, `tabUser`
-	WHERE
-		`tabHas Role`.role = %(role)s
-		AND `tabHas Role`.parent = `tabUser`.name
-		AND `tabUser`.enabled = 1
-		AND `tabUser`.user_type = 'System User'
-		AND `tabUser`.name != 'Administrator'
-	ORDER BY parent
-	""",
-			{"role": role},
-			as_dict=True,
+	has_role = frappe.qb.DocType("Has Role")
+	user = frappe.qb.DocType("User")
+
+	result = (
+		frappe.qb.from_(has_role)
+		.join(user)
+		.on(has_role.parent == user.name)
+		.select(has_role.parent)
+		.where(
+			(has_role.role == role)
+			& (user.enabled == 1)
+			& (user.user_type == "System User")
+			& (user.name != "Administrator")
 		)
-	]
+		.orderby(has_role.parent)
+		.run(as_dict=True)
+	)
+
+	return [d["parent"] for d in result]
 
 
 def account_numbers(*args):

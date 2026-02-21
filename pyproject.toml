@@ -1,3 +1,14 @@
+[project]
+name = "approvals"
+version = "15.3.3"
+authors = [
+    { name = "AgriTheory", email = "support@agritheory.dev" }
+]
+description = "Customizable Approval Workflows"
+readme = "README.md"
+requires-python = ">=3.10"
+dynamic = ["dependencies"]
+
 [tool.poetry]
 version = "15.3.3"
 name = "approvals"
@@ -16,6 +27,10 @@ playwright = "^1.45.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.bench.frappe-dependencies]
+frappe = ">=15.0.0,<16.0.0"
+erpnext = ">=15.0.0,<16.0.0"
 
 [tool.pytest.ini_options]
 addopts = "--cov=approvals --cov-report term-missing"

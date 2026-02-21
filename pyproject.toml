@@ -9,13 +9,6 @@ readme = "README.md"
 requires-python = ">=3.10"
 dynamic = ["dependencies"]
 
-[tool.poetry]
-version = "15.3.3"
-name = "approvals"
-authors = ["AgriTheory <support@agritheory.dev>"]
-description = "Customizable Approval Workflows"
-readme = "README.md"
-
 [tool.poetry.dependencies]
 python = "^3.10"
 
@@ -48,7 +41,7 @@ ensure_newline_before_comments = true
 indent = "\t"
 
 [tool.semantic_release]
-version_toml = ["pyproject.toml:tool.poetry.version"]
+version_toml = ["pyproject.toml:project.version"]
 
 [tool.semantic_release.branches.version]
 match = "version-15"

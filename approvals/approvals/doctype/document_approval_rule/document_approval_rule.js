@@ -1,3 +1,6 @@
+// Copyright (c) 2026, AgriTheory and contributors
+// For license information, please see license.txt
+
 frappe.ui.form.on('Document Approval Rule', {
 	refresh: function (frm) {
 		frm.add_custom_button(__('Test Condition'), function () {

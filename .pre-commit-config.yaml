@@ -11,13 +11,21 @@ repos:
         exclude: '.*json$|.*txt$|.*csv|.*md|.*svg'
       - id: check-yaml
       - id: no-commit-to-branch
-        args: ['--branch', 'develop']
+        args: ['--branch', 'version-15', '--branch', 'version-16']
       - id: check-merge-conflict
       - id: check-ast
       - id: check-json
       - id: check-toml
-      - id: check-yaml
       - id: debug-statements
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.1
+    hooks:
+      - id: codespell
+        args: ['--ignore-words-list', 'notin']
+        exclude: 'yarn.lock|poetry.lock'
+        additional_dependencies:
+          - tomli
 
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.19.1
@@ -36,31 +44,21 @@ repos:
       - id: flake8
         additional_dependencies: ['flake8-bugbear']
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.15.0
-    hooks:
-      - id: mypy
-        exclude: ^tests/
-        args: [--ignore-missing-imports]
-
-  - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.1
-    hooks:
-      - id: codespell
-        additional_dependencies:
-          - tomli
-
   - repo: https://github.com/agritheory/test_utils
-    rev: v1.14.0
+    rev: v1.15.3
     hooks:
       - id: update_pre_commit_config
+      - id: validate_frappe_project
       - id: validate_copyright
         files: '\.(js|ts|py|md)$'
         args: ['--app', 'approvals']
+      - id: bylines
+        exclude: 'README.md|CHANGELOG.md'
       - id: clean_customized_doctypes
         args: ['--app', 'approvals']
       - id: validate_customizations
-      - id: validate_python_dependencies
+      - id: patch_linters
+        args: ['--app', 'approvals']
 
   - repo: local
     hooks:

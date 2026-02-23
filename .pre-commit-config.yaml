@@ -4,7 +4,7 @@ fail_fast: false
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         files: 'approvals.*'
@@ -57,10 +57,12 @@ repos:
       - id: clean_customized_doctypes
         args: ['--app', 'approvals']
       - id: validate_customizations
-      - id: patch_linters
+      - id: validate_patches
         args: ['--app', 'approvals']
       - id: track_overrides
         args: ['--directory', '.', '--app', 'approvals', '--base-branch', 'version-15']
+      - id: check_code_duplication
+        args: ['--max-clones', '60', '--max-percentage', '5.0']
 
   - repo: local
     hooks:

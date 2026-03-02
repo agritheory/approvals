@@ -518,7 +518,3 @@ Initial version-15 release
 * keep test purchase invoices as drafts ([2094b05](https://github.com/agritheory/approvals/commit/2094b05eb3e2e85ce6fa07459ed9e9d2c1b83729))
 * prevent disabled rules from being applied ([a1f628a](https://github.com/agritheory/approvals/commit/a1f628a7d7fe6c69eddf30a91f2210553472385d))
 * update test client script to load Vue components ([66cc58d](https://github.com/agritheory/approvals/commit/66cc58d44a6202988ce993acd9111c687fad1f01))
-
-
-
-

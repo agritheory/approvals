@@ -1,12 +1,6 @@
 <!-- Copyright (c) 2026, AgriTheory and contributors
 For license information, please see license.txt-->
 
-<<<<<<< Updated upstream
-<!-- Copyright (c) 2026, AgriTheory and contributors
-For license information, please see license.txt-->
-
-# CHANGELOG
-=======
 # Changelog
 
 This changelog was automatically generated from GitHub releases and pull requests.
@@ -119,7 +113,6 @@ Backported validation for Python in condition fields for Document Approval Rules
 ## [v15.2.0] - 2024-10-17
 
 ### Release Notes
->>>>>>> Stashed changes
 
 ## v15.2.0 (2024-10-17)
 

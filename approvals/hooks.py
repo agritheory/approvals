@@ -15,8 +15,8 @@ required_apps = ["erpnext", "hrms"]
 # ------------------
 
 # include js, css files in header of desk.html
-app_include_css = ["/assets/approvals/dist/js/approvals.css"]
-# app_include_js = "/assets/approvals/js/approvals.js"
+app_include_css = ["/assets/approvals/dist/js/assets/approvals.css"]
+app_include_js = ["approvals.bundle.js"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/approvals/css/approvals.css"
@@ -106,13 +106,11 @@ after_install = "approvals.install.after_install"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"*": {
+		"on_update": "approvals.approvals.api.assign_approvers",
+	},
+}
 
 # Scheduled Tasks
 # ---------------

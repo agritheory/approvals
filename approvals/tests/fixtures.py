@@ -1,6 +1,9 @@
+# Copyright (c) 2026, AgriTheory and contributors
+# For license information, please see license.txt
+
 suppliers = [
 	("Exceptional Grid", "Electricity", "Credit Card", 150.00),
-	("Liu & Loewen Accountants LLP", "Accounting Services", "Check", 500.00),
+	("Liu & Loewen Accountants LLP", "Accounting Services", "Check", 750.00),
 	("Mare Digitalis", "Cloud Services", "Credit Card", 200.00),
 	("AgriTheory", "ERPNext Consulting", "Check", 1000.00),
 	("HIJ Telecom, Inc", "Internet Services", "Check", 150.00),
@@ -17,42 +20,42 @@ document_approval_rules = [
 		"approval_doctype": "Purchase Order",
 		"approval_role": "Accounts Manager",
 		"primary_assignee": "mbritt@cfc.co",
-		"condition": "doc.grand_total > 1000.00",
+		"condition": "{{ doc.grand_total > 1000 }}",
 		"enabled": 1,
 	},
 	{
 		"approval_doctype": "Purchase Invoice",
 		"approval_role": "Accounts Manager",
 		"primary_assignee": "mbritt@cfc.co",
-		"condition": "doc.grand_total > 1000.00",
+		"condition": "{{ doc.grand_total > 1000 }}",
 		"enabled": 1,
 	},
 	{
 		"approval_doctype": "Purchase Order",
 		"approval_role": "Stock Manager",
 		"primary_assignee": "mmckay@cfc.co",
-		"condition": "200.00 < doc.grand_total < 500.00",
+		"condition": "{{ doc.grand_total > 200 and doc.grand_total < 500 }}",
 		"enabled": 1,
 	},
 	{
 		"approval_doctype": "Purchase Invoice",
 		"approval_role": "Stock Manager",
 		"primary_assignee": "mmckay@cfc.co",
-		"condition": "200.00 < doc.grand_total < 500.00",
+		"condition": "{{ doc.grand_total > 200 and doc.grand_total < 500 }}",
 		"enabled": 1,
 	},
 	{
 		"approval_doctype": "Purchase Order",
 		"approval_role": "Sales Manager",
 		"primary_assignee": "arivers@cfc.co",
-		"condition": "500.00 < doc.grand_total < 1000.00",
+		"condition": "{{ doc.grand_total > 500 and doc.grand_total < 1000 }}",
 		"enabled": 1,
 	},
 	{
 		"approval_doctype": "Purchase Invoice",
 		"approval_role": "Sales Manager",
 		"primary_assignee": "arivers@cfc.co",
-		"condition": "500.00 < doc.grand_total < 1000.00",
+		"condition": "{{ doc.grand_total > 500 and doc.grand_total < 1000 }}",
 		"enabled": 1,
 	},
 ]

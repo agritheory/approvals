@@ -1,3 +1,6 @@
+# Copyright (c) 2026, AgriTheory and contributors
+# For license information, please see license.txt
+
 import datetime
 import os
 
@@ -58,7 +61,11 @@ def create_test_data():
 	create_items(settings)
 	create_document_approval_settings(settings)
 	create_pi_document_approval_rules(settings)
-	create_client_scripts(settings)
+	# Removed: create_client_scripts(settings)
+	# Client Scripts masked integration bugs by manually loading the approvals bundle.
+	# With hooks.py now properly configured (app_include_js, doc_events),
+	# the bundle loads globally and assign_approvers runs on document updates.
+	# Playwright (already a dev dep) can be used for E2E integration tests.
 	create_purchase_orders(settings)
 	create_invoices(settings)
 	dismiss_onboarding(settings)

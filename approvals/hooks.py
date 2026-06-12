@@ -1,3 +1,6 @@
+# Copyright (c) 2025, AgriTheory and contributors
+# For license information, please see license.txt
+
 from . import __version__ as app_version
 
 app_name = "approvals"
@@ -12,8 +15,8 @@ required_apps = ["erpnext", "hrms"]
 # ------------------
 
 # include js, css files in header of desk.html
-app_include_css = ["/assets/approvals/dist/js/approvals.css"]
-# app_include_js = "/assets/approvals/js/approvals.js"
+app_include_css = ["/assets/approvals/dist/js/assets/approvals.css"]
+app_include_js = ["approvals.bundle.js"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/approvals/css/approvals.css"
@@ -103,32 +106,30 @@ after_install = "approvals.install.after_install"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"*": {
+		"on_update": "approvals.approvals.api.assign_approvers",
+	},
+}
 
 # Scheduled Tasks
 # ---------------
 
-scheduler_events = {
-	# 	"all": [
-	# 		"approvals.tasks.all"
-	# 	],
-	# 	"daily": [
-	# 		"approvals.tasks.daily"
-	# 	],
-	"hourly": ["approvals.tasks.hourly"],
-	# 	"weekly": [
-	# 		"approvals.tasks.weekly"
-	# 	],
-	# 	"monthly": [
-	# 		"approvals.tasks.monthly"
-	# 	],
-}
+# scheduler_events = {
+# 	"all": [
+# 		"approvals.tasks.all"
+# 	],
+# 	"daily": [
+# 		"approvals.tasks.daily"
+# 	],
+# "hourly": ["approvals.tasks.hourly"],
+# 	"weekly": [
+# 		"approvals.tasks.weekly"
+# 	],
+# 	"monthly": [
+# 		"approvals.tasks.monthly"
+# 	],
+# }
 
 # Testing
 # -------

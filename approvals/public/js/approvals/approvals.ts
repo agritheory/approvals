@@ -1,3 +1,6 @@
+// Copyright (c) 2026, AgriTheory and contributors
+// For license information, please see license.txt
+
 import { createApp } from 'vue'
 
 import ApprovalList from './ApprovalList.vue'
@@ -15,6 +18,9 @@ frappe.get_form_sidebar_extension = () => {
 }
 
 approvals.load_approvals = frm => {
+	if (approvals.Approvals) {
+		approvals.Approvals.unmount()
+	}
 	const approvals_section = document.getElementById('approvals-section')
 	const app = createApp(ApprovalList)
 	app.mount(approvals_section!)
@@ -119,3 +125,8 @@ approvals.remove_approver_dialog = (user_approvals: (string | undefined)[]) => {
 		dialog.get_close_btn()
 	})
 }
+
+$(document).on('form-refresh', (_e, frm) => {
+	if (frm.is_new()) return
+	approvals.load_approvals(frm)
+})

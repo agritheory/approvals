@@ -79,10 +79,11 @@ jobs:
       - name: Run Tests
         working-directory: /home/runner/frappe-bench
         run: |
-          source env/bin/activate
-          cd apps/approvals
-          poetry install
-          pytest --cov=approvals --cov-report=xml --disable-warnings -s | tee pytest-coverage.txt
+          env/bin/python -m pytest apps/approvals/approvals/tests \
+            --cov=approvals \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --disable-warnings -s | tee apps/approvals/pytest-coverage.txt
 
       - name: Pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main

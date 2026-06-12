@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Usage
 
 <div class="byline">
-  Tyler Matteson 2026-03-02
+  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-06-12
 </div>
 
 ## Finding Documents That Need Approval
@@ -53,7 +53,7 @@ The added user automatically receives read and write access to the document if t
 
 ## Understanding the Approval Panel
 
-The sidebar panel shows the status of each required approval when the document is in the workflow's Approval State. While in that state, the form is read-only for editing.
+The sidebar panel shows the status of each required approval when the document is in the workflow's Approval State. While the document is in Approval State, the form is read-only for editing. After approval completes and the document moves to another state, normal editing resumes.
 
 Pending approvals show who the approval is assigned to. "You" means it is waiting on the current user.
 

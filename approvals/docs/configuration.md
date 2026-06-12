@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Configuration
 
 <div class="byline">
-  Tyler Matteson 2026-03-02
+  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-06-12
 </div>
 
 ## Creating an Approval Rule
@@ -32,10 +32,10 @@ Conditions are Jinja templates that evaluate against the document. When the cond
 {{ doc.grand_total > 10000 }}
 ```
 
-**Require approval when items hit capital expense accounts:**
+**Require approval when items hit specific expense accounts:**
 
 ```jinja
-{{ any([i.expense_account in account_numbers('6100', '6200') for i in doc.items]) }}
+{{ any([i.expense_account in account_numbers('Capital Equipment - CO', 'Office Supplies - CO') for i in doc.items]) }}
 ```
 
 **Require approval for a specific supplier:**
@@ -59,7 +59,7 @@ Conditions have access to the full document as `doc`, plus several helpers:
 - `doc.fieldname` accesses any field on the document
 - `doc.items` accesses child table rows for iteration
 - `expense_accounts`, `income_accounts`, `tax_accounts`, and `asset_accounts` are pre-fetched lists of account names by type
-- `account_numbers('5000', '5100')` creates a list of account numbers to check against
+- `account_numbers('Capital Equipment - CO', 'Office Supplies - CO')` returns a list of exact account names to check against. Pass each account name as it appears in ERPNext; the helper does not expand ranges.
 - `any()` and `all()` are Python built-ins for checking lists
 - `frappe.get_value()` and `frappe.get_all()` perform database lookups when related data is needed
 
@@ -89,6 +89,10 @@ When a rule matches, someone needs to review the document. There are two approac
 
 When Automatically Assign Users is unchecked, the rule still requires the role's approval, but no ToDo is created. Users with the role can still approve from the document. They just do not receive a notification.
 
+### Skipping Auto Repeat Documents
+
+Check **Skip for Auto Repeat** on a rule when documents created by Auto Repeat should not trigger that rule. When enabled and the document has an `auto_repeat` value set, the rule is bypassed entirely. Use this for recurring documents that were already approved on the original and should not require a fresh approval cycle each time they are generated.
+
 ## Setting Up a Fallback
 
 When a document matches a DocType that has approval rules configured, but none of those rules apply, the system needs a fallback. Without configuration, it throws an error.
@@ -99,11 +103,34 @@ A specific Fallback Approver user can also be set. Unmatched documents then alwa
 
 The fallback does not apply to DocTypes with no approval rules at all. Those DocTypes do not show the approval sidebar.
 
+## Using Settings in Conditions
+
+Document Approval Settings includes a **Settings** field that accepts arbitrary JSON. The parsed values are available in every condition template as `settings`.
+
+Store thresholds, account lists, or other site-specific values in the JSON blob instead of hard-coding them in each rule. For example, set the Settings field to:
+
+```json
+{
+  "approval_threshold": 10000,
+  "high_risk_suppliers": ["SUPPLIER-001", "SUPPLIER-002"]
+}
+```
+
+Then reference those values in a condition:
+
+```jinja
+{{ doc.grand_total > settings.approval_threshold or doc.supplier in settings.high_risk_suppliers }}
+```
+
+Changes to the settings JSON apply to all rules immediately. No code changes are required.
+
 ## Email Reminders
 
-Users can forget they have documents waiting. Daily reminder emails list all pending approvals for each user.
+Users can forget they have documents waiting. Reminder emails list all pending approvals for each user.
 
-1. In Document Approval Settings, set Reminder Email Hour to when reminders should send (0-23, in server time).
+The app ships with `send_reminder_email()` but does not register a scheduled job by default. Reminders run only when something calls that function on a schedule.
+
+1. In Document Approval Settings, set Reminder Email Hour to when reminders should send (0-23, in server time). The function sends only during that hour.
 
 2. Add this to the site's `site_config.json`:
 
@@ -114,6 +141,8 @@ Users can forget they have documents waiting. Daily reminder emails list all pen
   }
 }
 ```
+
+3. Wire up a scheduled job that calls `approvals.approvals.api.send_reminder_email`. For example, add an hourly entry to `scheduler_events` in the app's `hooks.py` or call the function from a custom bench task on the desired cadence.
 
 ## Connecting to Workflows
 

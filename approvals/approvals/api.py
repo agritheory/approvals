@@ -209,8 +209,8 @@ def approve_document(
 	if checked_all:
 		doc = frappe.get_doc(doc.doctype, doc.name)
 		if doc.meta.is_submittable:
+			doc.flags.ignore_permissions = True
 			doc.submit()
-			doc.set_status(update=True, status="Approved")
 		else:
 			action = get_non_submittable_approval_action(doc)
 			if action:

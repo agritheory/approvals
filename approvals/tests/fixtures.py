@@ -143,32 +143,32 @@ document_approval_rules = [
 	{
 		"approval_doctype": "Purchase Order",
 		"approval_role": "Stock Manager",
-		"primary_assignee": "mmckay@cfc.co",
+		"primary_assignee": "arivers@cfc.co",
 		"condition": "{{ doc.grand_total > 200 and doc.grand_total < 500 }}",
 		"enabled": 1,
 	},
 	{
 		"approval_doctype": "Purchase Invoice",
 		"approval_role": "Stock Manager",
-		"primary_assignee": "mmckay@cfc.co",
+		"primary_assignee": "arivers@cfc.co",
 		"condition": "{{ doc.grand_total > 200 and doc.grand_total < 500 }}",
 		"enabled": 1,
 	},
 	{
 		"approval_doctype": "Purchase Order",
 		"approval_role": "Sales Manager",
-		"primary_assignee": "arivers@cfc.co",
+		"primary_assignee": "mmckay@cfc.co",
 		"condition": "{{ doc.grand_total > 500 and doc.grand_total < 1000 }}",
 		"enabled": 1,
 	},
 	{
 		"approval_doctype": "Purchase Invoice",
 		"approval_role": "Sales Manager",
-		"primary_assignee": "arivers@cfc.co",
+		"primary_assignee": "mmckay@cfc.co",
 		"condition": "{{ doc.grand_total > 500 and doc.grand_total < 1000 }}",
 		"enabled": 1,
 	},
-	customer_credit_limit_approval_rule | {"primary_assignee": "arivers@cfc.co"},
+	customer_credit_limit_approval_rule | {"primary_assignee": "mmckay@cfc.co"},
 ]
 
 

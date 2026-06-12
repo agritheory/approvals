@@ -163,10 +163,17 @@ def create_invoices(settings):
 
 def create_pi_document_approval_rules(settings=None):
 	for d in document_approval_rules:
-		if frappe.db.exists(
+		existing_name = frappe.db.get_value(
 			"Document Approval Rule",
 			{"approval_doctype": d.get("approval_doctype"), "approval_role": d.get("approval_role")},
-		):
+			"name",
+		)
+		if existing_name:
+			dar = frappe.get_doc("Document Approval Rule", existing_name)
+			for field in ("primary_assignee", "condition", "enabled", "message"):
+				if d.get(field) is not None:
+					dar.set(field, d[field])
+			dar.save()
 			continue
 		dar = frappe.new_doc("Document Approval Rule")
 		dar.approval_doctype = d.get("approval_doctype")

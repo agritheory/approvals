@@ -3,9 +3,8 @@
 
 import frappe
 
-from approvals.approvals.api import approve_document
 from approvals.tests.fixtures import customer_credit_limit_workflow
-from approvals.tests.setup import create_customer_custom_fields, sync_workflow_from_fixture
+from approvals.tests.setup import sync_workflow_from_fixture
 
 
 def test_customer_credit_limit_approval_workflow():
@@ -19,7 +18,7 @@ def test_customer_credit_limit_approval_workflow():
 	| Sales Manager approves  |    $10,000   |       $10,000 | Approved         |
 	| Credit limit raised     |    $20,000   |       $10,000 | Pending Approval |
 	"""
-	create_customer_custom_fields()
+	frappe.set_user("Administrator")
 	workflow_name = frappe.db.get_value("Workflow", {"document_type": "Customer"}, "name")
 	if workflow_name:
 		sync_workflow_from_fixture(workflow_name, customer_credit_limit_workflow)
@@ -48,19 +47,34 @@ def test_customer_credit_limit_approval_workflow():
 		{
 			"reference_type": "Customer",
 			"reference_name": customer.name,
-			"allocated_to": "arivers@cfc.co",
+			"allocated_to": "mmckay@cfc.co",
 			"status": "Open",
 		},
 	)
 
-	frappe.set_user("mmckay@cfc.co")
-	approve_document(doc=customer, role="Sales Manager", user="mmckay@cfc.co")
+	approver = "mmckay@cfc.co"
+	frappe.set_user(approver)
+	frappe.call(
+		"approvals.approvals.api.approve_document",
+		doc=frappe.as_json(customer.as_dict()),
+		role="Sales Manager",
+		user=approver,
+	)
 	frappe.set_user("Administrator")
 
 	customer.reload()
 	assert customer.docstatus == 0
 	assert customer.workflow_state == "Approved"
 	assert customer.last_approved_credit_limit == 10000
+	assert frappe.db.exists(
+		"Document Approval",
+		{
+			"reference_doctype": "Customer",
+			"reference_name": customer.name,
+			"approver": approver,
+			"approval_role": "Sales Manager",
+		},
+	)
 
 	customer.credit_limits[0].credit_limit = 20000
 	customer.save()

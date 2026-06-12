@@ -13,11 +13,19 @@ from frappe.query_builder import DocType
 from frappe.utils import cint, get_datetime
 from frappe.utils.data import get_url_to_form
 from frappe.share import add as add_share
-from frappe.model.workflow import apply_workflow
+from approvals.approvals.workflow import apply_workflow
+from approvals.approvals.workflow import evaluate_workflow_template
+
 
 if TYPE_CHECKING:
 	from approvals.approvals.doctype.document_approval_rule.document_approval_rule import (
 		DocumentApprovalRule,
+	)
+
+
+def doctype_has_approval_rules(doctype: str) -> bool:
+	return bool(
+		frappe.db.exists("Document Approval Rule", {"approval_doctype": doctype, "enabled": 1})
 	)
 
 
@@ -46,6 +54,8 @@ def get_approval_roles(doc: Document | frappe._dict, method: str | None = None):
 	roles.extend(user_approvals)
 
 	if not roles:
+		if not doctype_has_approval_rules(doc.doctype):
+			return user_approvals
 		fallback_approver = settings.fallback_approver_role
 		if not fallback_approver:
 			frappe.throw(
@@ -72,7 +82,21 @@ def get_document_approvals(doc: Document | frappe._dict, method: str | None = No
 def fetch_approvals_and_roles(doc: Document | str, method: str | None = None):
 	doc = frappe.get_doc(json.loads(doc)) if isinstance(doc, str) else doc
 	if doc.get("__islocal"):
-		return
+		return {
+			"approvals": [],
+			"approval_state": None,
+			"require_rejection_reason": None,
+			"workflow_exists": bool(get_workflow_name(doc.doctype)),
+			"show_approvals": False,
+		}
+	if not doctype_has_approval_rules(doc.doctype):
+		return {
+			"approvals": [],
+			"approval_state": None,
+			"require_rejection_reason": None,
+			"workflow_exists": bool(get_workflow_name(doc.doctype)),
+			"show_approvals": False,
+		}
 	roles = get_approval_roles(doc)
 	approvals = get_document_approvals(doc)
 	user_roles = [
@@ -114,6 +138,8 @@ def fetch_approvals_and_roles(doc: Document | str, method: str | None = None):
 		"approvals": add_roles,
 		"approval_state": approval_state,
 		"require_rejection_reason": require_rejection_reason,
+		"workflow_exists": bool(get_workflow_name(doc.doctype)),
+		"show_approvals": True,
 	}
 
 
@@ -125,6 +151,28 @@ def check_rejection_reason_required(doc: Document | str, method: str | None = No
 	)
 
 	return require_rejection_reason
+
+
+def get_non_submittable_approval_action(doc: Document) -> str | None:
+	workflow_name = get_workflow_name(doc.doctype)
+	if not workflow_name:
+		return None
+
+	workflow = frappe.get_doc("Workflow", workflow_name)
+	approved_state = next(
+		(
+			state.state for state in workflow.states if state.is_approved_state_for_non_submittable_document
+		),
+		None,
+	)
+	if not approved_state:
+		return None
+
+	current_state = doc.get(workflow.workflow_state_field)
+	for transition in workflow.transitions:
+		if transition.state == current_state and transition.next_state == approved_state:
+			return transition.action
+	return None
 
 
 @frappe.whitelist()
@@ -161,11 +209,14 @@ def approve_document(
 	if checked_all:
 		doc = frappe.get_doc(doc.doctype, doc.name)
 		if doc.meta.is_submittable:
+			doc.flags.ignore_permissions = True
 			doc.submit()
-			doc.set_status(update=True, status="Approved")
 		else:
-			doc.save(ignore_permissions=True)
-			doc.set_status(update=True, status="Approved")
+			action = get_non_submittable_approval_action(doc)
+			if action:
+				apply_workflow(doc, action)
+			else:
+				doc.save(ignore_permissions=True)
 
 	return approval
 
@@ -225,16 +276,56 @@ def revoke_approvals_on_reject(doc: Document, method: str | None = None):
 	for approval in frappe.get_all(
 		"Document Approval", filters={"reference_doctype": doc.doctype, "reference_name": doc.name}
 	):
-		frappe.get_doc("Document Approval", approval).delete()
+		frappe.get_doc("Document Approval", approval).delete(ignore_permissions=True)
 	for approval in frappe.get_all(
 		"User Document Approval",
 		filters={"reference_doctype": doc.doctype, "reference_name": doc.name},
 	):
-		frappe.get_doc("User Document Approval", approval).delete()
+		frappe.get_doc("User Document Approval", approval).delete(ignore_permissions=True)
+
+
+def reset_to_reapproval_state_if_needed(doc: Document, method: str | None = None):
+	workflow_name = get_workflow_name(doc.doctype)
+	if not workflow_name:
+		return
+
+	workflow = frappe.get_cached_doc("Workflow", workflow_name)
+	condition = workflow.get("reapproval_condition")
+	approval_state = workflow.get("approval_state")
+	if not condition or not approval_state:
+		return
+
+	state_field = workflow.workflow_state_field
+	if doc.get(state_field) == approval_state:
+		return
+
+	try:
+		needs_reapproval = evaluate_workflow_template(condition, doc)
+	except Exception:
+		frappe.log_error(
+			f"Error evaluating reapproval condition for {doc.doctype} {doc.name}",
+			"Workflow Reapproval Condition Error",
+		)
+		return
+
+	if not needs_reapproval:
+		return
+
+	revoke_approvals_on_reject(doc, method)
+	frappe.db.set_value(
+		doc.doctype,
+		doc.name,
+		state_field,
+		approval_state,
+		update_modified=False,
+	)
+	doc.set(state_field, approval_state)
 
 
 @frappe.whitelist()
 def assign_approvers(doc: Document, method: str | None = None):
+	reset_to_reapproval_state_if_needed(doc, method)
+
 	roles = frappe.get_all(
 		"Document Approval Rule", {"approval_doctype": doc.doctype}, pluck="approval_role"
 	)

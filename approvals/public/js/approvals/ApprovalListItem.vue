@@ -34,6 +34,7 @@ import type { Approval } from './ApprovalList.vue'
 declare const approvals: any
 declare const cur_frm: any
 declare const frappe: any
+declare const __: any
 
 const emit = defineEmits(['documentapproval'])
 
@@ -45,7 +46,7 @@ const props = defineProps<{
 }>()
 
 const isApproveable = computed(() => {
-	const workflowStateField = frappe.workflow.state_fields[cur_frm.doc.doctype]
+	const workflowStateField = frappe.workflow.get_state_fieldname(cur_frm.doc.doctype)
 	if (workflowStateField) {
 		return (
 			cur_frm.doc.docstatus === 0 &&

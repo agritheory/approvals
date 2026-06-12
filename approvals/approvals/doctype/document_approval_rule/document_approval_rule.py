@@ -259,6 +259,7 @@ class DocumentApprovalRule(Document):
 			},
 		):
 			return
+
 		if not frappe.has_permission(doc.doctype, ptype="read", user=user, doc=doc.name):
 			add_share(doc.doctype, doc.name, user, read=True, write=True, share=True)
 		if not frappe.db.get_value(
@@ -267,6 +268,7 @@ class DocumentApprovalRule(Document):
 				"allocated_to": user,
 				"reference_type": doc.doctype,
 				"reference_name": doc.name,
+				"status": "Open",
 			},
 		):
 			todo = frappe.new_doc("ToDo")

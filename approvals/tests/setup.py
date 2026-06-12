@@ -15,7 +15,9 @@ from approvals.tests.fixtures import (
 	tax_authority,
 	employees,
 	workflows,
+	customers,
 )
+from approvals.tests.fixtures import customer_custom_fields
 
 
 def before_test():
@@ -53,22 +55,46 @@ def create_test_data():
 				int(frappe.defaults.get_defaults().get("fiscal_year", datetime.datetime.now().year)), 1, 1
 			),
 			"company": frappe.defaults.get_defaults().get("company"),
+			"language": "en-US",
+			"time_zone": "America/New_York",
 		}
 	)
+	create_customer_custom_fields()
 	create_workflows()
 	create_employees(settings)
 	create_suppliers(settings)
 	create_items(settings)
 	create_document_approval_settings(settings)
 	create_pi_document_approval_rules(settings)
-	# Removed: create_client_scripts(settings)
-	# Client Scripts masked integration bugs by manually loading the approvals bundle.
-	# With hooks.py now properly configured (app_include_js, doc_events),
-	# the bundle loads globally and assign_approvers runs on document updates.
-	# Playwright (already a dev dep) can be used for E2E integration tests.
+	create_customers(settings)
 	create_purchase_orders(settings)
 	create_invoices(settings)
 	dismiss_onboarding(settings)
+
+
+def create_customers(settings):
+	customer_group = frappe.db.get_value("Customer Group", {"is_group": 0}, "name")
+	for customer_name, credit_limit in customers:
+		customer = frappe.new_doc("Customer")
+		customer.customer_name = customer_name
+		customer.customer_type = "Company"
+		customer.customer_group = customer_group
+		customer.append(
+			"credit_limits",
+			{"company": settings.company, "credit_limit": credit_limit},
+		)
+		customer.save()
+
+
+def create_customer_custom_fields():
+	for field in customer_custom_fields:
+		if frappe.db.exists("Custom Field", {"dt": field["dt"], "fieldname": field["fieldname"]}):
+			continue
+		custom_field = frappe.new_doc("Custom Field")
+		custom_field.update(field)
+		custom_field.insert(ignore_permissions=True)
+
+	frappe.clear_cache(doctype="Customer")
 
 
 def create_suppliers(settings):
@@ -137,6 +163,18 @@ def create_invoices(settings):
 
 def create_pi_document_approval_rules(settings=None):
 	for d in document_approval_rules:
+		existing_name = frappe.db.get_value(
+			"Document Approval Rule",
+			{"approval_doctype": d.get("approval_doctype"), "approval_role": d.get("approval_role")},
+			"name",
+		)
+		if existing_name:
+			dar = frappe.get_doc("Document Approval Rule", existing_name)
+			for field in ("primary_assignee", "condition", "enabled", "message"):
+				if d.get(field) is not None:
+					dar.set(field, d[field])
+			dar.save()
+			continue
 		dar = frappe.new_doc("Document Approval Rule")
 		dar.approval_doctype = d.get("approval_doctype")
 		dar.approval_role = d.get("approval_role")
@@ -176,6 +214,12 @@ def dismiss_onboarding(settings=None):
 
 def create_workflows(settings=None):
 	for workflow in workflows:
+		existing_name = frappe.db.get_value(
+			"Workflow", {"document_type": workflow.get("document_type")}, "name"
+		)
+		if existing_name:
+			sync_workflow_from_fixture(existing_name, workflow)
+			continue
 		for state in workflow.get("states"):
 			if frappe.db.exists("Workflow State", state.get("state")):
 				continue
@@ -192,6 +236,28 @@ def create_workflows(settings=None):
 		doc = frappe.new_doc("Workflow")
 		doc.update(workflow)
 		doc.save()
+
+
+def sync_workflow_from_fixture(name, workflow):
+	doc = frappe.get_doc("Workflow", name)
+	for field in ("reapproval_condition", "approval_state", "require_rejection_reason"):
+		if workflow.get(field) is not None:
+			doc.set(field, workflow[field])
+
+	fixture_states = {state["state"]: state for state in workflow.get("states", [])}
+	for state in doc.states:
+		fixture = fixture_states.get(state.state)
+		if not fixture:
+			continue
+		for field in (
+			"update_field",
+			"update_value",
+			"is_approved_state_for_non_submittable_document",
+		):
+			if field in fixture:
+				state.set(field, fixture[field])
+
+	doc.save()
 
 
 def create_purchase_orders(settings=None):
@@ -212,6 +278,8 @@ def create_purchase_orders(settings=None):
 
 
 def create_employees(settings, only_create=None):
+	if not frappe.db.exists("Designation", "Associate"):
+		frappe.get_doc({"doctype": "Designation", "designation_name": "Associate"}).insert()
 
 	for employee in employees:
 		if only_create and employee.get("employee_name") not in only_create:
@@ -220,13 +288,9 @@ def create_employees(settings, only_create=None):
 		if frappe.db.exists("Employee", {"employee_name": employee.get("employee_name")}):
 			continue
 
-		if not frappe.db.exists("Designation", employee.get("designation")):
-			desg = frappe.new_doc("Designation")
-			desg.designation_name = employee.get("designation")
-			desg.save()
-
 		empl = frappe.new_doc("Employee")
-		empl.update(employee)
+		empl.update({key: value for key, value in employee.items() if key != "roles"})
+		empl.designation = "Associate"
 		empl.reports_to = None
 		if settings.company:
 			empl.company = settings.company

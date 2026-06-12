@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Configuration
 
 <div class="byline">
-  Tyler Matteson 2026-02-28
+  Tyler Matteson 2026-03-02
 </div>
 
 ## Creating an Approval Rule
@@ -91,11 +91,13 @@ When Automatically Assign Users is unchecked, the rule still requires the role's
 
 ## Setting Up a Fallback
 
-When a document does not match any rules, the system needs a fallback. Without configuration, it throws an error.
+When a document matches a DocType that has approval rules configured, but none of those rules apply, the system needs a fallback. Without configuration, it throws an error.
 
-Navigate to Approvals > Document Approval Settings and set a Fallback Approver Role. Documents that do not match any rules require approval from this role instead of failing.
+Navigate to Approvals > Document Approval Settings and set a Fallback Approver Role. Documents of a configured DocType that do not match any rules require approval from this role instead of failing.
 
 A specific Fallback Approver user can also be set. Unmatched documents then always go to that one person.
+
+The fallback does not apply to DocTypes with no approval rules at all. Those DocTypes do not show the approval sidebar.
 
 ## Email Reminders
 
@@ -120,3 +122,55 @@ Approval rules evaluate when documents enter a specific workflow state. The DocT
 In the Workflow record, the Approval State field tells Approvals which state represents "waiting for approval." When a document transitions into this state, rules evaluate and assignments are created.
 
 A typical workflow has states like Draft, Pending Approval, and Approved. A Rejected state returns documents to Draft.
+
+The app adds three fields to the standard Workflow DocType:
+
+| Field | Purpose |
+| :--- | :-------- |
+| **Approval State** | Workflow state where approval rules run and the form is locked |
+| **Require Rejection Reason** | Prompt approvers for a comment when rejecting |
+| **Reapproval Condition** | Jinja condition that returns a document to Approval State on save |
+
+Non-submittable DocTypes (documents that are never submitted) need one workflow state marked **Approved State for Non-Submittable Document**. When all required approvals are recorded, the app applies the workflow transition to that state instead of submitting the document.
+
+### Reapproval Condition
+
+Use Reapproval Condition when a saved change should send the document back for approval without a manual workflow action. The condition is a Jinja template evaluated on every save. When it returns true and the document is not already in Approval State, the workflow state resets to Approval State, existing approvals are cleared, and matching rules assign approvers again.
+
+**Return a Customer to approval when the credit limit changes:**
+
+```jinja
+{{ doc.credit_limits and flt(doc.credit_limits[0].credit_limit) != flt(doc.last_approved_credit_limit or 0) }}
+```
+
+Reapproval conditions can reference any field on the document, including child tables. The `flt` helper is available in workflow templates.
+
+### State Field Updates
+
+Each workflow state can set an additional field when the document enters that state. Approvals extends Frappe's workflow engine so **Update Value** supports Jinja templates, not just static text.
+
+**Record the approved credit limit on Customer when approval completes:**
+
+| Setting | Value |
+| :--- | :------ |
+| Update Field | `last_approved_credit_limit` |
+| Update Value | `{{ doc.credit_limits[0].credit_limit if doc.credit_limits else 0 }}` |
+
+Sites define their own custom fields through Customize Form. The app does not install DocType-specific fields.
+
+### Where the Sidebar Appears
+
+The approval sidebar appears only on DocTypes that have at least one enabled Document Approval Rule. DocTypes without rules do not show the panel, even when a fallback approver is configured in settings. The fallback applies when rules exist for the DocType but none match the current document.
+
+## Example: Customer Credit Limit
+
+The repository includes a complete example for approving Customer credit limit changes without submitting the Customer. It lives in `approvals/tests/fixtures.py` and is loaded by `approvals/tests/setup.py` for automated tests only. It is not installed with the app.
+
+To use the pattern on a site:
+
+1. Add custom fields to Customer (or your DocType) through Customize Form — at minimum a workflow state field and any baseline fields your reapproval condition compares against.
+2. Create a Workflow using the example as a reference: set Approval State, Reapproval Condition, and Approved-state Update Field/Value.
+3. Create a Document Approval Rule with a condition that matches documents in Approval State.
+4. Mark the Approved workflow state as **Approved State for Non-Submittable Document**.
+
+Run `bench execute 'approvals.tests.setup.before_test'` on a development site to load the example workflow, rule, custom fields, and test customers.

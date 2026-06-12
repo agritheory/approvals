@@ -7,6 +7,7 @@
 				:key="index"
 				:approval="approval"
 				:approvalStateName="approvalsData.approval_state"
+				:workflowExists="approvalsData.workflowExists"
 				@documentapproval="refreshApprovals" />
 		</ul>
 
@@ -73,8 +74,8 @@ const fetchApprovalsAndRoles = async () => {
 	approvalsData.approval_state = response.approval_state
 	approvalsData.workflowExists = response.workflow_exists
 	approvalsData.require_rejection_reason = response.require_rejection_reason
-	const workflowStateField = frappe.workflow.state_fields[cur_frm.doc.doctype]
-	if (cur_frm.doc[workflowStateField] == approvalsData.approval_state) {
+	const workflowStateField = frappe.workflow.get_state_fieldname(cur_frm.doc.doctype)
+	if (workflowStateField && cur_frm.doc[workflowStateField] == approvalsData.approval_state) {
 		cur_frm.set_read_only()
 	}
 }

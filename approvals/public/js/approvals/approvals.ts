@@ -17,14 +17,49 @@ frappe.get_form_sidebar_extension = () => {
 	return `<div id="approvals-section"></div>`
 }
 
-approvals.load_approvals = frm => {
+const clear_approvals_section = () => {
+	const approvals_section = document.getElementById('approvals-section')
+	if (approvals_section) {
+		approvals_section.innerHTML = ''
+	}
 	if (approvals.Approvals) {
 		approvals.Approvals.unmount()
+		approvals.Approvals = null
 	}
-	const approvals_section = document.getElementById('approvals-section')
-	const app = createApp(ApprovalList)
-	app.mount(approvals_section!)
-	approvals.Approvals = app
+}
+
+approvals.load_approvals = async frm => {
+	if (frm.is_new()) {
+		return
+	}
+
+	const response = await frappe.xcall('approvals.approvals.api.fetch_approvals_and_roles', {
+		doc: frm.doc,
+	})
+	if (!response.show_approvals) {
+		clear_approvals_section()
+		return
+	}
+
+	frappe.workflow.setup(frm.doctype)
+
+	const mount = () => {
+		const approvals_section = document.getElementById('approvals-section')
+		if (!approvals_section) {
+			return
+		}
+		if (approvals.Approvals) {
+			approvals.Approvals.unmount()
+		}
+		const app = createApp(ApprovalList)
+		app.mount(approvals_section)
+		approvals.Approvals = app
+	}
+
+	mount()
+	if (!document.getElementById('approvals-section')) {
+		setTimeout(mount, 0)
+	}
 }
 
 approvals.rejection_reason_dialog = (frm: any) => {
@@ -127,6 +162,5 @@ approvals.remove_approver_dialog = (user_approvals: (string | undefined)[]) => {
 }
 
 $(document).on('form-refresh', (_e, frm) => {
-	if (frm.is_new()) return
 	approvals.load_approvals(frm)
 })

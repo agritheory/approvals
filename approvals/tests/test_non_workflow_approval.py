@@ -1,58 +1,69 @@
-# Copyright (c) 2024, AgriTheory and contributors
+# Copyright (c) 2026, AgriTheory and contributors
 # For license information, please see license.txt
 
-import pytest
 import frappe
-from frappe.utils.data import get_url_to_form
 
-from playwright.sync_api import sync_playwright
-
-
-@pytest.fixture
-def admin_user():
-	pass
+from approvals.approvals.api import approve_document
+from approvals.tests.fixtures import customer_credit_limit_workflow
+from approvals.tests.setup import create_customer_custom_fields, sync_workflow_from_fixture
 
 
-@pytest.fixture
-def stock_manager_user():
-	pass
+def test_customer_credit_limit_approval_workflow():
+	"""
+	Changing a Customer credit limit sends the document for approval and locks it
+	until a Sales Manager approves, without submitting the Customer.
 
+	| Step                    | Credit Limit | Last Approved | Workflow State   |
+	| ----------------------- | -----------: | ------------: | ---------------- |
+	| Initial limit set       |    $10,000   |             — | Pending Approval |
+	| Sales Manager approves  |    $10,000   |       $10,000 | Approved         |
+	| Credit limit raised     |    $20,000   |       $10,000 | Pending Approval |
+	"""
+	create_customer_custom_fields()
+	workflow_name = frappe.db.get_value("Workflow", {"document_type": "Customer"}, "name")
+	if workflow_name:
+		sync_workflow_from_fixture(workflow_name, customer_credit_limit_workflow)
 
-@pytest.fixture
-def purchase_invoice_07():
-	return f"http://localhost:{frappe.conf(frappe.local.site).webserver_port}"
+	customer_name = "Chelsea Fruit Wholesale"
+	name = frappe.db.get_value("Customer", {"customer_name": customer_name}, "name")
+	assert name, f"No Customer found for {customer_name}"
+	customer = frappe.get_doc("Customer", name)
 
+	# Idempotent reruns: reset to a known credit limit and clear the approved baseline.
+	customer.credit_limits[0].credit_limit = 10000
+	frappe.db.set_value(
+		"Customer",
+		customer.name,
+		{"workflow_state": "Draft", "last_approved_credit_limit": 0},
+		update_modified=False,
+	)
+	customer.reload()
+	customer.credit_limits[0].credit_limit = 10000
+	customer.save()
+	customer.reload()
 
-def test_non_workflow_approval():
-	doc = frappe.get_doc("Purchase Invoice", "ACC-PINV-2024-00007")
-	assert doc.docstatus == 0
+	assert customer.workflow_state == "Pending Approval"
+	assert frappe.db.exists(
+		"ToDo",
+		{
+			"reference_type": "Customer",
+			"reference_name": customer.name,
+			"allocated_to": "arivers@cfc.co",
+			"status": "Open",
+		},
+	)
 
-	with sync_playwright() as p:
-		browser = p.firefox.launch(headless=False)
-		context = browser.new_context()
+	frappe.set_user("mmckay@cfc.co")
+	approve_document(doc=customer, role="Sales Manager", user="mmckay@cfc.co")
+	frappe.set_user("Administrator")
 
-		# Login via API
-		api_request_context = context.request
-		login_url = f"{frappe.utils.get_url()}/api/method/login"
-		login_response = api_request_context.post(
-			login_url,
-			data={
-				"usr": "Administrator",
-				"pwd": "admin",
-			},
-		)
-		assert login_response.ok, "Login failed"
+	customer.reload()
+	assert customer.docstatus == 0
+	assert customer.workflow_state == "Approved"
+	assert customer.last_approved_credit_limit == 10000
 
-		invoice_url = get_url_to_form(doc.doctype, doc.name)
-		page = context.new_page()
-		page.goto(invoice_url)
-		page.wait_for_selector("#approve-btn")
-		approve_button = page.query_selector("#approve-btn")
-		approve_button.click()
-		page.wait_for_selector(".btn-modal-primary")
-		yes_button = page.query_selector(".btn-modal-primary")
-		yes_button.click()
-		browser.close()
-
-	doc.reload()
-	assert doc.status == "Approved"
+	customer.credit_limits[0].credit_limit = 20000
+	customer.save()
+	customer.reload()
+	assert customer.workflow_state == "Pending Approval"
+	assert customer.last_approved_credit_limit == 10000

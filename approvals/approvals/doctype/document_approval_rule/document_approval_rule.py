@@ -268,6 +268,7 @@ class DocumentApprovalRule(Document):
 				"allocated_to": user,
 				"reference_type": doc.doctype,
 				"reference_name": doc.name,
+				"status": "Open",
 			},
 		):
 			todo = frappe.new_doc("ToDo")

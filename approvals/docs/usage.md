@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Usage
 
 <div class="byline">
-  Tyler Matteson 2026-02-28
+  Tyler Matteson 2026-03-02
 </div>
 
 ## Finding Documents That Need Approval
@@ -17,6 +17,8 @@ When someone submits a document that requires approval, the assigned approver kn
 
 Open the document to review it and take action.
 
+The approval sidebar appears only on DocTypes configured with at least one enabled Document Approval Rule. Other forms are unchanged.
+
 ## Approving a Document
 
 When a user opens a document awaiting their approval, an approval panel appears in the right sidebar. It shows each role or user that must approve, and whether they have done so.
@@ -25,7 +27,7 @@ Users with the required role see Approve and Reject buttons next to their approv
 
 To approve, review the document and click Approve.
 
-The approval records immediately. If this was the last required approval, the document automatically submits and moves to Approved status. If other approvals are still pending, the document stays in its current state until everyone has approved.
+The approval records immediately. If this was the last required approval, the document finalizes automatically. Submittable documents (like Purchase Order) submit. Non-submittable documents transition to the workflow's approved state. If other approvals are still pending, the document stays in its current state until everyone has approved.
 
 ## Rejecting a Document
 
@@ -51,7 +53,7 @@ The added user automatically receives read and write access to the document if t
 
 ## Understanding the Approval Panel
 
-The sidebar panel shows the status of each required approval.
+The sidebar panel shows the status of each required approval when the document is in the workflow's Approval State. While in that state, the form is read-only for editing.
 
 Pending approvals show who the approval is assigned to. "You" means it is waiting on the current user.
 
@@ -72,7 +74,7 @@ The assigned user receives a ToDo. However, any user with the required role can 
 Once every required approval is recorded:
 
 - Submittable documents (like Purchase Order) automatically submit
-- Non-submittable documents save with Approved status
-- The workflow state updates accordingly
+- Non-submittable documents apply the workflow transition to the configured approved state and save
+- Workflow state field updates and any configured state Update Field values are applied
 
 No manual action is needed to finalize the document after the last approval.

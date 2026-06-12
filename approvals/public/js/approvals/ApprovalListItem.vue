@@ -46,7 +46,7 @@ const props = defineProps<{
 }>()
 
 const isApproveable = computed(() => {
-	const workflowStateField = frappe.workflow.state_fields[cur_frm.doc.doctype]
+	const workflowStateField = frappe.workflow.get_state_fieldname(cur_frm.doc.doctype)
 	if (workflowStateField) {
 		return (
 			cur_frm.doc.docstatus === 0 &&

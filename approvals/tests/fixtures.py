@@ -15,6 +15,116 @@ tax_authority = [
 	("Local Tax Authority", "Payroll Taxes", "Check", 0.00),
 ]
 
+customers = [
+	("Chelsea Fruit Wholesale", 10000),
+]
+
+# Customer credit limit example — test data only, not installed with the app.
+customer_credit_limit_reapproval_condition = (
+	"{{ doc.credit_limits and flt(doc.credit_limits[0].credit_limit) "
+	"!= flt(doc.last_approved_credit_limit or 0) }}"
+)
+
+customer_custom_fields = [
+	{
+		"dt": "Customer",
+		"fieldname": "workflow_state",
+		"fieldtype": "Link",
+		"label": "Workflow State",
+		"options": "Workflow State",
+		"insert_after": "customer_name",
+		"hidden": 1,
+		"read_only": 1,
+		"no_copy": 1,
+	},
+	{
+		"dt": "Customer",
+		"fieldname": "last_approved_credit_limit",
+		"fieldtype": "Currency",
+		"label": "Last Approved Credit Limit",
+		"insert_after": "workflow_state",
+		"read_only": 1,
+	},
+]
+
+customer_credit_limit_workflow = {
+	"name": "Customer Credit Limit",
+	"docstatus": 0,
+	"idx": 0,
+	"workflow_name": "Customer Credit Limit",
+	"document_type": "Customer",
+	"is_active": 1,
+	"override_status": 0,
+	"send_email_alert": 0,
+	"workflow_state_field": "workflow_state",
+	"approval_state": "Pending Approval",
+	"reapproval_condition": customer_credit_limit_reapproval_condition,
+	"states": [
+		{
+			"idx": 1,
+			"state": "Draft",
+			"doc_status": "0",
+			"is_optional_state": 0,
+			"avoid_status_override": 0,
+			"allow_edit": "All",
+		},
+		{
+			"idx": 2,
+			"state": "Pending Approval",
+			"doc_status": "0",
+			"is_optional_state": 0,
+			"avoid_status_override": 0,
+			"allow_edit": "All",
+			"style": "Warning",
+		},
+		{
+			"idx": 3,
+			"state": "Approved",
+			"doc_status": "0",
+			"is_optional_state": 0,
+			"avoid_status_override": 0,
+			"allow_edit": "All",
+			"is_approved_state_for_non_submittable_document": 1,
+			"update_field": "last_approved_credit_limit",
+			"update_value": "{{ doc.credit_limits[0].credit_limit if doc.credit_limits else 0 }}",
+		},
+	],
+	"transitions": [
+		{
+			"idx": 1,
+			"state": "Draft",
+			"action": "Send for Approval",
+			"next_state": "Pending Approval",
+			"allowed": "All",
+			"allow_self_approval": 1,
+		},
+		{
+			"idx": 2,
+			"state": "Pending Approval",
+			"action": "Approve",
+			"next_state": "Approved",
+			"allowed": "All",
+			"allow_self_approval": 1,
+		},
+		{
+			"idx": 3,
+			"state": "Pending Approval",
+			"action": "Reject",
+			"next_state": "Draft",
+			"allowed": "All",
+			"allow_self_approval": 1,
+		},
+	],
+}
+
+customer_credit_limit_approval_rule = {
+	"approval_doctype": "Customer",
+	"approval_role": "Sales Manager",
+	"condition": "{{ doc.workflow_state == 'Pending Approval' }}",
+	"enabled": 1,
+	"message": "Customer credit limit requires your approval",
+}
+
 document_approval_rules = [
 	{
 		"approval_doctype": "Purchase Order",
@@ -58,6 +168,7 @@ document_approval_rules = [
 		"condition": "{{ doc.grand_total > 500 and doc.grand_total < 1000 }}",
 		"enabled": 1,
 	},
+	customer_credit_limit_approval_rule | {"primary_assignee": "arivers@cfc.co"},
 ]
 
 
@@ -157,7 +268,8 @@ workflows = [
 				"allow_self_approval": 1,
 			},
 		],
-	}
+	},
+	customer_credit_limit_workflow,
 ]
 
 
@@ -174,7 +286,7 @@ employees = [
 		"status": "Active",
 		"tin": "004-48-0067",
 		"roles": ["Stock Manager", "Item Manager"],
-		"designation": "Warehouse Manager",
+		"designation": "Associate",
 		"reports_to": "Darnell Benton",
 	},
 	{
@@ -189,7 +301,7 @@ employees = [
 		"status": "Active",
 		"tin": "002-27-6877",
 		"roles": ["Sales User", "Sales Manager", "Sales Master Manager"],
-		"designation": "Head of Marketing and Sales",
+		"designation": "Associate",
 		"reports_to": "Darnell Benton",
 	},
 	{
@@ -210,7 +322,7 @@ employees = [
 			"Purchase Manager",
 			"Purchase Master Manager",
 		],
-		"designation": "Chief Financial Officer",
+		"designation": "Associate",
 		"reports_to": "Darnell Benton",
 	},
 	{
@@ -285,7 +397,7 @@ employees = [
 		"status": "Active",
 		"tin": "004-82-6553",
 		"roles": ["Sales User"],
-		"designation": "Sales Representative",
+		"designation": "Associate",
 		"reports_to": "Minh McKay",
 	},
 	{
@@ -300,7 +412,7 @@ employees = [
 		"status": "Active",
 		"tin": "002-23-2941",
 		"roles": ["Sales User"],
-		"designation": "Sales Representative",
+		"designation": "Associate",
 		"reports_to": "Minh McKay",
 	},
 	{
@@ -330,7 +442,7 @@ employees = [
 		"status": "Active",
 		"tin": "004-84-1349",
 		"roles": ["Sales User"],
-		"designation": "Sales Representative",
+		"designation": "Associate",
 		"reports_to": "Minh McKay",
 	},
 	{
@@ -344,7 +456,7 @@ employees = [
 		"last_name": "Benton",
 		"status": "Active",
 		"tin": "006-77-6510",
-		"designation": "Chief Executive Officer",
+		"designation": "Associate",
 		"roles": [
 			"Item Manager",
 			"Sales User",

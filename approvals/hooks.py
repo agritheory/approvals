@@ -139,9 +139,9 @@ doc_events = {
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "approvals.event.get_events"
-# }
+override_whitelisted_methods = {
+	"frappe.model.workflow.apply_workflow": "approvals.approvals.workflow.apply_workflow",
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,

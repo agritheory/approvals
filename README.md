@@ -11,11 +11,11 @@ MIT
 
 ## Install Instructions
 
-Set up a new bench, substitute a path to the python version to use, which should 3.10 latest
+Set up a new bench with Python 3.11 or later. Substitute a path to the Python interpreter to use.
 
 ```
 # for linux development
-bench init --frappe-branch version-14 {{ bench name }} --python ~/.pyenv/versions/3.10.10/bin/python3
+bench init --frappe-branch version-15 {{ bench name }} --python ~/.pyenv/versions/3.11/bin/python3
 ```
 Create a new site in that bench
 ```
@@ -25,7 +25,7 @@ bench use {{ site name }}
 ```
 Download the ERPNext and HR module
 ```
-bench get-app erpnext --branch version-14
+bench get-app erpnext --branch version-15
 bench get-app hrms
 ```
 Download this application and install all apps

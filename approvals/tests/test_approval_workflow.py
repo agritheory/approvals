@@ -123,9 +123,9 @@ def test_workflow_approve_blocked_without_approvals():
 	send_purchase_orders_for_approval()
 
 	po_name = frappe.db.get_value(
-		"Purchase Order", {"supplier": "Cooperative Ag Finance", "docstatus": 0}, "name"
+		"Purchase Order", {"supplier": "Premier Equipment Leasing", "docstatus": 0}, "name"
 	)
-	assert po_name
+	assert po_name, "No unsubmitted Purchase Order found for Premier Equipment Leasing"
 
 	po = frappe.get_doc("Purchase Order", po_name)
 	assert po.workflow_state == "Pending Approval"
@@ -144,9 +144,12 @@ def test_workflow_approve_blocked_until_all_required_roles_approve():
 	send_purchase_orders_for_approval()
 
 	po_name = frappe.db.get_value(
-		"Purchase Order", {"supplier": "Cooperative Ag Finance", "docstatus": 0}, "name"
+		"Purchase Order", {"supplier": "North County Grain Cooperative", "docstatus": 0}, "name"
 	)
-	assert po_name
+	assert po_name, "No unsubmitted Purchase Order found for North County Grain Cooperative"
+
+	po = frappe.get_doc("Purchase Order", po_name)
+	assert po.workflow_state == "Pending Approval"
 
 	extra_rule = frappe.new_doc("Document Approval Rule")
 	extra_rule.approval_doctype = "Purchase Order"
@@ -156,7 +159,6 @@ def test_workflow_approve_blocked_until_all_required_roles_approve():
 	extra_rule.enabled = 1
 	extra_rule.insert(ignore_permissions=True)
 
-	po = frappe.get_doc("Purchase Order", po_name)
 	frappe.call("approvals.approvals.api.assign_approvers", doc=po)
 
 	frappe.set_user("mbritt@cfc.co")

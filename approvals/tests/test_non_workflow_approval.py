@@ -2,7 +2,10 @@
 # For license information, please see license.txt
 
 import frappe
+import pytest
+from frappe.exceptions import ValidationError
 
+from approvals.approvals.workflow import apply_workflow
 from approvals.tests.fixtures import customer_credit_limit_workflow
 from approvals.tests.setup import sync_workflow_from_fixture
 
@@ -81,3 +84,36 @@ def test_customer_credit_limit_approval_workflow():
 	customer.reload()
 	assert customer.workflow_state == "Pending Approval"
 	assert customer.last_approved_credit_limit == 10000
+
+
+def test_customer_workflow_approve_blocked_without_approvals():
+	"""Non-submittable workflow Approve must not bypass required sidebar approvals."""
+	frappe.set_user("Administrator")
+	workflow_name = frappe.db.get_value("Workflow", {"document_type": "Customer"}, "name")
+	if workflow_name:
+		sync_workflow_from_fixture(workflow_name, customer_credit_limit_workflow)
+
+	customer_name = "Chelsea Fruit Wholesale"
+	name = frappe.db.get_value("Customer", {"customer_name": customer_name}, "name")
+	assert name
+
+	customer = frappe.get_doc("Customer", name)
+	customer.credit_limits[0].credit_limit = 10000
+	frappe.db.set_value(
+		"Customer",
+		customer.name,
+		{"workflow_state": "Draft", "last_approved_credit_limit": 0},
+		update_modified=False,
+	)
+	customer.reload()
+	customer.credit_limits[0].credit_limit = 10000
+	customer.save()
+	customer.reload()
+
+	assert customer.workflow_state == "Pending Approval"
+
+	with pytest.raises(ValidationError, match="All approvers must approve"):
+		apply_workflow(customer, "Approve")
+
+	customer.reload()
+	assert customer.workflow_state == "Pending Approval"

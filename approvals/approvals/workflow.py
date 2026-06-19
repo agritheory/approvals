@@ -3,6 +3,7 @@
 
 import frappe
 from frappe import _
+from frappe.core.doctype.submission_queue.submission_queue import queue_submission
 from frappe.model.docstatus import DocStatus
 from frappe.model.workflow import (
 	WorkflowTransitionError,
@@ -10,8 +11,11 @@ from frappe.model.workflow import (
 	get_workflow,
 	has_approval_access,
 )
-from frappe.utils import cint, flt
+from frappe.utils import cint, cstr, flt
+from frappe.utils.scheduler import is_scheduler_inactive
 from jinja2 import BaseLoader, Environment
+
+from approvals.approvals.validation import validate_all_approvals_complete
 
 
 def render_workflow_template(template: str, doc) -> str:
@@ -50,9 +54,19 @@ def apply_workflow(doc, action):
 	if not has_approval_access(user, doc, transition):
 		frappe.throw(_("Self approval is not allowed"))
 
-	doc.set(workflow.workflow_state_field, transition.next_state)
-
 	next_state = next(d for d in workflow.states if d.state == transition.next_state)
+	approval_state = workflow.approval_state
+	current_state = doc.get(workflow.workflow_state_field)
+	is_leaving_approval = approval_state and current_state == approval_state
+	will_finalize = (
+		cstr(next_state.doc_status) == "1"
+		or cstr(next_state.is_approved_state_for_non_submittable_document) == "1"
+	)
+
+	if is_leaving_approval and will_finalize:
+		validate_all_approvals_complete(doc, method="before_submit")
+
+	doc.set(workflow.workflow_state_field, transition.next_state)
 
 	if next_state.update_field:
 		doc.set(
@@ -64,9 +78,6 @@ def apply_workflow(doc, action):
 	if doc.docstatus.is_draft() and new_docstatus.is_draft():
 		doc.save()
 	elif doc.docstatus.is_draft() and new_docstatus.is_submitted():
-		from frappe.core.doctype.submission_queue.submission_queue import queue_submission
-		from frappe.utils.scheduler import is_scheduler_inactive
-
 		if doc.meta.queue_in_background and not is_scheduler_inactive():
 			queue_submission(doc, "Submit")
 			return doc

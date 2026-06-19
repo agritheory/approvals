@@ -1,6 +1,6 @@
 {
 	"actions": [],
-	"autoname": "format:{approval_doctype}-{approval_role}-#####",
+	"autoname": "format:{approval_doctype}-{approval_role}-{#####}",
 	"creation": "2021-02-17 08:31:46.780071",
 	"doctype": "DocType",
 	"editable_grid": 1,

@@ -2,3 +2,4 @@
 approvals.patches.add_pending_approval_email_template # Francisco Roldan 07/001/24
 
 [post_model_sync]
+approvals.patches.fix_document_approval_rule_naming # Tyler Matteson 06/18/26

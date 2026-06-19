@@ -109,6 +109,7 @@ after_install = "approvals.install.after_install"
 doc_events = {
 	"*": {
 		"on_update": "approvals.approvals.api.assign_approvers",
+		"before_submit": "approvals.approvals.validation.validate_all_approvals_complete",
 	},
 }
 

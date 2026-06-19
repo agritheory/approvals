@@ -3,7 +3,9 @@
 
 import frappe
 import pytest
-from frappe.model.workflow import apply_workflow
+from frappe.exceptions import ValidationError
+
+from approvals.approvals.workflow import apply_workflow
 
 
 def send_purchase_orders_for_approval():
@@ -114,3 +116,78 @@ def test_purchase_order_approval_via_api(supplier, approver, approval_role):
 			"approval_role": approval_role,
 		},
 	)
+
+
+def test_workflow_approve_blocked_without_approvals():
+	"""The workflow Approve action must not submit before required sidebar approvals exist."""
+	send_purchase_orders_for_approval()
+
+	po_name = frappe.db.get_value(
+		"Purchase Order", {"supplier": "Premier Equipment Leasing", "docstatus": 0}, "name"
+	)
+	assert po_name, "No unsubmitted Purchase Order found for Premier Equipment Leasing"
+
+	po = frappe.get_doc("Purchase Order", po_name)
+	assert po.workflow_state == "Pending Approval"
+
+	frappe.set_user("Administrator")
+	with pytest.raises(ValidationError, match="All approvers must approve"):
+		apply_workflow(po, "Approve")
+
+	po.reload()
+	assert po.docstatus == 0
+	assert po.workflow_state == "Pending Approval"
+
+
+def test_workflow_approve_blocked_until_all_required_roles_approve():
+	"""Partial sidebar approvals must not allow workflow Approve to finalize the document."""
+	send_purchase_orders_for_approval()
+
+	po_name = frappe.db.get_value(
+		"Purchase Order", {"supplier": "North County Grain Cooperative", "docstatus": 0}, "name"
+	)
+	assert po_name, "No unsubmitted Purchase Order found for North County Grain Cooperative"
+
+	po = frappe.get_doc("Purchase Order", po_name)
+	assert po.workflow_state == "Pending Approval"
+
+	extra_rule = frappe.new_doc("Document Approval Rule")
+	extra_rule.approval_doctype = "Purchase Order"
+	extra_rule.approval_role = "Sales Manager"
+	extra_rule.condition = "{{ doc.grand_total > 1000 }}"
+	extra_rule.primary_assignee = "mmckay@cfc.co"
+	extra_rule.enabled = 1
+	extra_rule.insert(ignore_permissions=True)
+
+	frappe.call("approvals.approvals.api.assign_approvers", doc=po)
+
+	frappe.set_user("mbritt@cfc.co")
+	frappe.call(
+		"approvals.approvals.api.approve_document",
+		doc=frappe.as_json(po.as_dict()),
+		role="Accounts Manager",
+		user="mbritt@cfc.co",
+	)
+	frappe.set_user("Administrator")
+
+	po.reload()
+	assert po.docstatus == 0
+	assert po.workflow_state == "Pending Approval"
+
+	with pytest.raises(ValidationError, match="All approvers must approve"):
+		apply_workflow(po, "Approve")
+
+	frappe.set_user("mmckay@cfc.co")
+	frappe.call(
+		"approvals.approvals.api.approve_document",
+		doc=frappe.as_json(po.as_dict()),
+		role="Sales Manager",
+		user="mmckay@cfc.co",
+	)
+	frappe.set_user("Administrator")
+
+	po.reload()
+	assert po.docstatus == 1
+	assert po.workflow_state == "Approved"
+
+	extra_rule.delete(ignore_permissions=True)

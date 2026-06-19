@@ -1,7 +1,6 @@
 # Copyright (c) 2025, AgriTheory and contributors
 # For license information, please see license.txt
 
-import ast
 import frappe
 from frappe.model.document import Document
 from frappe.utils.data import today
@@ -22,51 +21,31 @@ class DocumentApprovalRule(Document):
 			except Exception as e:
 				frappe.throw(f"Invalid Jinja condition: {str(e)}")
 
-	def is_syntax_valid_and_returning_bool(self):
-		from RestrictedPython import compile_restricted
-
-		if not self.condition:
-			return True
-
-		try:
-			compile_restricted(self.condition)
-		except Exception as e:
-			return False, frappe._(f"Error parsing approval rule condition:<br> <code>{e}</code>")
-
-		tree = ast.parse(self.condition)
-		last_statement = tree.body[-1]
-
-		if isinstance(last_statement, ast.Expr):
-			return_expr = last_statement.value
-		elif isinstance(last_statement, ast.Return):
-			return_expr = last_statement.value
-		else:
-			return False, frappe._("Condition should return a boolean value")
-
-		bool_exprs = (ast.Compare, ast.BoolOp, ast.UnaryOp)
-		bool_values = (ast.Constant,)
-
-		if isinstance(return_expr, bool_exprs) or (
-			isinstance(return_expr, bool_values) and isinstance(return_expr.value, bool)
-		):
-			return True, ""
-		return False, frappe._("Condition should return a boolean value")
-
 	@frappe.whitelist()
 	def test_condition(self, doctype: str, docname: str):
 		doc = frappe.get_doc(doctype, docname)
 
-		result, message = self.is_syntax_valid_and_returning_bool()
-		if not result:
-			return message
+		if self.condition:
+			try:
+				validate_template(self.condition)
+			except Exception as e:
+				return frappe._(f"Invalid Jinja condition: {str(e)}")
+
+		if not self.enabled:
+			return frappe._("Document Approval Rule is disabled")
+
+		if self.skip_for_auto_repeat and doc.get("auto_repeat"):
+			return frappe._(
+				f"Document Approval Rule skipped: {doctype} {docname} is an Auto Repeat document"
+			)
 
 		try:
-			result = self.apply(doc, dry=True)
+			result = True if not self.condition else self.evaluate_jinja_condition(doc, raise_on_error=True)
 			if result:
 				return frappe._(f"Document Approval Rule applies to {doctype} {docname}")
 			return frappe._(f"Document Approval Rule does not apply to {doctype} {docname}")
 		except Exception as e:
-			return frappe._(f"Error: {e}")
+			return frappe._(f"Error evaluating condition: {str(e)}")
 
 	def apply(
 		self,
@@ -102,7 +81,7 @@ class DocumentApprovalRule(Document):
 			)
 			return False
 
-	def evaluate_jinja_condition(self, doc: Document):
+	def evaluate_jinja_condition(self, doc: Document, raise_on_error: bool = False):
 		"""Evaluate Jinja-based condition"""
 		try:
 			context = self.get_jinja_context(doc)
@@ -119,6 +98,8 @@ class DocumentApprovalRule(Document):
 			return bool(result)
 
 		except TemplateSyntaxError as e:
+			if raise_on_error:
+				raise
 			frappe.log_error(
 				f"Jinja syntax error in approval rule {self.name}: {str(e)}",
 				"Document Approval Jinja Error",
@@ -126,6 +107,8 @@ class DocumentApprovalRule(Document):
 			return False
 
 		except UndefinedError as e:
+			if raise_on_error:
+				raise
 			frappe.log_error(
 				f"Undefined variable in approval rule {self.name}: {str(e)}",
 				"Document Approval Jinja Error",

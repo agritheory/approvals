@@ -9,6 +9,8 @@ suppliers = [
 	("HIJ Telecom, Inc", "Internet Services", "Check", 150.00),
 	("Sphere Cellular", "Phone Services", "Credit Card", 250.00),
 	("Cooperative Ag Finance", "Financial Services", "Bank Draft", 5000.00),
+	("Premier Equipment Leasing", "Equipment Lease", "Check", 5000.00),
+	("North County Grain Cooperative", "Grain Supply", "Bank Draft", 5000.00),
 ]
 
 tax_authority = [

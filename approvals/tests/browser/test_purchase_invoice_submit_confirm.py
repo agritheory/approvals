@@ -1,19 +1,6 @@
 # Copyright (c) 2026, AgriTheory and contributors
 # For license information, please see license.txt
 
-# Server tests (default pytest from apps/approvals):
-#   pytest --disable-warnings -s
-#
-# Browser tests (bench root, env activated; same CI runner runs both):
-#   bench setup requirements --dev
-#   python -m playwright install chromium
-#   bench start
-#   bench execute 'approvals.tests.setup.before_test'   # if fixture data is missing
-#   pytest apps/approvals/approvals/tests/browser --browser chromium --disable-warnings --no-cov
-#
-# The site host_name must resolve (CI uses test_site in /etc/hosts). For a local bench,
-# set host_name in site_config.json or map the site name in /etc/hosts to 127.0.0.1.
-
 import frappe
 import pytest
 
@@ -33,7 +20,7 @@ from approvals.tests.test_purchase_invoice_non_workflow_approval import (
 from approvals.tests.test_utils import use_current_db_transaction
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(20)
 @pytest.mark.parametrize(
 	"supplier,user",
 	[
@@ -55,7 +42,7 @@ def test_approve_shows_submit_confirm_for_non_workflow_invoice(page, supplier, u
 		assert pi.docstatus == 0
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(21)
 @pytest.mark.parametrize(
 	"supplier,user,approval_role",
 	[
@@ -88,7 +75,7 @@ def test_dismissing_confirm_does_not_submit_invoice(page, supplier, user, approv
 		)
 
 
-@pytest.mark.order(3)
+@pytest.mark.order(22)
 @pytest.mark.parametrize(
 	"supplier,user,approval_role",
 	[
@@ -120,7 +107,7 @@ def test_confirming_submits_invoice(page, supplier, user, approval_role):
 		)
 
 
-@pytest.mark.order(4)
+@pytest.mark.order(23)
 def test_workflow_purchase_order_does_not_show_submit_confirm(page):
 	"""
 	Workflow PO sidebar Approve must not show the non-workflow submit confirm dialog.

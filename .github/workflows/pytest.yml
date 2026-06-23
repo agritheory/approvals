@@ -78,18 +78,13 @@ jobs:
         run: |
           set -o pipefail
           source env/bin/activate
+          python -m playwright install --with-deps chromium
           pytest apps/approvals/approvals/tests \
-            --ignore=apps/approvals/approvals/tests/browser \
+            --browser chromium \
             --cov=approvals \
             --cov-report=xml \
             --cov-report=term-missing \
             --disable-warnings -s | tee apps/approvals/pytest-coverage.txt
-          bench execute 'approvals.tests.setup.before_test'
-          python -m playwright install --with-deps chromium
-          pytest apps/approvals/approvals/tests/browser \
-            --browser chromium \
-            --disable-warnings \
-            --no-cov
 
       - name: Pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main

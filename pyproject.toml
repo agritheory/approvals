@@ -35,7 +35,7 @@ pytest-playwright = "~=0.7.0"
 playwright = "~=1.45.0"
 
 [tool.pytest.ini_options]
-addopts = "--cov=approvals --cov-report=term-missing --ignore=approvals/tests/browser"
+addopts = "--cov=approvals --cov-report=term-missing"
 testpaths = ["approvals/tests"]
 
 [tool.coverage.run]

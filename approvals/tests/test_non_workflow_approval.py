@@ -10,6 +10,7 @@ from approvals.tests.fixtures import customer_credit_limit_workflow
 from approvals.tests.setup import sync_workflow_from_fixture
 
 
+@pytest.mark.order(40)
 def test_customer_credit_limit_approval_workflow():
 	"""
 	Changing a Customer credit limit sends the document for approval and locks it
@@ -86,6 +87,7 @@ def test_customer_credit_limit_approval_workflow():
 	assert customer.last_approved_credit_limit == 10000
 
 
+@pytest.mark.order(41)
 def test_customer_workflow_approve_blocked_without_approvals():
 	"""Non-submittable workflow Approve must not bypass required sidebar approvals."""
 	frappe.set_user("Administrator")

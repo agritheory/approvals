@@ -24,6 +24,7 @@ def send_purchase_orders_for_approval():
 			apply_workflow(po, "Send for Approval")
 
 
+@pytest.mark.order(10)
 @pytest.mark.parametrize(
 	"supplier,approver,expects_todo,expects_doc_share",
 	[
@@ -65,6 +66,7 @@ def test_purchase_order_approval_side_effects(supplier, approver, expects_todo, 
 		assert not frappe.db.exists("DocShare", {"user": approver, "share_name": po.name})
 
 
+@pytest.mark.order(30)
 @pytest.mark.parametrize(
 	"supplier,approver,approval_role",
 	[
@@ -118,6 +120,7 @@ def test_purchase_order_approval_via_api(supplier, approver, approval_role):
 	)
 
 
+@pytest.mark.order(13)
 def test_workflow_approve_blocked_without_approvals():
 	"""The workflow Approve action must not submit before required sidebar approvals exist."""
 	send_purchase_orders_for_approval()
@@ -139,6 +142,7 @@ def test_workflow_approve_blocked_without_approvals():
 	assert po.workflow_state == "Pending Approval"
 
 
+@pytest.mark.order(33)
 def test_workflow_approve_blocked_until_all_required_roles_approve():
 	"""Partial sidebar approvals must not allow workflow Approve to finalize the document."""
 	send_purchase_orders_for_approval()

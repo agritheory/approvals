@@ -20,6 +20,7 @@ def ensure_purchase_invoice_assignments(pi):
 		frappe.call("approvals.approvals.api.assign_approvers", doc=pi)
 
 
+@pytest.mark.order(11)
 @pytest.mark.parametrize(
 	"supplier,approver,expects_todo,expects_doc_share",
 	[
@@ -59,6 +60,7 @@ def test_purchase_invoice_approval_side_effects(
 		assert not frappe.db.exists("DocShare", {"user": approver, "share_name": pi.name})
 
 
+@pytest.mark.order(12)
 def test_cooperative_ag_finance_invoice_has_no_workflow():
 	pi = purchase_invoice_for_supplier("Cooperative Ag Finance")
 	response = frappe.call(
@@ -69,6 +71,7 @@ def test_cooperative_ag_finance_invoice_has_no_workflow():
 	assert response["show_approvals"] is True
 
 
+@pytest.mark.order(31)
 @pytest.mark.parametrize(
 	"supplier,approver,approval_role",
 	[
@@ -116,6 +119,7 @@ def test_purchase_invoice_approval_via_api_submits_document(supplier, approver, 
 	)
 
 
+@pytest.mark.order(32)
 def test_partial_purchase_invoice_approval_leaves_invoice_in_draft():
 	"""Partial sidebar approvals must not submit a multi-role invoice."""
 	pi = purchase_invoice_for_supplier("North County Grain Cooperative")

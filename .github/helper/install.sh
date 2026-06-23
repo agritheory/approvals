@@ -53,6 +53,14 @@ bench start &> bench_run_logs.txt &
 CI=Yes &
 bench --site test_site reinstall --yes --admin-password admin
 
+bench --site test_site migrate
+
+cd apps/approvals
+yarn --prefer-offline
+yarn build
+cd ../..
+bench build --app approvals
+
 bench setup requirements --dev
 
 echo "BENCH VERSION NUMBERS:"

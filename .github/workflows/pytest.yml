@@ -19,7 +19,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
       fail-fast: false
-    name: Server
+    name: Tests
 
     services:
       mariadb:
@@ -59,9 +59,6 @@ jobs:
             ${{ runner.os }}-pip-
             ${{ runner.os }}-
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-
       - name: Install JS Dependencies
         run: yarn --prefer-offline
 
@@ -79,11 +76,20 @@ jobs:
       - name: Run Tests
         working-directory: /home/runner/frappe-bench
         run: |
-          env/bin/python -m pytest apps/approvals/approvals/tests \
+          set -o pipefail
+          source env/bin/activate
+          pytest apps/approvals/approvals/tests \
+            --ignore=apps/approvals/approvals/tests/browser \
             --cov=approvals \
             --cov-report=xml \
             --cov-report=term-missing \
             --disable-warnings -s | tee apps/approvals/pytest-coverage.txt
+          bench execute 'approvals.tests.setup.before_test'
+          python -m playwright install --with-deps chromium
+          pytest apps/approvals/approvals/tests/browser \
+            --browser chromium \
+            --disable-warnings \
+            --no-cov
 
       - name: Pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main

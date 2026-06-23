@@ -69,6 +69,7 @@ def create_test_data():
 	create_customers(settings)
 	create_purchase_orders(settings)
 	create_invoices(settings)
+	set_test_user_passwords()
 	dismiss_onboarding(settings)
 
 
@@ -205,6 +206,14 @@ def create_client_scripts(settings=None):
 	cs.enabled = 1
 	cs.script = "frappe.ui.form.on('Purchase Order', { onload(frm) { frappe.require('approvals.bundle.js', () => { frm.refresh(); frappe.provide('approvals').load_approvals(frm); }) } })"
 	cs.save()
+
+
+def set_test_user_passwords():
+	from frappe.utils.password import update_password
+
+	for email in ("mbritt@cfc.co", "mmckay@cfc.co", "arivers@cfc.co"):
+		if frappe.db.exists("User", email):
+			update_password(email, "admin")
 
 
 def dismiss_onboarding(settings=None):

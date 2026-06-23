@@ -71,7 +71,7 @@ def test_cooperative_ag_finance_invoice_has_no_workflow():
 	assert response["show_approvals"] is True
 
 
-@pytest.mark.order(31)
+@pytest.mark.order(35)
 @pytest.mark.parametrize(
 	"supplier,approver,approval_role",
 	[
@@ -119,7 +119,7 @@ def test_purchase_invoice_approval_via_api_submits_document(supplier, approver, 
 	)
 
 
-@pytest.mark.order(32)
+@pytest.mark.order(36)
 def test_partial_purchase_invoice_approval_leaves_invoice_in_draft():
 	"""Partial sidebar approvals must not submit a multi-role invoice."""
 	pi = purchase_invoice_for_supplier("North County Grain Cooperative")

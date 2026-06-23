@@ -7,8 +7,9 @@ from playwright.sync_api import Page
 
 def login_as(page: Page, user: str, password: str = "admin"):
 	page.goto(frappe.utils.get_url())
-	page.get_by_role("textbox", name="Email").fill(user)
-	page.get_by_role("textbox", name="Password").fill(password)
+	page.wait_for_selector("#login_email", timeout=15000)
+	page.locator("#login_email").fill(user)
+	page.locator("#login_password").fill(password)
 	page.get_by_role("button", name="Login").click()
 
 

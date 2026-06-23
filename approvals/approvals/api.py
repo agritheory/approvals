@@ -154,12 +154,14 @@ def approve_document(
 		todo = frappe.get_doc("ToDo", todo)
 		todo.status = "Closed"
 		todo.save(ignore_permissions=True)
-		frappe.db.commit()
+	frappe.db.commit()
 
 	checked_all = check_all_document_approvals(doc, method, include_role=role)
 	if checked_all:
 		doc = frappe.get_doc(doc.doctype, doc.name)
-		if doc.meta.is_submittable:
+		if get_workflow_name(doc.doctype):
+			apply_workflow(frappe.as_json(doc.as_dict()), "Approve")
+		elif doc.meta.is_submittable:
 			doc.flags.ignore_permissions = True
 			doc.submit()
 		else:

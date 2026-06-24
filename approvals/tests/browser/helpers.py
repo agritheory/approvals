@@ -10,7 +10,7 @@ def login_as(page: Page, user: str, password: str = "admin"):
 	page.wait_for_selector("#login_email", timeout=15000)
 	page.locator("#login_email").fill(user)
 	page.locator("#login_password").fill(password)
-	page.get_by_role("button", name="Login").click()
+	page.locator("button.btn-login").click()
 
 
 def form_page_url(doctype: str, name: str):

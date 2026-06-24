@@ -1,0 +1,119 @@
+# Local CI reproduction via nektos/act (no PR coverage comment — node24 incompatible with act).
+#
+# Prerequisites:
+#   - Docker running; Redis listening on 127.0.0.1:6379 (host network is shared)
+#   - Port 33306 free for the MariaDB service container
+#
+# Run from repo root:
+#   act workflow_dispatch -j tests
+#
+# Log is typically tee'd to /tmp/act-pytest.log. Full install + tests takes ~10 minutes.
+name: Pytest CI (act)
+
+on:
+  workflow_dispatch:
+
+env:
+  BRANCH_NAME: version-15
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    name: Tests
+
+    services:
+      mariadb:
+        image: mariadb:10.6
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: YES
+          MYSQL_ROOT_PASSWORD: 'admin'
+        ports:
+          - 33306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=5s --health-timeout=2s --health-retries=3
+
+    steps:
+      # With `act --bind`, the repo is mounted at GITHUB_WORKSPACE — no checkout needed.
+      - name: Verify workspace
+        run: test -f "${GITHUB_WORKSPACE}/.github/helper/install.sh"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          check-latest: true
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/*requirements.txt', '**/pyproject.toml', '**/setup.py', '**/setup.cfg') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+
+      - name: Install JS Dependencies
+        run: yarn --prefer-offline
+
+      - name: Install App Dependencies
+        run: bash ${{ github.workspace }}/.github/helper/install_dependencies.sh
+
+      - name: Wait for MariaDB
+        env:
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_PORT: '33306'
+          MYSQL_PWD: 'admin'
+        run: |
+          for _ in $(seq 1 30); do
+            python3 - <<'PY' && exit 0
+          import os
+          import pymysql
+          pymysql.connect(
+              host=os.environ["MYSQL_HOST"],
+              port=int(os.environ["MYSQL_PORT"]),
+              user="root",
+              password=os.environ["MYSQL_PWD"],
+          ).close()
+          print("MariaDB ready")
+          PY
+            sleep 2
+          done
+          echo "MariaDB did not become ready in time"
+          exit 1
+
+      - name: Install Bench Site and Apps
+        env:
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_PWD: 'admin'
+          MYSQL_PORT: '33306'
+          BRANCH_NAME: ${{ env.BRANCH_NAME}}
+        run: |
+          python3 - <<PY
+          import json
+          import os
+          from pathlib import Path
+          source = Path(os.environ["GITHUB_WORKSPACE"]) / ".github/helper/site_config.json"
+          config = json.loads(source.read_text())
+          config["db_host"] = "127.0.0.1"
+          config["db_port"] = 33306
+          config["host_name"] = "http://127.0.0.1:8000"
+          Path("/tmp/act_site_config.json").write_text(json.dumps(config, indent=4) + "\n")
+          PY
+          SITE_CONFIG=/tmp/act_site_config.json bash "${GITHUB_WORKSPACE}/.github/helper/install.sh"
+
+      - name: Run Tests
+        working-directory: /home/ubuntu/frappe-bench
+        run: |
+          set -o pipefail
+          source env/bin/activate
+          python -m playwright install chromium
+          pytest apps/approvals/approvals/tests \
+            --browser chromium \
+            --cov=approvals \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --disable-warnings -s | tee apps/approvals/pytest-coverage.txt

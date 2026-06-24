@@ -82,6 +82,7 @@ def apply_workflow(doc, action):
 			queue_submission(doc, "Submit")
 			return doc
 
+		doc.flags.ignore_permissions = True
 		doc.submit()
 	elif doc.docstatus.is_submitted() and new_docstatus.is_submitted():
 		doc.save()

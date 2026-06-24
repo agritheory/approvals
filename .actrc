@@ -1,0 +1,6 @@
+-W .github/workflows/pytest-act.yml
+-P ubuntu-latest=catthehacker/ubuntu:full-latest
+--container-architecture linux/amd64
+--bind
+--container-options=--user=1000:1000
+--env BRANCH_NAME=version-15

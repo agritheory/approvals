@@ -126,20 +126,28 @@ def test_workflow_purchase_order_does_not_show_submit_confirm(page):
 	extra_rule = frappe.new_doc("Document Approval Rule")
 	extra_rule.approval_doctype = "Purchase Order"
 	extra_rule.approval_role = "Sales Manager"
-	extra_rule.condition = "{{ doc.grand_total > 1000 }}"
+	extra_rule.condition = (
+		"{{ doc.supplier == 'North County Grain Cooperative' and doc.grand_total > 1000 }}"
+	)
 	extra_rule.primary_assignee = "mmckay@cfc.co"
 	extra_rule.enabled = 1
 	extra_rule.insert(ignore_permissions=True)
-	frappe.call("approvals.approvals.api.assign_approvers", doc=po)
+	try:
+		frappe.call("approvals.approvals.api.assign_approvers", doc=po)
 
-	login_as(page, "mbritt@cfc.co")
-	open_form_page(page, po.doctype, po.name)
-	click_approve(page)
-	modal = page.locator(".modal.show")
-	assert not modal.filter(has_text="Permanently Submit").is_visible()
+		login_as(page, "mbritt@cfc.co")
+		open_form_page(page, po.doctype, po.name)
+		click_approve(page)
+		modal = page.locator(".modal.show")
+		assert not modal.filter(has_text="Permanently Submit").is_visible()
 
-	with use_current_db_transaction():
-		po.reload()
-		assert po.docstatus == 0
-
-	extra_rule.delete(ignore_permissions=True)
+		with use_current_db_transaction():
+			po.reload()
+			assert po.docstatus == 0
+	finally:
+		frappe.db.delete(
+			"ToDo",
+			{"reference_type": "Purchase Order", "reference_name": po.name, "role": "Sales Manager"},
+		)
+		frappe.db.commit()
+		extra_rule.delete(ignore_permissions=True)

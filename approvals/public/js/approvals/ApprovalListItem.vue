@@ -5,13 +5,13 @@
 		</div>
 
 		<div v-if="isApproveable">
-			<button id="approve-btn" @click="approve" :disabled="!status" :class="status ? 'btn btn-disabled' : 'btn'">
+			<button id="approve-btn" @click="approve" :disabled="!status" :class="status ? 'btn' : 'btn btn-disabled'">
 				APPROVE
 			</button>
 			<button
 				@click="reject"
 				:disabled="!status"
-				:class="status ? 'btn btn-disabled button-reject' : 'btn button-reject'">
+				:class="status ? 'btn button-reject' : 'btn btn-disabled button-reject'">
 				REJECT
 			</button>
 		</div>

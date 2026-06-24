@@ -206,40 +206,48 @@ def test_workflow_approve_blocked_until_all_required_roles_approve():
 	extra_rule = frappe.new_doc("Document Approval Rule")
 	extra_rule.approval_doctype = "Purchase Order"
 	extra_rule.approval_role = "Sales Manager"
-	extra_rule.condition = "{{ doc.grand_total > 1000 }}"
+	extra_rule.condition = (
+		"{{ doc.supplier == 'North County Grain Cooperative' and doc.grand_total > 1000 }}"
+	)
 	extra_rule.primary_assignee = "mmckay@cfc.co"
 	extra_rule.enabled = 1
 	extra_rule.insert(ignore_permissions=True)
 
-	frappe.call("approvals.approvals.api.assign_approvers", doc=po)
+	try:
+		frappe.call("approvals.approvals.api.assign_approvers", doc=po)
 
-	frappe.set_user("mbritt@cfc.co")
-	frappe.call(
-		"approvals.approvals.api.approve_document",
-		doc=frappe.as_json(po.as_dict()),
-		role="Accounts Manager",
-		user="mbritt@cfc.co",
-	)
-	frappe.set_user("Administrator")
+		frappe.set_user("mbritt@cfc.co")
+		frappe.call(
+			"approvals.approvals.api.approve_document",
+			doc=frappe.as_json(po.as_dict()),
+			role="Accounts Manager",
+			user="mbritt@cfc.co",
+		)
+		frappe.set_user("Administrator")
 
-	po.reload()
-	assert po.docstatus == 0
-	assert po.workflow_state == "Pending Approval"
+		po.reload()
+		assert po.docstatus == 0
+		assert po.workflow_state == "Pending Approval"
 
-	with pytest.raises(ValidationError, match="All approvers must approve"):
-		apply_workflow(po, "Approve")
+		with pytest.raises(ValidationError, match="All approvers must approve"):
+			apply_workflow(po, "Approve")
 
-	frappe.set_user("mmckay@cfc.co")
-	frappe.call(
-		"approvals.approvals.api.approve_document",
-		doc=frappe.as_json(po.as_dict()),
-		role="Sales Manager",
-		user="mmckay@cfc.co",
-	)
-	frappe.set_user("Administrator")
+		frappe.set_user("mmckay@cfc.co")
+		frappe.call(
+			"approvals.approvals.api.approve_document",
+			doc=frappe.as_json(po.as_dict()),
+			role="Sales Manager",
+			user="mmckay@cfc.co",
+		)
+		frappe.set_user("Administrator")
 
-	po.reload()
-	assert po.docstatus == 1
-	assert po.workflow_state == "Approved"
-
-	extra_rule.delete(ignore_permissions=True)
+		po.reload()
+		assert po.docstatus == 1
+		assert po.workflow_state == "Approved"
+	finally:
+		frappe.db.delete(
+			"ToDo",
+			{"reference_type": "Purchase Order", "reference_name": po_name, "role": "Sales Manager"},
+		)
+		frappe.db.commit()
+		extra_rule.delete(ignore_permissions=True)

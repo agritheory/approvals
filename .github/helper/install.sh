@@ -80,11 +80,11 @@ bench --site test_site reinstall --yes --admin-password admin
 
 bench --site test_site migrate
 
+bench build --app approvals
 cd apps/approvals
 yarn --prefer-offline
 yarn build
 cd ../..
-bench build --app approvals
 
 bench setup requirements --dev
 

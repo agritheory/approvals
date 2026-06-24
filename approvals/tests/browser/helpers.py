@@ -11,6 +11,7 @@ def login_as(page: Page, user: str, password: str = "admin"):
 	page.locator("#login_email").fill(user)
 	page.locator("#login_password").fill(password)
 	page.locator("button.btn-login").click()
+	page.wait_for_url(lambda url: "/login" not in url, timeout=15000)
 
 
 def form_page_url(doctype: str, name: str):
@@ -35,11 +36,11 @@ def open_form_page(page: Page, doctype: str, name: str):
 	page.goto(form_page_url(doctype, name))
 	page.wait_for_load_state("networkidle")
 	dismiss_blocking_modals(page)
-	page.wait_for_selector("#approve-btn:not(.btn-disabled)", timeout=15000)
+	page.wait_for_selector("#approve-btn:not([disabled])", timeout=15000)
 
 
 def click_approve(page: Page):
-	page.locator("#approve-btn:not(.btn-disabled)").click()
+	page.locator("#approve-btn:not([disabled])").click()
 
 
 def confirm_modal_visible(page: Page, docname: str):

@@ -186,6 +186,7 @@ workflows = [
 		"send_email_alert": 0,
 		"workflow_state_field": "workflow_state",
 		"approval_state": "Pending Approval",
+		"approval_action": "Approve",
 		"states": [
 			{
 				"idx": 1,

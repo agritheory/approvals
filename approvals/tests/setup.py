@@ -245,6 +245,8 @@ def sync_workflow_from_fixture(name, workflow):
 		"approval_state",
 		"approval_action",
 		"require_rejection_reason",
+		"workflow_state_field",
+		"override_status",
 	):
 		if workflow.get(field) is not None:
 			doc.set(field, workflow[field])
@@ -261,6 +263,8 @@ def sync_workflow_from_fixture(name, workflow):
 		):
 			if field in fixture:
 				state.set(field, fixture[field])
+			elif field in ("update_field", "update_value"):
+				state.set(field, None)
 
 	doc.save()
 

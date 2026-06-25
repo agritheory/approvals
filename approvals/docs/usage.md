@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Usage
 
 <div class="byline">
-  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-06-12
+  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-06-23
 </div>
 
 ## Finding Documents That Need Approval
@@ -27,7 +27,7 @@ Users with the required role see Approve and Reject buttons next to their approv
 
 To approve, review the document and click Approve.
 
-The approval records immediately. If this was the last required approval, the document finalizes automatically. Submittable documents (like Purchase Order or Purchase Invoice) submit. Non-submittable documents transition to the workflow's approved state. If other approvals are still pending, the document stays in its current state until everyone has approved.
+The approval records immediately. If this was the last required approval, the document finalizes automatically. Submittable documents with a workflow apply the configured **Approval Action** (typically Approve), which submits the document and updates the workflow state. Non-submittable documents transition to the workflow's approved state. If other approvals are still pending, the document stays in its current state until everyone has approved.
 
 On submittable documents **without a workflow**, the final approver sees a confirmation dialog before submit — **Permanently Submit {document name}?** — the same prompt ERPNext shows for a normal Submit action. Dismissing the dialog leaves the document in draft and does not record the approval.
 
@@ -83,9 +83,10 @@ The assigned user receives a ToDo. However, any user with the required role can 
 
 Once every required approval is recorded:
 
-- Submittable documents (like Purchase Order or Purchase Invoice) automatically submit
-- Non-submittable documents apply the workflow transition to the configured approved state and save
-- Workflow state field updates and any configured state Update Field values are applied
+- Submittable documents with a workflow apply the configured **Approval Action** workflow transition (typically Approve), which submits the document
+- Non-submittable documents apply the workflow transition to the state marked **Approved State for Non-Submittable Document** and save
+- The workflow state field and any configured state **Update Field** / **Update Value** settings are applied for both paths
+- Submittable documents without a workflow still submit directly after the approver confirms in the submit dialog
 
 On submittable documents without a workflow, the last approver confirms submit in a dialog before the document posts.
 

@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Configuration
 
 <div class="byline">
-  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-06-12
+  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-06-23
 </div>
 
 ## Creating an Approval Rule
@@ -203,15 +203,18 @@ In the Workflow record, the Approval State field tells Approvals which state rep
 
 A typical workflow has states like Draft, Pending Approval, and Approved. A Rejected state returns documents to Draft.
 
-The app adds three fields to the standard Workflow DocType:
+The app adds these fields to the standard Workflow DocType:
 
 | Field | Purpose |
 | :--- | :-------- |
 | **Approval State** | Workflow state where approval rules run and the form is locked |
+| **Approval Action** | Workflow transition action applied when all sidebar approvals are recorded (submittable doctypes) |
 | **Require Rejection Reason** | Prompt approvers for a comment when rejecting |
 | **Reapproval Condition** | Jinja condition that returns a document to Approval State on save |
 
-Non-submittable DocTypes (documents that are never submitted) need one workflow state marked **Approved State for Non-Submittable Document**. When all required approvals are recorded, the app applies the workflow transition to that state instead of submitting the document.
+**Submittable DocTypes** (like Purchase Order) need **Approval State** and **Approval Action** set on the Workflow, plus a matching transition from the approval state to a submitted state (`doc_status=1`). Example: Approval State = `Pending`, Approval Action = `Approve`, with an Approve transition from Pending → Approved. If **Approval Action** is empty, the app defaults to `Approve`.
+
+**Non-submittable DocTypes** (documents that are never submitted) need one workflow state marked **Approved State for Non-Submittable Document**. When all required approvals are recorded, the app applies the workflow transition to that state instead of submitting the document.
 
 ### Reapproval Condition
 
@@ -237,6 +240,29 @@ Each workflow state can set an additional field when the document enters that st
 | Update Value | `{{ doc.credit_limits[0].credit_limit if doc.credit_limits else 0 }}` |
 
 Sites define their own custom fields through Customize Form. The app does not install DocType-specific fields.
+
+### Using ERPNext Status as the Workflow State Field
+
+Some submittable DocTypes use ERPNext's built-in **status** field as the workflow state field instead of a separate custom field like `workflow_state`. The workflow record sets **Workflow State Field** to `status` and **Override Status** so workflow transitions drive operational status values such as Pending and Approved. Typically this also requires extensive overrides to `status_updater` and to the doctype's listview. This approach isn't recommended but is included here for completeness sake.
+
+Configure sidebar finalization the same way as any other submittable DocType: set **Approval State**, **Approval Action**, and an Approve transition from the approval state to a submitted state (`doc_status=1`).
+
+Set **Update Field** and **Update Value** on the approval and approved states so `status` stays aligned when users move through the workflow:
+
+| Workflow State | doc_status | Update Field | Update Value |
+| :--- | :--- | :--- | :--- |
+| Pending (Approval State) | 0 | `status` | `Pending` |
+| Approved | 1 | `status` | `Approved` |
+
+When the last sidebar approval is recorded, the app applies the configured **Approval Action**. That runs the same workflow transition as the Approve button: it submits the document, sets the workflow state field, and applies the Approved state's **Update Field** values. If finalization only called `submit()` without the workflow transition, the document could end up submitted while **status** still showed Pending.
+
+Document Approval Rule conditions should match documents in the approval state using the same field the workflow uses, for example:
+
+```jinja
+{{ doc.status == 'Pending' }}
+```
+
+Sites that use **status** as the workflow state field typically also customize Purchase Order `set_status` so ERPNext does not overwrite workflow-driven values such as Pending and Approved on save. That override is site-specific and is not part of the approvals app.
 
 ### Where the Sidebar Appears
 

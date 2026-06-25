@@ -5,7 +5,15 @@ import frappe
 import pytest
 from frappe.exceptions import ValidationError
 
+from approvals.approvals.api import get_submittable_approval_action
 from approvals.approvals.workflow import apply_workflow
+
+
+def purchase_order_workflow_config():
+	workflow_name = frappe.db.get_value(
+		"Workflow", {"document_type": "Purchase Order", "is_active": 1}, "name"
+	)
+	return frappe.get_cached_doc("Workflow", workflow_name)
 
 
 def send_purchase_orders_for_approval():
@@ -16,30 +24,92 @@ def send_purchase_orders_for_approval():
 		"fallback_approver",
 		"mbritt@cfc.co",
 	)
+	workflow = purchase_order_workflow_config()
+	state_field = workflow.workflow_state_field
+	approval_state = workflow.approval_state
+
 	for po_name in frappe.get_all("Purchase Order", {"docstatus": 0}, pluck="name"):
 		po = frappe.get_doc("Purchase Order", po_name)
-		if po.workflow_state == "Pending Approval":
+		if po.get(state_field) == approval_state:
 			apply_workflow(po, "Reject")
-		if po.workflow_state == "Draft":
+			po.reload()
+		if po.get(state_field) in (None, "", "Draft"):
 			apply_workflow(po, "Send for Approval")
 
 
 def prepare_purchase_order_for_approval(supplier):
 	po_name = frappe.db.get_value("Purchase Order", {"supplier": supplier, "docstatus": 0}, "name")
 	assert po_name, f"No unsubmitted Purchase Order found for supplier {supplier}"
+
+	workflow = purchase_order_workflow_config()
+	state_field = workflow.workflow_state_field
+	approval_state = workflow.approval_state
+
 	po = frappe.get_doc("Purchase Order", po_name)
-	if po.workflow_state == "Pending Approval":
+	if po.get(state_field) == approval_state:
 		apply_workflow(po, "Reject")
 	po.reload()
-	if po.workflow_state == "Draft":
+	if po.get(state_field) in (None, "", "Draft"):
 		apply_workflow(po, "Send for Approval")
 	po.reload()
-	assert po.workflow_state == "Pending Approval"
+	assert po.get(state_field) == approval_state
 	frappe.call("approvals.approvals.api.assign_approvers", doc=po)
 	return po
 
 
-@pytest.mark.order(10)
+@pytest.mark.order(1)
+def test_get_submittable_approval_action_from_pending_approval():
+	send_purchase_orders_for_approval()
+
+	po_name = frappe.db.get_value(
+		"Purchase Order", {"supplier": "Sphere Cellular", "docstatus": 0}, "name"
+	)
+	assert po_name, "No unsubmitted Purchase Order found for Sphere Cellular"
+
+	po = frappe.get_doc("Purchase Order", po_name)
+	assert po.workflow_state == "Pending Approval"
+	assert get_submittable_approval_action(po) == "Approve"
+
+
+@pytest.mark.order(2)
+def test_get_submittable_approval_action_from_draft():
+	send_purchase_orders_for_approval()
+
+	po_name = frappe.db.get_value(
+		"Purchase Order", {"supplier": "Sphere Cellular", "docstatus": 0}, "name"
+	)
+	assert po_name, "No unsubmitted Purchase Order found for Sphere Cellular"
+
+	po = frappe.get_doc("Purchase Order", po_name)
+	frappe.db.set_value("Purchase Order", po.name, "workflow_state", "Draft", update_modified=False)
+	po.reload()
+
+	assert get_submittable_approval_action(po) is None
+
+
+@pytest.mark.order(3)
+def test_get_submittable_approval_action_defaults_when_approval_action_empty():
+	send_purchase_orders_for_approval()
+
+	po_name = frappe.db.get_value(
+		"Purchase Order", {"supplier": "Sphere Cellular", "docstatus": 0}, "name"
+	)
+	assert po_name, "No unsubmitted Purchase Order found for Sphere Cellular"
+
+	workflow_name = frappe.db.get_value("Workflow", {"document_type": "Purchase Order"}, "name")
+	assert workflow_name
+	frappe.db.set_value("Workflow", workflow_name, "approval_action", None, update_modified=False)
+
+	po = frappe.get_doc("Purchase Order", po_name)
+	assert po.workflow_state == "Pending Approval"
+	assert get_submittable_approval_action(po) == "Approve"
+
+	frappe.db.set_value(
+		"Workflow", workflow_name, "approval_action", "Approve", update_modified=False
+	)
+
+
+@pytest.mark.order(4)
 @pytest.mark.parametrize(
 	"supplier,approver,expects_todo,expects_doc_share",
 	[
@@ -50,16 +120,6 @@ def prepare_purchase_order_for_approval(supplier):
 	],
 )
 def test_purchase_order_approval_side_effects(supplier, approver, expects_todo, expects_doc_share):
-	"""
-	Each Chelsea Fruit Co purchase order tier assigns the correct approver after Send for Approval.
-
-	| Supplier                     | PO Total | Approver       | ToDo | DocShare |
-	| ---------------------------- | -------: | -------------- | ---- | -------- |
-	| Exceptional Grid             |  $150.00 | none           | no   | no       |
-	| Sphere Cellular              |  $250.00 | arivers@cfc.co | yes  | yes      |
-	| Liu & Loewen Accountants LLP |  $750.00 | mmckay@cfc.co  | yes  | yes      |
-	| Cooperative Ag Finance       | $5000.00 | mbritt@cfc.co  | yes  | no       |
-	"""
 	send_purchase_orders_for_approval()
 
 	po_name = frappe.db.get_value("Purchase Order", {"supplier": supplier, "docstatus": 0}, "name")
@@ -81,9 +141,8 @@ def test_purchase_order_approval_side_effects(supplier, approver, expects_todo, 
 		assert not frappe.db.exists("DocShare", {"user": approver, "share_name": po.name})
 
 
-@pytest.mark.order(30)
+@pytest.mark.order(5)
 def test_purchase_order_stock_manager_approval_via_api():
-	"""Sphere Cellular ($250) submits after Stock Manager sidebar approval."""
 	po = prepare_purchase_order_for_approval("Sphere Cellular")
 	approver, approval_role = "arivers@cfc.co", "Stock Manager"
 
@@ -110,9 +169,8 @@ def test_purchase_order_stock_manager_approval_via_api():
 	)
 
 
-@pytest.mark.order(31)
+@pytest.mark.order(6)
 def test_purchase_order_sales_manager_approval_via_api():
-	"""Liu & Loewen ($750) submits after Sales Manager sidebar approval."""
 	po = prepare_purchase_order_for_approval("Liu & Loewen Accountants LLP")
 	approver, approval_role = "mmckay@cfc.co", "Sales Manager"
 
@@ -139,9 +197,8 @@ def test_purchase_order_sales_manager_approval_via_api():
 	)
 
 
-@pytest.mark.order(32)
+@pytest.mark.order(7)
 def test_purchase_order_accounts_manager_approval_via_api():
-	"""Cooperative Ag Finance ($5000) submits after Accounts Manager sidebar approval."""
 	po = prepare_purchase_order_for_approval("Cooperative Ag Finance")
 	approver, approval_role = "mbritt@cfc.co", "Accounts Manager"
 
@@ -168,9 +225,8 @@ def test_purchase_order_accounts_manager_approval_via_api():
 	)
 
 
-@pytest.mark.order(13)
+@pytest.mark.order(8)
 def test_workflow_approve_blocked_without_approvals():
-	"""The workflow Approve action must not submit before required sidebar approvals exist."""
 	send_purchase_orders_for_approval()
 
 	po_name = frappe.db.get_value(
@@ -190,9 +246,8 @@ def test_workflow_approve_blocked_without_approvals():
 	assert po.workflow_state == "Pending Approval"
 
 
-@pytest.mark.order(34)
+@pytest.mark.order(9)
 def test_workflow_approve_blocked_until_all_required_roles_approve():
-	"""Partial sidebar approvals must not allow workflow Approve to finalize the document."""
 	send_purchase_orders_for_approval()
 
 	po_name = frappe.db.get_value(

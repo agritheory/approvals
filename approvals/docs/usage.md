@@ -27,7 +27,7 @@ Users with the required role see Approve and Reject buttons next to their approv
 
 To approve, review the document and click Approve.
 
-The approval records immediately. If this was the last required approval, the document finalizes automatically. Submittable documents (like Purchase Order) submit. Non-submittable documents transition to the workflow's approved state. If other approvals are still pending, the document stays in its current state until everyone has approved.
+The approval records immediately. If this was the last required approval, the document finalizes automatically. Submittable documents apply the configured workflow **Approval Action** (typically Approve), which submits the document and updates the workflow state. Non-submittable documents transition to the workflow's approved state. If other approvals are still pending, the document stays in its current state until everyone has approved.
 
 ## Rejecting a Document
 
@@ -73,8 +73,9 @@ The assigned user receives a ToDo. However, any user with the required role can 
 
 Once every required approval is recorded:
 
-- Submittable documents (like Purchase Order) automatically submit
-- Non-submittable documents apply the workflow transition to the configured approved state and save
-- Workflow state field updates and any configured state Update Field values are applied
+- Submittable documents apply the configured **Approval Action** workflow transition (typically Approve), which submits the document
+- Non-submittable documents apply the workflow transition to the state marked **Approved State for Non-Submittable Document** and save
+- The workflow state field and any configured state **Update Field** / **Update Value** settings are applied for both paths
+- Submittable documents without a workflow still submit directly
 
 No manual action is needed to finalize the document after the last approval.

@@ -5,6 +5,7 @@ import frappe
 import pytest
 from frappe.exceptions import ValidationError
 
+from approvals.approvals.api import get_submittable_approval_action
 from approvals.approvals.workflow import apply_workflow
 
 
@@ -191,3 +192,52 @@ def test_workflow_approve_blocked_until_all_required_roles_approve():
 	assert po.workflow_state == "Approved"
 
 	extra_rule.delete(ignore_permissions=True)
+
+
+def test_get_submittable_approval_action_from_pending_approval():
+	send_purchase_orders_for_approval()
+
+	po_name = frappe.db.get_value(
+		"Purchase Order", {"supplier": "Sphere Cellular", "docstatus": 0}, "name"
+	)
+	assert po_name
+
+	po = frappe.get_doc("Purchase Order", po_name)
+	assert po.workflow_state == "Pending Approval"
+	assert get_submittable_approval_action(po) == "Approve"
+
+
+def test_get_submittable_approval_action_from_draft():
+	send_purchase_orders_for_approval()
+
+	po_name = frappe.db.get_value(
+		"Purchase Order", {"supplier": "Sphere Cellular", "docstatus": 0}, "name"
+	)
+	assert po_name
+
+	po = frappe.get_doc("Purchase Order", po_name)
+	frappe.db.set_value("Purchase Order", po.name, "workflow_state", "Draft", update_modified=False)
+	po.reload()
+
+	assert get_submittable_approval_action(po) is None
+
+
+def test_get_submittable_approval_action_defaults_when_approval_action_empty():
+	send_purchase_orders_for_approval()
+
+	po_name = frappe.db.get_value(
+		"Purchase Order", {"supplier": "Sphere Cellular", "docstatus": 0}, "name"
+	)
+	assert po_name
+
+	workflow_name = frappe.db.get_value("Workflow", {"document_type": "Purchase Order"}, "name")
+	assert workflow_name
+	frappe.db.set_value("Workflow", workflow_name, "approval_action", None, update_modified=False)
+
+	po = frappe.get_doc("Purchase Order", po_name)
+	assert po.workflow_state == "Pending Approval"
+	assert get_submittable_approval_action(po) == "Approve"
+
+	frappe.db.set_value(
+		"Workflow", workflow_name, "approval_action", "Approve", update_modified=False
+	)

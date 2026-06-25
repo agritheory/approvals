@@ -240,7 +240,12 @@ def create_workflows(settings=None):
 
 def sync_workflow_from_fixture(name, workflow):
 	doc = frappe.get_doc("Workflow", name)
-	for field in ("reapproval_condition", "approval_state", "require_rejection_reason"):
+	for field in (
+		"reapproval_condition",
+		"approval_state",
+		"approval_action",
+		"require_rejection_reason",
+	):
 		if workflow.get(field) is not None:
 			doc.set(field, workflow[field])
 

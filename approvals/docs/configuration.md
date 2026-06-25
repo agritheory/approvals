@@ -152,15 +152,18 @@ In the Workflow record, the Approval State field tells Approvals which state rep
 
 A typical workflow has states like Draft, Pending Approval, and Approved. A Rejected state returns documents to Draft.
 
-The app adds three fields to the standard Workflow DocType:
+The app adds these fields to the standard Workflow DocType:
 
 | Field | Purpose |
 | :--- | :-------- |
 | **Approval State** | Workflow state where approval rules run and the form is locked |
+| **Approval Action** | Workflow transition action applied when all sidebar approvals are recorded (submittable doctypes) |
 | **Require Rejection Reason** | Prompt approvers for a comment when rejecting |
 | **Reapproval Condition** | Jinja condition that returns a document to Approval State on save |
 
-Non-submittable DocTypes (documents that are never submitted) need one workflow state marked **Approved State for Non-Submittable Document**. When all required approvals are recorded, the app applies the workflow transition to that state instead of submitting the document.
+**Submittable DocTypes** (like Purchase Order) need **Approval State** and **Approval Action** set on the Workflow, plus a matching transition from the approval state to a submitted state (`doc_status=1`). Example: Approval State = `Pending`, Approval Action = `Approve`, with an Approve transition from Pending → Approved. If **Approval Action** is empty, the app defaults to `Approve`.
+
+**Non-submittable DocTypes** (documents that are never submitted) need one workflow state marked **Approved State for Non-Submittable Document**. When all required approvals are recorded, the app applies the workflow transition to that state instead of submitting the document.
 
 ### Reapproval Condition
 

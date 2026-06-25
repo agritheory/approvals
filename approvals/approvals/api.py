@@ -10,7 +10,7 @@ from frappe.desk.form.utils import add_comment
 from frappe.model.document import Document
 from frappe.model.workflow import get_workflow_name
 from frappe.query_builder import DocType
-from frappe.utils import cint, get_datetime
+from frappe.utils import cint, cstr, get_datetime
 from frappe.utils.data import get_url_to_form
 from frappe.share import add as add_share
 from approvals.approvals.validation import (
@@ -126,6 +126,42 @@ def get_non_submittable_approval_action(doc: Document) -> str | None:
 	return None
 
 
+def get_submittable_approval_action(doc: Document) -> str | None:
+	workflow_name = get_workflow_name(doc.doctype)
+	if not workflow_name:
+		return None
+
+	workflow = frappe.get_doc("Workflow", workflow_name)
+	action_name = workflow.get("approval_action") or "Approve"
+	current_state = doc.get(workflow.workflow_state_field)
+
+	for transition in workflow.transitions:
+		if transition.state != current_state or transition.action != action_name:
+			continue
+		next_state = next(
+			(state for state in workflow.states if state.state == transition.next_state),
+			None,
+		)
+		if next_state and cstr(next_state.doc_status) == "1":
+			return transition.action
+	return None
+
+
+def finalize_document_after_approval(doc: Document):
+	doc.flags.ignore_permissions = True
+	if doc.meta.is_submittable:
+		action = get_submittable_approval_action(doc)
+	else:
+		action = get_non_submittable_approval_action(doc)
+
+	if action:
+		apply_workflow(doc, action)
+	elif doc.meta.is_submittable:
+		doc.submit()
+	else:
+		doc.save(ignore_permissions=True)
+
+
 @frappe.whitelist()
 def approve_document(
 	doc: Document | str,
@@ -159,15 +195,7 @@ def approve_document(
 	checked_all = check_all_document_approvals(doc, method, include_role=role)
 	if checked_all:
 		doc = frappe.get_doc(doc.doctype, doc.name)
-		if doc.meta.is_submittable:
-			doc.flags.ignore_permissions = True
-			doc.submit()
-		else:
-			action = get_non_submittable_approval_action(doc)
-			if action:
-				apply_workflow(doc, action)
-			else:
-				doc.save(ignore_permissions=True)
+		finalize_document_after_approval(doc)
 
 	return approval
 

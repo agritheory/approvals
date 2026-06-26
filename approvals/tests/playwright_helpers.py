@@ -8,7 +8,7 @@ from approvals.tests.playwright_telemetry import ensure_bench_web_running, get_p
 
 
 def login_as(page: Page, user: str, password: str = "admin"):
-	page.goto(get_playwright_base_url())
+	page.goto(f"{get_playwright_base_url()}/app")
 	page.locator("#login_email").fill(user)
 	page.locator("#login_password").fill(password)
 	page.locator("button.btn-login:not(.btn-ldap-login)").click()

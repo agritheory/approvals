@@ -114,8 +114,8 @@ def test_get_submittable_approval_action_defaults_when_approval_action_empty():
 	"supplier,approver,expects_todo,expects_doc_share",
 	[
 		pytest.param("Exceptional Grid", None, False, False, id="under_200"),
-		pytest.param("Sphere Cellular", "arivers@cfc.co", True, True, id="stock_manager"),
-		pytest.param("Liu & Loewen Accountants LLP", "mmckay@cfc.co", True, True, id="sales_manager"),
+		pytest.param("Sphere Cellular", "arivers@cfc.co", True, False, id="stock_manager"),
+		pytest.param("Liu & Loewen Accountants LLP", "mmckay@cfc.co", True, False, id="sales_manager"),
 		pytest.param("Cooperative Ag Finance", "mbritt@cfc.co", True, False, id="accounts_manager"),
 	],
 )

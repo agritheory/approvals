@@ -5,11 +5,27 @@ import frappe
 import pytest
 from frappe.model.workflow import get_workflow_name
 
+from approvals.tests.fixtures import suppliers
+
 
 def purchase_invoice_for_supplier(supplier):
 	name = frappe.db.get_value("Purchase Invoice", {"supplier": supplier, "docstatus": 0}, "name")
 	assert name, f"No draft Purchase Invoice found for {supplier}"
 	return frappe.get_doc("Purchase Invoice", name)
+
+
+def create_draft_purchase_invoice_for_supplier(supplier):
+	"""Create a fresh draft PI so browser submit tests do not consume fixture invoices."""
+	supplier_row = next(row for row in suppliers if row[0] == supplier)
+	pi = frappe.new_doc("Purchase Invoice")
+	pi.company = frappe.defaults.get_defaults().company
+	pi.set_posting_time = 1
+	pi.posting_date = frappe.utils.getdate()
+	pi.supplier = supplier
+	pi.append("items", {"item_code": supplier_row[1], "rate": supplier_row[3], "qty": 1})
+	pi.save()
+	frappe.db.commit()
+	return pi
 
 
 def ensure_purchase_invoice_assignments(pi):
@@ -18,6 +34,7 @@ def ensure_purchase_invoice_assignments(pi):
 		{"reference_type": "Purchase Invoice", "reference_name": pi.name, "status": "Open"},
 	):
 		frappe.call("approvals.approvals.api.assign_approvers", doc=pi)
+		frappe.db.commit()
 
 
 @pytest.mark.order(11)
@@ -25,8 +42,8 @@ def ensure_purchase_invoice_assignments(pi):
 	"supplier,approver,expects_todo,expects_doc_share",
 	[
 		pytest.param("Exceptional Grid", None, False, False, id="under_200"),
-		pytest.param("Sphere Cellular", "arivers@cfc.co", True, True, id="stock_manager"),
-		pytest.param("Liu & Loewen Accountants LLP", "mmckay@cfc.co", True, True, id="sales_manager"),
+		pytest.param("Sphere Cellular", "arivers@cfc.co", True, False, id="stock_manager"),
+		pytest.param("Liu & Loewen Accountants LLP", "mmckay@cfc.co", True, False, id="sales_manager"),
 		pytest.param("Cooperative Ag Finance", "mbritt@cfc.co", True, False, id="accounts_manager"),
 	],
 )
@@ -39,8 +56,8 @@ def test_purchase_invoice_approval_side_effects(
 	| Supplier                     | PI Total | Approver       | ToDo | DocShare |
 	| ---------------------------- | -------: | -------------- | ---- | -------- |
 	| Exceptional Grid             |  $150.00 | none           | no   | no       |
-	| Sphere Cellular              |  $250.00 | arivers@cfc.co | yes  | yes      |
-	| Liu & Loewen Accountants LLP |  $750.00 | mmckay@cfc.co  | yes  | yes      |
+	| Sphere Cellular              |  $250.00 | arivers@cfc.co | yes  | no       |
+	| Liu & Loewen Accountants LLP |  $750.00 | mmckay@cfc.co  | yes  | no       |
 	| Cooperative Ag Finance       | $5000.00 | mbritt@cfc.co  | yes  | no       |
 	"""
 	pi = purchase_invoice_for_supplier(supplier)

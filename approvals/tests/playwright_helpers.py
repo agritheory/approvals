@@ -4,14 +4,23 @@
 import frappe
 from playwright.sync_api import Page, expect
 
-from approvals.tests.playwright_telemetry import ensure_bench_web_running, get_playwright_base_url
+from approvals.tests.playwright_telemetry import get_playwright_base_url
 
 
 def login_as(page: Page, user: str, password: str = "admin"):
-	page.goto(f"{get_playwright_base_url()}/app")
-	page.locator("#login_email").fill(user)
-	page.locator("#login_password").fill(password)
-	page.locator("button.btn-login:not(.btn-ldap-login)").click()
+	base_url = get_playwright_base_url()
+	# Authenticate through the login API rather than driving the UI form: the
+	# login page's submit handler may not be bound yet when Playwright clicks,
+	# which makes the button fall back to a native GET and never establishes a
+	# session. page.request shares the browser context cookie jar, so the sid
+	# cookie set here is honored by the subsequent navigation.
+	response = page.request.post(
+		f"{base_url}/api/method/login",
+		form={"usr": user, "pwd": password},
+	)
+	if not response.ok:
+		raise AssertionError(f"login failed for {user}: {response.status} {response.text()}")
+	page.goto(f"{base_url}/app")
 	page.wait_for_url("**/app/**", timeout=15000)
 
 

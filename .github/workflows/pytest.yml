@@ -85,6 +85,17 @@ jobs:
         run: |
           bash ${{ github.workspace }}/.github/helper/install.sh
 
+      - name: Build Assets
+        env:
+          BENCH_ROOT: ${{ env.BENCH_ROOT }}
+        run: |
+          # bench refuses root; under act the step runs as root, so build as the bench user.
+          if [[ "${ACT:-}" == "true" && "$(id -u)" -eq 0 ]]; then
+            runuser -u ubuntu -- env HOME=/home/ubuntu PATH="${PATH}" bash -lc "cd '${BENCH_ROOT}' && bench build"
+          else
+            cd "${BENCH_ROOT}" && bench build
+          fi
+
       - name: Run Tests
         env:
           BENCH_ROOT: ${{ env.BENCH_ROOT }}

@@ -18,7 +18,10 @@ from approvals.tests.playwright_helpers import (
 	login_as,
 	open_form_page,
 )
-from approvals.tests.playwright_telemetry import init_playwright_url_state
+from approvals.tests.playwright_telemetry import (
+	ensure_bench_web_running,
+	init_playwright_url_state,
+)
 from approvals.tests.test_purchase_invoice_non_workflow_approval import (
 	create_draft_purchase_invoice_for_supplier,
 	ensure_purchase_invoice_assignments,
@@ -29,7 +32,12 @@ from approvals.tests.test_utils import use_current_db_transaction
 
 
 @pytest.fixture(scope="session")
-def browser_context_args(browser_context_args, request):
+def playwright_bench_web():
+	ensure_bench_web_running()
+
+
+@pytest.fixture(scope="session")
+def browser_context_args(browser_context_args, request, playwright_bench_web):
 	args = {
 		**browser_context_args,
 		"viewport": {"width": 1280, "height": 900},
@@ -40,7 +48,7 @@ def browser_context_args(browser_context_args, request):
 
 
 @pytest.fixture(scope="session")
-def browser_type_launch_args(browser_type_launch_args, request):
+def browser_type_launch_args(browser_type_launch_args, request, playwright_bench_web):
 	base_url = getattr(request.config.option, "base_url", None)
 	env = init_playwright_url_state(base_url=base_url)
 	map_host = env.get("playwright_resolver_map_host")

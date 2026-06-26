@@ -20,6 +20,8 @@ jobs:
         os: [ubuntu-latest]
       fail-fast: false
     name: Tests
+    env:
+      BENCH_ROOT: /home/runner/frappe-bench
 
     services:
       mariadb:
@@ -29,7 +31,13 @@ jobs:
           MYSQL_ROOT_PASSWORD: 'admin'
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=5s --health-timeout=2s --health-retries=3
+        options: --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -padmin" --health-interval=5s --health-timeout=2s --health-retries=3
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping" --health-interval=5s --health-timeout=2s --health-retries=3
 
     steps:
       - name: Clone
@@ -45,9 +53,13 @@ jobs:
         with:
           node-version: 18
           check-latest: true
-          cache: 'yarn' # Replaces `Get yarn cache directory path` and `yarn-cache` steps
+          cache: 'yarn'
+
+      - name: Enable Yarn
+        run: command -v yarn >/dev/null 2>&1 || npm install -g yarn
 
       - name: Add to Hosts
+        if: ${{ !env.ACT }}
         run: echo "127.0.0.1 test_site" | sudo tee -a /etc/hosts
 
       - name: Cache pip
@@ -67,27 +79,20 @@ jobs:
 
       - name: Install Bench Site and Apps
         env:
-          MYSQL_HOST: 'localhost'
+          MYSQL_HOST: '127.0.0.1'
           MYSQL_PWD: 'admin'
           BRANCH_NAME: ${{ env.BRANCH_NAME}}
         run: |
           bash ${{ github.workspace }}/.github/helper/install.sh
 
       - name: Run Tests
-        working-directory: /home/runner/frappe-bench
-        run: |
-          set -o pipefail
-          source env/bin/activate
-          python -m playwright install --with-deps chromium
-          pytest apps/approvals/approvals/tests \
-            --browser chromium \
-            --cov=approvals \
-            --cov-report=xml \
-            --cov-report=term-missing \
-            --disable-warnings -s | tee apps/approvals/pytest-coverage.txt
+        env:
+          BENCH_ROOT: ${{ env.BENCH_ROOT }}
+        run: bash ${{ github.workspace }}/.github/helper/run_tests.sh
 
       - name: Pytest coverage comment
+        if: ${{ !env.ACT }}
         uses: MishaKav/pytest-coverage-comment@main
         with:
-          pytest-coverage-path: /home/runner/frappe-bench/apps/approvals/pytest-coverage.txt
-          pytest-xml-coverage-path: /home/runner/frappe-bench/apps/approvals/coverage.xml
+          pytest-coverage-path: ${{ env.BENCH_ROOT }}/apps/approvals/pytest-coverage.txt
+          pytest-xml-coverage-path: ${{ env.BENCH_ROOT }}/apps/approvals/coverage.xml

@@ -4,14 +4,14 @@
 import frappe
 from playwright.sync_api import Page, expect
 
-from approvals.tests.playwright_telemetry import get_playwright_base_url
+from approvals.tests.playwright_telemetry import ensure_bench_web_running, get_playwright_base_url
 
 
 def login_as(page: Page, user: str, password: str = "admin"):
 	page.goto(get_playwright_base_url())
-	page.get_by_role("textbox", name="Email").fill(user)
-	page.get_by_role("textbox", name="Password").fill(password)
-	page.get_by_role("button", name="Login").click()
+	page.locator("#login_email").fill(user)
+	page.locator("#login_password").fill(password)
+	page.locator("button.btn-login:not(.btn-ldap-login)").click()
 	page.wait_for_url("**/app/**", timeout=15000)
 
 

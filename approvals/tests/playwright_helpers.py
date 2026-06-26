@@ -1,6 +1,8 @@
 # Copyright (c) 2026, AgriTheory and contributors
 # For license information, please see license.txt
 
+import re
+
 import frappe
 from playwright.sync_api import Page, expect
 
@@ -21,7 +23,8 @@ def login_as(page: Page, user: str, password: str = "admin"):
 	if not response.ok:
 		raise AssertionError(f"login failed for {user}: {response.status} {response.text()}")
 	page.goto(f"{base_url}/app")
-	page.wait_for_url("**/app/**", timeout=15000)
+	# The desk may settle at "/app" or redirect to "/app/<workspace>"; accept both.
+	page.wait_for_url(re.compile(r"/app(/|\?|$)"), timeout=15000)
 
 
 def form_page_url(doctype: str, name: str):

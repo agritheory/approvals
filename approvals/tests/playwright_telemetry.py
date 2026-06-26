@@ -17,18 +17,16 @@ from frappe.utils import get_bench_path
 def probe_host_port(host: str, port: int, timeout: float = 2.0) -> dict:
 	result = {"host": host, "port": port, "dns_resolved": False, "tcp_reachable": False}
 	try:
-		addrinfo = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+		socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
 		result["dns_resolved"] = True
-		result["resolved_addresses"] = [item[4][0] for item in addrinfo]
-	except socket.gaierror as error:
-		result["dns_error"] = str(error)
+	except socket.gaierror:
 		return result
 
 	try:
 		with socket.create_connection((host, port), timeout=timeout):
 			result["tcp_reachable"] = True
-	except OSError as error:
-		result["tcp_error"] = str(error)
+	except OSError:
+		pass
 	return result
 
 
@@ -58,7 +56,6 @@ def bench_connection_target(site_config: dict, get_url: str) -> dict:
 		bench_port = 443 if scheme == "https" else 80
 
 	return {
-		"scheme": scheme,
 		"site_host": site_host,
 		"bench_port": bench_port,
 		"canonical_url": get_url.rstrip("/"),
@@ -150,31 +147,21 @@ def init_playwright_url_state(base_url: str | None = None) -> dict:
 		_url_state = {
 			"playwright_base_url": canonical_url,
 			"playwright_resolver_map_host": site_host,
-			"playwright_resolution": "host_resolver_map",
 		}
 	elif site_host and hostname_probe.get("dns_resolved") and hostname_probe.get("tcp_reachable"):
 		_url_state = {
 			"playwright_base_url": canonical_url,
 			"playwright_resolver_map_host": None,
-			"playwright_resolution": "canonical",
-		}
-	elif localhost_probe.get("tcp_reachable"):
-		_url_state = {
-			"playwright_base_url": canonical_url,
-			"playwright_resolver_map_host": site_host if non_localhost else None,
-			"playwright_resolution": "host_resolver_map" if non_localhost else "localhost",
 		}
 	else:
 		_url_state = {
 			"playwright_base_url": canonical_url,
 			"playwright_resolver_map_host": site_host if non_localhost else None,
-			"playwright_resolution": "canonical_unreachable",
 		}
 
 	if base_url:
 		_url_state["playwright_base_url"] = base_url.rstrip("/")
 		_url_state["playwright_resolver_map_host"] = None
-		_url_state["playwright_resolution"] = "pytest_base_url"
 
 	return _url_state
 

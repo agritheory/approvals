@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Configuration
 
 <div class="byline">
-  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-06-25
+  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-06-23
 </div>
 
 ## Creating an Approval Rule
@@ -124,6 +124,57 @@ Then reference those values in a condition:
 
 Changes to the settings JSON apply to all rules immediately. No code changes are required.
 
+## Approvals Without a Workflow
+
+Some submittable documents need approval before posting, but not a full workflow with states like Pending Approval or Send for Approval. Purchase Invoice is a common example: accounts payable saves vendor bills as drafts, matching rules assign approvers on save, and the final approver submits the invoice from the sidebar.
+
+This pattern works well when:
+
+- The document is submittable (for example, Purchase Invoice or Purchase Order)
+- Approvers should act on draft documents without a separate workflow transition
+- The site does not need workflow-driven rejection, reapproval, or state locking
+
+Workflows remain optional. Use them when you need explicit approval states, rejection flows, or non-submittable documents like Customer credit limit changes.
+
+### Setup
+
+1. **Do not** create a Workflow for the DocType, or leave the DocType out of any active Workflow record.
+2. Navigate to Approvals > Document Approval Rule and create one or more rules for the DocType (see [Creating an Approval Rule](#creating-an-approval-rule) and [Narrowing Down with Conditions](#narrowing-down-with-conditions)).
+3. Optionally configure a [Fallback Approver](#setting-up-a-fallback) for documents that match the DocType but no rule condition.
+4. Ensure users who approve have the required roles and can open the document (the app creates ToDo assignments and DocShare access when needed).
+
+**Example setup for Purchase Invoice at Chelsea Fruit Co:**
+
+| Rule | Role | Condition | Primary Assignee |
+| :--- | :--- | :-------- | :--------------- |
+| 1 | Stock Manager | `{{ doc.grand_total > 200 and doc.grand_total < 500 }}` | (round-robin) |
+| 2 | Sales Manager | `{{ doc.grand_total > 500 and doc.grand_total < 1000 }}` | (round-robin) |
+| 3 | Accounts Manager | `{{ doc.grand_total > 1000 }}` | Morgan Britt |
+
+A $250 invoice from Sphere Cellular requires Stock Manager approval. A $5,000 invoice from Cooperative Ag Finance requires Accounts Manager approval. A $150 invoice matches no rule and needs no approval unless the fallback role is configured.
+
+### How It Behaves
+
+On every save of a draft document, matching rules run and approvers are assigned (ToDo records, and DocShare when the assignee lacks read access). The approval sidebar appears on the form for any DocType with at least one enabled rule.
+
+Approvers use the sidebar **Approve** and **Reject** buttons while the document remains in draft (`docstatus = 0`). The form is not locked by a workflow Approval State; editors can still change the document until it is submitted.
+
+When the last required approver clicks **Approve** on a submittable document **without a workflow**, a confirmation dialog appears — **Permanently Submit {document name}?** — before the approval is recorded and the document submits. This matches ERPNext's normal submit confirmation.
+
+The standard **Submit** toolbar action is also blocked until all required sidebar approvals exist (`before_submit` validation).
+
+### Workflow vs No Workflow
+
+| | No workflow | With workflow |
+| :--- | :---------- | :------------ |
+| When rules evaluate | On each save while draft | When document enters Approval State |
+| Form editing | Draft stays editable | Locked in Approval State |
+| Final action | Confirm, then auto-submit (submittable) | Auto-submit or workflow transition |
+| Rejection | No workflow state change; use comments | Workflow Reject returns to Draft and clears approvals |
+| Reapproval | Change document and save; re-assign on save | Reapproval Condition on workflow |
+
+For rejection handling without a workflow, rely on document comments or add a Workflow later if you need structured reject-and-revise flows.
+
 ## Email Reminders
 
 Users can forget they have documents waiting. Reminder emails list all pending approvals for each user.
@@ -146,7 +197,7 @@ The app ships with `send_reminder_email()` but does not register a scheduled job
 
 ## Connecting to Workflows
 
-Approval rules evaluate when documents enter a specific workflow state. The DocType needs a Workflow configured with an Approval State set.
+Approval rules can also evaluate when documents enter a specific workflow state. The DocType needs a Workflow configured with an Approval State set.
 
 In the Workflow record, the Approval State field tells Approvals which state represents "waiting for approval." When a document transitions into this state, rules evaluate and assignments are created.
 

@@ -37,6 +37,26 @@ def send_purchase_orders_for_approval():
 			apply_workflow(po, "Send for Approval")
 
 
+def prepare_purchase_order_for_approval(supplier):
+	po_name = frappe.db.get_value("Purchase Order", {"supplier": supplier, "docstatus": 0}, "name")
+	assert po_name, f"No unsubmitted Purchase Order found for supplier {supplier}"
+
+	workflow = purchase_order_workflow_config()
+	state_field = workflow.workflow_state_field
+	approval_state = workflow.approval_state
+
+	po = frappe.get_doc("Purchase Order", po_name)
+	if po.get(state_field) == approval_state:
+		apply_workflow(po, "Reject")
+	po.reload()
+	if po.get(state_field) in (None, "", "Draft"):
+		apply_workflow(po, "Send for Approval")
+	po.reload()
+	assert po.get(state_field) == approval_state
+	frappe.call("approvals.approvals.api.assign_approvers", doc=po)
+	return po
+
+
 @pytest.mark.order(1)
 def test_get_submittable_approval_action_from_pending_approval():
 	send_purchase_orders_for_approval()
@@ -94,8 +114,8 @@ def test_get_submittable_approval_action_defaults_when_approval_action_empty():
 	"supplier,approver,expects_todo,expects_doc_share",
 	[
 		pytest.param("Exceptional Grid", None, False, False, id="under_200"),
-		pytest.param("Sphere Cellular", "arivers@cfc.co", True, True, id="stock_manager"),
-		pytest.param("Liu & Loewen Accountants LLP", "mmckay@cfc.co", True, True, id="sales_manager"),
+		pytest.param("Sphere Cellular", "arivers@cfc.co", True, False, id="stock_manager"),
+		pytest.param("Liu & Loewen Accountants LLP", "mmckay@cfc.co", True, False, id="sales_manager"),
 		pytest.param("Cooperative Ag Finance", "mbritt@cfc.co", True, False, id="accounts_manager"),
 	],
 )
@@ -122,31 +142,14 @@ def test_purchase_order_approval_side_effects(supplier, approver, expects_todo, 
 
 
 @pytest.mark.order(5)
-@pytest.mark.parametrize(
-	"supplier,approver,approval_role",
-	[
-		pytest.param("Sphere Cellular", "arivers@cfc.co", "Stock Manager", id="stock_manager"),
-		pytest.param(
-			"Liu & Loewen Accountants LLP", "mmckay@cfc.co", "Sales Manager", id="sales_manager"
-		),
-		pytest.param(
-			"Cooperative Ag Finance", "mbritt@cfc.co", "Accounts Manager", id="accounts_manager"
-		),
-	],
-)
-def test_purchase_order_approval_via_api(supplier, approver, approval_role):
-	send_purchase_orders_for_approval()
-
-	po_name = frappe.db.get_value("Purchase Order", {"supplier": supplier, "docstatus": 0}, "name")
-	assert po_name, f"No unsubmitted Purchase Order found for supplier {supplier}"
-
-	po = frappe.get_doc("Purchase Order", po_name)
-	assert po.workflow_state == "Pending Approval"
+def test_purchase_order_stock_manager_approval_via_api():
+	po = prepare_purchase_order_for_approval("Sphere Cellular")
+	approver, approval_role = "arivers@cfc.co", "Stock Manager"
 
 	frappe.set_user(approver)
 	frappe.call(
 		"approvals.approvals.api.approve_document",
-		doc=frappe.as_json(frappe.get_doc("Purchase Order", po.name).as_dict()),
+		doc=frappe.as_json(po.as_dict()),
 		role=approval_role,
 		user=approver,
 	)
@@ -167,6 +170,62 @@ def test_purchase_order_approval_via_api(supplier, approver, approval_role):
 
 
 @pytest.mark.order(6)
+def test_purchase_order_sales_manager_approval_via_api():
+	po = prepare_purchase_order_for_approval("Liu & Loewen Accountants LLP")
+	approver, approval_role = "mmckay@cfc.co", "Sales Manager"
+
+	frappe.set_user(approver)
+	frappe.call(
+		"approvals.approvals.api.approve_document",
+		doc=frappe.as_json(po.as_dict()),
+		role=approval_role,
+		user=approver,
+	)
+	frappe.set_user("Administrator")
+
+	po.reload()
+	assert po.docstatus == 1
+	assert po.workflow_state == "Approved"
+	assert frappe.db.exists(
+		"Document Approval",
+		{
+			"reference_doctype": "Purchase Order",
+			"reference_name": po.name,
+			"approver": approver,
+			"approval_role": approval_role,
+		},
+	)
+
+
+@pytest.mark.order(7)
+def test_purchase_order_accounts_manager_approval_via_api():
+	po = prepare_purchase_order_for_approval("Cooperative Ag Finance")
+	approver, approval_role = "mbritt@cfc.co", "Accounts Manager"
+
+	frappe.set_user(approver)
+	frappe.call(
+		"approvals.approvals.api.approve_document",
+		doc=frappe.as_json(po.as_dict()),
+		role=approval_role,
+		user=approver,
+	)
+	frappe.set_user("Administrator")
+
+	po.reload()
+	assert po.docstatus == 1
+	assert po.workflow_state == "Approved"
+	assert frappe.db.exists(
+		"Document Approval",
+		{
+			"reference_doctype": "Purchase Order",
+			"reference_name": po.name,
+			"approver": approver,
+			"approval_role": approval_role,
+		},
+	)
+
+
+@pytest.mark.order(8)
 def test_workflow_approve_blocked_without_approvals():
 	send_purchase_orders_for_approval()
 
@@ -187,7 +246,7 @@ def test_workflow_approve_blocked_without_approvals():
 	assert po.workflow_state == "Pending Approval"
 
 
-@pytest.mark.order(7)
+@pytest.mark.order(9)
 def test_workflow_approve_blocked_until_all_required_roles_approve():
 	send_purchase_orders_for_approval()
 
@@ -202,40 +261,48 @@ def test_workflow_approve_blocked_until_all_required_roles_approve():
 	extra_rule = frappe.new_doc("Document Approval Rule")
 	extra_rule.approval_doctype = "Purchase Order"
 	extra_rule.approval_role = "Sales Manager"
-	extra_rule.condition = "{{ doc.grand_total > 1000 }}"
+	extra_rule.condition = (
+		"{{ doc.supplier == 'North County Grain Cooperative' and doc.grand_total > 1000 }}"
+	)
 	extra_rule.primary_assignee = "mmckay@cfc.co"
 	extra_rule.enabled = 1
 	extra_rule.insert(ignore_permissions=True)
 
-	frappe.call("approvals.approvals.api.assign_approvers", doc=po)
+	try:
+		frappe.call("approvals.approvals.api.assign_approvers", doc=po)
 
-	frappe.set_user("mbritt@cfc.co")
-	frappe.call(
-		"approvals.approvals.api.approve_document",
-		doc=frappe.as_json(po.as_dict()),
-		role="Accounts Manager",
-		user="mbritt@cfc.co",
-	)
-	frappe.set_user("Administrator")
+		frappe.set_user("mbritt@cfc.co")
+		frappe.call(
+			"approvals.approvals.api.approve_document",
+			doc=frappe.as_json(po.as_dict()),
+			role="Accounts Manager",
+			user="mbritt@cfc.co",
+		)
+		frappe.set_user("Administrator")
 
-	po.reload()
-	assert po.docstatus == 0
-	assert po.workflow_state == "Pending Approval"
+		po.reload()
+		assert po.docstatus == 0
+		assert po.workflow_state == "Pending Approval"
 
-	with pytest.raises(ValidationError, match="All approvers must approve"):
-		apply_workflow(po, "Approve")
+		with pytest.raises(ValidationError, match="All approvers must approve"):
+			apply_workflow(po, "Approve")
 
-	frappe.set_user("mmckay@cfc.co")
-	frappe.call(
-		"approvals.approvals.api.approve_document",
-		doc=frappe.as_json(po.as_dict()),
-		role="Sales Manager",
-		user="mmckay@cfc.co",
-	)
-	frappe.set_user("Administrator")
+		frappe.set_user("mmckay@cfc.co")
+		frappe.call(
+			"approvals.approvals.api.approve_document",
+			doc=frappe.as_json(po.as_dict()),
+			role="Sales Manager",
+			user="mmckay@cfc.co",
+		)
+		frappe.set_user("Administrator")
 
-	po.reload()
-	assert po.docstatus == 1
-	assert po.workflow_state == "Approved"
-
-	extra_rule.delete(ignore_permissions=True)
+		po.reload()
+		assert po.docstatus == 1
+		assert po.workflow_state == "Approved"
+	finally:
+		frappe.db.delete(
+			"ToDo",
+			{"reference_type": "Purchase Order", "reference_name": po_name, "role": "Sales Manager"},
+		)
+		frappe.db.commit()
+		extra_rule.delete(ignore_permissions=True)

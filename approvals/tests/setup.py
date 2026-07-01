@@ -69,6 +69,8 @@ def create_test_data():
 	create_customers(settings)
 	create_purchase_orders(settings)
 	create_invoices(settings)
+	set_test_user_passwords()
+	sync_approver_user_roles()
 	dismiss_onboarding(settings)
 
 
@@ -205,6 +207,38 @@ def create_client_scripts(settings=None):
 	cs.enabled = 1
 	cs.script = "frappe.ui.form.on('Purchase Order', { onload(frm) { frappe.require('approvals.bundle.js', () => { frm.refresh(); frappe.provide('approvals').load_approvals(frm); }) } })"
 	cs.save()
+
+
+def set_test_user_passwords():
+	from frappe.utils.password import update_password
+
+	for email in ("mbritt@cfc.co", "mmckay@cfc.co", "arivers@cfc.co"):
+		if frappe.db.exists("User", email):
+			update_password(email, "admin")
+
+
+def sync_approver_user_roles():
+	"""PI forms read Buying Settings on load; approvers need Purchase User in the desk."""
+	role_map = {
+		"arivers@cfc.co": ["Stock Manager", "Item Manager", "Purchase User"],
+		"mmckay@cfc.co": [
+			"Sales User",
+			"Sales Manager",
+			"Sales Master Manager",
+			"Purchase User",
+		],
+	}
+	for email, roles in role_map.items():
+		if not frappe.db.exists("User", email):
+			continue
+		user = frappe.get_doc("User", email)
+		existing_roles = {row.role for row in user.roles}
+		if not any(role not in existing_roles for role in roles):
+			continue
+		for role in roles:
+			if role not in existing_roles:
+				user.append("roles", {"role": role})
+		user.save(ignore_permissions=True)
 
 
 def dismiss_onboarding(settings=None):

@@ -4,10 +4,10 @@ For license information, please see license.txt-->
 # Approvals
 
 <div class="byline">
-  Tyler Matteson 2026-03-02
+  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-06-12
 </div>
 
-Approvals is a document approval workflow app for Frappe and ERPNext. It allows organizations to define conditional approval rules for business documents based on configurable criteria. It supports submittable documents (Purchase Order, Purchase Invoice) and non-submittable documents through workflow configuration.
+Approvals is a document approval workflow app for Frappe and ERPNext. It allows organizations to define conditional approval rules for business documents based on configurable criteria. It supports submittable documents (Purchase Order, Purchase Invoice) with or without a Frappe Workflow, and non-submittable documents through workflow configuration.
 
 ## Design Philosophy
 
@@ -17,7 +17,7 @@ The app routes documents to roles, not people. People change positions, leave or
 
 ### [Configuration](configuration.md)
 
-Administrators set up approval rules that define which roles must approve each document type and under what conditions. Rules use Jinja templates to match documents based on field values like amounts, accounts, or other criteria. Workflows control approval states, reapproval conditions, and field updates on approval. Global settings control fallback approvers and email reminder timing.
+Administrators set up approval rules that define which roles must approve each document type and under what conditions. Rules use Jinja templates to match documents based on field values like amounts, accounts, or other criteria. Submittable documents can use sidebar-only approval without a workflow, or pair rules with workflows for approval states, rejection, and reapproval. Global settings control fallback approvers and email reminder timing.
 
 ### [Usage](usage.md)
 

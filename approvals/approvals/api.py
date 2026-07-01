@@ -190,7 +190,7 @@ def approve_document(
 		todo = frappe.get_doc("ToDo", todo)
 		todo.status = "Closed"
 		todo.save(ignore_permissions=True)
-		frappe.db.commit()
+	frappe.db.commit()
 
 	checked_all = check_all_document_approvals(doc, method, include_role=role)
 	if checked_all:

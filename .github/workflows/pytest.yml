@@ -19,7 +19,9 @@ jobs:
       matrix:
         os: [ubuntu-latest]
       fail-fast: false
-    name: Server
+    name: Tests
+    env:
+      BENCH_ROOT: /home/runner/frappe-bench
 
     services:
       mariadb:
@@ -29,7 +31,13 @@ jobs:
           MYSQL_ROOT_PASSWORD: 'admin'
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=5s --health-timeout=2s --health-retries=3
+        options: --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -padmin" --health-interval=5s --health-timeout=2s --health-retries=3
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping" --health-interval=5s --health-timeout=2s --health-retries=3
 
     steps:
       - name: Clone
@@ -45,9 +53,13 @@ jobs:
         with:
           node-version: 18
           check-latest: true
-          cache: 'yarn' # Replaces `Get yarn cache directory path` and `yarn-cache` steps
+          cache: 'yarn'
+
+      - name: Enable Yarn
+        run: command -v yarn >/dev/null 2>&1 || npm install -g yarn
 
       - name: Add to Hosts
+        if: ${{ !env.ACT }}
         run: echo "127.0.0.1 test_site" | sudo tee -a /etc/hosts
 
       - name: Cache pip
@@ -59,9 +71,6 @@ jobs:
             ${{ runner.os }}-pip-
             ${{ runner.os }}-
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-
       - name: Install JS Dependencies
         run: yarn --prefer-offline
 
@@ -70,23 +79,31 @@ jobs:
 
       - name: Install Bench Site and Apps
         env:
-          MYSQL_HOST: 'localhost'
+          MYSQL_HOST: '127.0.0.1'
           MYSQL_PWD: 'admin'
           BRANCH_NAME: ${{ env.BRANCH_NAME}}
         run: |
           bash ${{ github.workspace }}/.github/helper/install.sh
 
-      - name: Run Tests
-        working-directory: /home/runner/frappe-bench
+      - name: Build Assets
+        env:
+          BENCH_ROOT: ${{ env.BENCH_ROOT }}
         run: |
-          env/bin/python -m pytest apps/approvals/approvals/tests \
-            --cov=approvals \
-            --cov-report=xml \
-            --cov-report=term-missing \
-            --disable-warnings -s | tee apps/approvals/pytest-coverage.txt
+          # bench refuses root; under act the step runs as root, so build as the bench user.
+          if [[ "${ACT:-}" == "true" && "$(id -u)" -eq 0 ]]; then
+            runuser -u ubuntu -- env HOME=/home/ubuntu PATH="${PATH}" bash -lc "cd '${BENCH_ROOT}' && bench build"
+          else
+            cd "${BENCH_ROOT}" && bench build
+          fi
+
+      - name: Run Tests
+        env:
+          BENCH_ROOT: ${{ env.BENCH_ROOT }}
+        run: bash ${{ github.workspace }}/.github/helper/run_tests.sh
 
       - name: Pytest coverage comment
+        if: ${{ !env.ACT }}
         uses: MishaKav/pytest-coverage-comment@main
         with:
-          pytest-coverage-path: /home/runner/frappe-bench/apps/approvals/pytest-coverage.txt
-          pytest-xml-coverage-path: /home/runner/frappe-bench/apps/approvals/coverage.xml
+          pytest-coverage-path: ${{ env.BENCH_ROOT }}/apps/approvals/pytest-coverage.txt
+          pytest-xml-coverage-path: ${{ env.BENCH_ROOT }}/apps/approvals/coverage.xml

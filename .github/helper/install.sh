@@ -4,6 +4,8 @@ export PIP_ROOT_USER_ACTION=ignore
 
 set -e
 
+DB="${DB:-mariadb}"
+
 # act runs workflow steps as root; bench refuses root. Re-run this script as ubuntu.
 if [[ "${ACT:-}" == "true" && "$(id -u)" -eq 0 ]]; then
 	mkdir -p /home/ubuntu
@@ -81,7 +83,15 @@ bench init frappe-bench --frappe-path ~/frappe --python "$(which python)" --skip
 cp "${GITHUB_WORKSPACE}/.github/helper/common_site_config.json" ~/frappe-bench/sites/common_site_config.json
 
 mkdir ~/frappe-bench/sites/test_site
-cp -r "${GITHUB_WORKSPACE}/.github/helper/site_config.json" ~/frappe-bench/sites/test_site/
+if [ "$DB" == "postgres" ]; then
+  cp "${GITHUB_WORKSPACE}/.github/helper/site_config_postgres.json" ~/frappe-bench/sites/test_site/site_config.json
+  echo "travis" | psql -h 127.0.0.1 -p 5432 -c "CREATE DATABASE test_site" -U postgres
+  echo "travis" | psql -h 127.0.0.1 -p 5432 -c "CREATE USER test_site WITH PASSWORD 'test_site'" -U postgres
+  echo "travis" | psql -h 127.0.0.1 -p 5432 -c "GRANT ALL PRIVILEGES ON DATABASE test_site TO test_site" -U postgres
+else
+  cp "${GITHUB_WORKSPACE}/.github/helper/site_config.json" ~/frappe-bench/sites/test_site/site_config.json
+fi
+
 
 cd ~/frappe-bench || exit
 

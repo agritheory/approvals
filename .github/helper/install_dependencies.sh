@@ -11,3 +11,6 @@ fi
 
 # redis-server binary is required for bench init version detection; runtime Redis is the workflow service.
 sudo apt update -y && sudo apt install redis-server mariadb-client -y
+if [ "${DB:-mariadb}" = "postgres" ]; then
+  sudo apt install -y postgresql-client libpq-dev
+fi

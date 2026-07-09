@@ -123,10 +123,7 @@ jobs:
 
       - name: Run Tests
         working-directory: /home/runner/frappe-bench
-        run: |
-          source env/bin/activate
-          cd apps/approvals
-          pytest --cov=approvals --cov-report=xml --disable-warnings -s | tee pytest-coverage.txt
+        run: bash ${GITHUB_WORKSPACE}/.github/helper/run_tests.sh
         env:
           TYPE: server
           FRAPPE_REDIS_CACHE: redis://127.0.0.1:13000

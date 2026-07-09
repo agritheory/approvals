@@ -13,6 +13,6 @@ python -m playwright install --with-deps chromium
 pytest apps/approvals/approvals/tests \
 	--browser chromium \
 	--cov=approvals \
-	--cov-report=xml \
+	--cov-report=xml:apps/approvals/coverage.xml \
 	--cov-report=term-missing \
 	--disable-warnings -s | tee apps/approvals/pytest-coverage.txt

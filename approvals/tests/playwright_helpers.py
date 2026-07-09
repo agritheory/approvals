@@ -22,9 +22,10 @@ def login_as(page: Page, user: str, password: str = "admin"):
 	)
 	if not response.ok:
 		raise AssertionError(f"login failed for {user}: {response.status} {response.text()}")
-	page.goto(f"{base_url}/app")
-	# The desk may settle at "/app" or redirect to "/app/<workspace>"; accept both.
-	page.wait_for_url(re.compile(r"/app(/|\?|$)"), timeout=15000)
+	page.goto(f"{base_url}/desk")
+	# The desk route is "/desk" (formerly "/app"); accept either in case it
+	# redirects to a workspace under either path.
+	page.wait_for_url(re.compile(r"/(app|desk)(/|\?|$)"), timeout=15000)
 
 
 def form_page_url(doctype: str, name: str):

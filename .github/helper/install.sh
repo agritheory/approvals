@@ -120,7 +120,7 @@ bench --site test_site reinstall --yes --admin-password admin
 
 bench --site test_site migrate
 
-bench build --app approvals
+bench build
 cd apps/approvals
 yarn --prefer-offline
 yarn build

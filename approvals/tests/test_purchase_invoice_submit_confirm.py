@@ -69,6 +69,12 @@ def use_real_database_commits():
 @pytest.fixture(autouse=True)
 def browser_setup(page):
 	page.set_default_timeout(15000)
+	page.on("console", lambda msg: print(f"[console:{msg.type}] {msg.text}"))
+	page.on("pageerror", lambda exc: print(f"[pageerror] {exc}"))
+	page.on(
+		"requestfailed",
+		lambda request: print(f"[requestfailed] {request.method} {request.url} - {request.failure}"),
+	)
 	yield
 
 

@@ -40,6 +40,7 @@ cd ~ || exit
 
 MYSQL_HOST="${MYSQL_HOST:-127.0.0.1}"
 MYSQL_PORT="${MYSQL_PORT:-3306}"
+export MYSQL_PWD="${MYSQL_PWD:-root}"
 
 mysql_exec() {
 	if command -v mysql >/dev/null 2>&1; then
@@ -50,7 +51,7 @@ mysql_exec() {
 }
 
 wait_for_redis() {
-	local port="${REDIS_PORT:-6379}"
+	local port="${1:-${REDIS_PORT:-6379}}"
 	for _ in $(seq 1 60); do
 		if (echo > /dev/tcp/127.0.0.1/"$port") 2>/dev/null; then
 			return 0
@@ -76,9 +77,10 @@ mysql_exec "GRANT ALL PRIVILEGES ON \`test_site\`.* TO 'test_site'@'%'"
 mysql_exec "ALTER USER 'root'@'localhost' IDENTIFIED BY 'root'"  # match site_config
 mysql_exec "FLUSH PRIVILEGES"
 
+BRANCH_NAME="${BRANCH_NAME:-version-16}"
 echo BRANCH_NAME: "${BRANCH_NAME}"
 git clone https://github.com/frappe/frappe --branch ${BRANCH_NAME}
-bench init frappe-bench --frappe-path ~/frappe --python "$(which python)" --skip-assets --ignore-exist --no-backups
+bench init frappe-bench --frappe-path ~/frappe --python "$(which python)" --skip-assets --skip-redis-config-generation --ignore-exist --no-backups
 
 cp "${GITHUB_WORKSPACE}/.github/helper/common_site_config.json" ~/frappe-bench/sites/common_site_config.json
 
@@ -112,7 +114,8 @@ bench setup requirements --python
 bench use test_site
 bench set-config -g server_script_enabled 1
 
-wait_for_redis
+wait_for_redis 13000
+wait_for_redis 11000
 bench --site test_site reinstall --yes --admin-password admin
 
 bench --site test_site migrate
@@ -130,5 +133,6 @@ bench version
 echo "SITE LIST-APPS:"
 bench list-apps
 
-wait_for_redis
-bench execute 'approvals.tests.setup.before_test'
+wait_for_redis 13000
+wait_for_redis 11000
+bench --site test_site execute 'approvals.tests.setup.before_test'

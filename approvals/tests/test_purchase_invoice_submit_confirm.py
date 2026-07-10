@@ -41,6 +41,7 @@ def browser_context_args(browser_context_args, request, playwright_bench_web):
 	args = {
 		**browser_context_args,
 		"viewport": {"width": 1280, "height": 900},
+		"locale": "en-US",
 	}
 	base_url = getattr(request.config.option, "base_url", None)
 	init_playwright_url_state(base_url=base_url)

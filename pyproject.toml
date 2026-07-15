@@ -1,6 +1,6 @@
 [project]
 name = "approvals"
-version = "15.6.0"
+version = "16.0.0"
 description = "Customizable Approval Workflows"
 readme = "README.md"
 requires-python = ">=3.14,<3.15"
@@ -27,6 +27,7 @@ indent = "\t"
 
 [tool.semantic_release]
 version_toml = [ "pyproject.toml:project.version",]
+version_variables = [ "approvals/__init__.py:__version__",]
 
 [tool.poetry.dependencies]
 python = ">=3.14,<3.15"

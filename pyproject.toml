@@ -53,8 +53,11 @@ omit = [ "*/tests/*", "*/test_*.py",]
 [tool.coverage.report]
 show_missing = true
 
-[tool.semantic_release.branches.version]
-match = "version-15"
+[tool.semantic_release.branches.version-16]
+match = "^version-16$"
+
+[tool.semantic_release.branches.version-15]
+match = "^version-15$"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"

@@ -15,6 +15,7 @@ from frappe.utils.data import get_url_to_form
 from frappe.share import add as add_share
 from approvals.approvals.validation import (
 	check_all_document_approvals,
+	close_open_approval_todos,
 	doctype_has_approval_rules,
 	get_approval_roles,
 	get_document_approvals,
@@ -27,6 +28,45 @@ if TYPE_CHECKING:
 	from approvals.approvals.doctype.document_approval_rule.document_approval_rule import (
 		DocumentApprovalRule,
 	)
+
+
+@frappe.whitelist()
+def get_pending_approval_count() -> int:
+	"""Get count of pending approvals for current user."""
+	return frappe.db.count(
+		"ToDo",
+		{
+			"allocated_to": frappe.session.user,
+			"status": "Open",
+			"document_approval_rule": ["is", "set"],
+		},
+	)
+
+
+@frappe.whitelist()
+def get_pending_approvals() -> list[dict]:
+	"""Get pending approval items assigned to current user."""
+	todos = frappe.get_all(
+		"ToDo",
+		filters={
+			"allocated_to": frappe.session.user,
+			"status": "Open",
+			"document_approval_rule": ["is", "set"],
+		},
+		fields=[
+			"name",
+			"description",
+			"status",
+			"reference_type",
+			"reference_name",
+			"role",
+			"document_approval_rule",
+			"creation",
+		],
+		order_by="creation desc",
+		limit=50,
+	)
+	return todos
 
 
 @frappe.whitelist()
@@ -291,11 +331,17 @@ def reset_to_reapproval_state_if_needed(doc: Document, method: str | None = None
 def assign_approvers(doc: Document, method: str | None = None):
 	reset_to_reapproval_state_if_needed(doc, method)
 
+	approvals = get_document_approvals(doc)
+
 	roles = frappe.get_all(
 		"Document Approval Rule", {"approval_doctype": doc.doctype}, pluck="approval_role"
 	)
 
 	for role in roles:
+		if role in approvals:
+			close_open_approval_todos(doc, role)
+			continue
+
 		approval_rule: "DocumentApprovalRule" = frappe.get_cached_doc(
 			"Document Approval Rule",
 			{"approval_doctype": doc.doctype, "approval_role": role},

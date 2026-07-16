@@ -61,6 +61,21 @@ def get_document_approvals(doc: Document | frappe._dict, method: str | None = No
 	return frappe._dict({a["approval_role"]: a["approver"] for a in approvers})
 
 
+def close_open_approval_todos(doc: Document, role: str | None = None):
+	filters = {
+		"reference_type": doc.doctype,
+		"reference_name": doc.name,
+		"status": "Open",
+		"document_approval_rule": ["is", "set"],
+	}
+	if role:
+		filters["role"] = role
+	for todo_name in frappe.get_all("ToDo", filters=filters, pluck="name"):
+		todo = frappe.get_doc("ToDo", todo_name)
+		todo.status = "Closed"
+		todo.save(ignore_permissions=True)
+
+
 @frappe.whitelist()
 def check_all_document_approvals(doc: Document, method: str | None = None, include_role=None):
 	if method != "before_submit" and not include_role:

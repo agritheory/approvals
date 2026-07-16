@@ -12,10 +12,12 @@
 		"url": "https://github.com/agritheory/approvals.git"
 	},
 	"scripts": {
-		"build": "vite build --config=./approvals/public/js/vite.config.ts",
+		"build": "vite build --config=./approvals/public/js/vite.config.ts && node node_modules/@agritheory/flyin/dist/cli/build-if-host.js",
+		"build:flyin": "node node_modules/@agritheory/flyin/dist/cli/build-if-host.js",
 		"dev": "vite build --watch --config=./approvals/public/js/vite.config.ts"
 	},
 	"dependencies": {
+		"@agritheory/flyin": "file:../../../flyin/flyin",
 		"vue": "^3.5.14"
 	},
 	"devDependencies": {

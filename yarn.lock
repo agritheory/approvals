@@ -2,8 +2,10 @@
 # yarn lockfile v1
 
 
-"@agritheory/flyin@file:../../../flyin/flyin":
-  version "0.1.0"
+"@agritheory/flyin@^15.0.0":
+  version "15.0.0"
+  resolved "https://npm.pkg.github.com/download/@agritheory/flyin/15.0.0/83b49575991f09fb075943c254dbf49fc2c9bd8c#83b49575991f09fb075943c254dbf49fc2c9bd8c"
+  integrity sha512-bhcsS9C876TpXXnYbwlu7KlNWT5h8ExQCklFIJrfXp/EQZthDkygpHusbJcNK/FkwQZfNLp9V5SgmewC9ENQJQ==
 
 "@babel/helper-string-parser@^7.29.7":
   version "7.29.7"

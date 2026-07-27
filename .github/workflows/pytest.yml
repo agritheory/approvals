@@ -14,7 +14,6 @@ env:
 
 permissions:
   contents: read
-  packages: read
 
 jobs:
   tests:
@@ -57,8 +56,6 @@ jobs:
         with:
           node-version: 18
           check-latest: true
-          registry-url: https://npm.pkg.github.com
-          scope: '@agritheory'
           cache: 'yarn'
 
       - name: Enable Yarn

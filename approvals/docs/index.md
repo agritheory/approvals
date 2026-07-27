@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Approvals
 
 <div class="byline">
-  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-06-12
+  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-07-01
 </div>
 
 Approvals is a document approval workflow app for Frappe and ERPNext. It allows organizations to define conditional approval rules for business documents based on configurable criteria. It supports submittable documents (Purchase Order, Purchase Invoice) with or without a Frappe Workflow, and non-submittable documents through workflow configuration.
@@ -17,8 +17,8 @@ The app routes documents to roles, not people. People change positions, leave or
 
 ### [Configuration](configuration.md)
 
-Administrators set up approval rules that define which roles must approve each document type and under what conditions. Rules use Jinja templates to match documents based on field values like amounts, accounts, or other criteria. Submittable documents can use sidebar-only approval without a workflow, or pair rules with workflows for approval states, rejection, and reapproval. Global settings control fallback approvers and email reminder timing.
+Administrators set up approval rules that define which roles must approve each document type and under what conditions. Rules use Jinja templates to match documents based on field values like amounts, accounts, or other criteria. Submittable documents can use sidebar-only approval without a workflow, or pair rules with workflows for approval states, rejection, and reapproval. Global settings control fallback approvers and email reminder timing. Custom email templates can use `get_approval_notification_link` to deep-link approvers into the Pending Approvals flyin.
 
 ### [Usage](usage.md)
 
-Users work with approvals through a sidebar panel on configured DocTypes. From this panel, a user can approve or reject documents, and add other users as approvers when needed. The panel does not appear on DocTypes without approval rules.
+Users work with approvals through a sidebar panel on configured DocTypes and a **Pending Approvals** flyin in the desk navbar. From the sidebar or flyin, a user can review, approve, or reject documents, and add other users as approvers when needed. Notification and reminder links open the document with the flyin pre-selected. The panel does not appear on DocTypes without approval rules.

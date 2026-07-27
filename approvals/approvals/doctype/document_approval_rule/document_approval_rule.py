@@ -276,7 +276,7 @@ class DocumentApprovalRule(Document):
 			)
 			todo.save(ignore_permissions=True)
 			if self.message:
-				create_approval_notification(doc, user)
+				create_approval_notification(doc, user, todo_name=todo.name)
 
 
 @frappe.whitelist()

@@ -77,6 +77,10 @@ import {
 	type DocLike,
 } from './approvalGating'
 
+const props = defineProps<{
+	approvalTodo?: string
+}>()
+
 const SLOT_ID = 'pending-approvals'
 
 type FormRoute = [string, string, string] | null
@@ -420,14 +424,49 @@ async function doReject(item: ApprovalItem, approval: ApprovalRole, doc: DocLike
 	}
 }
 
+async function handleApprovalDeepLink(todoName: string | undefined) {
+	if (!todoName) return
+
+	const item = items.value.find(row => row.name === todoName)
+	if (!item) return
+
+	selected.value = item.name
+	const route = readFormRoute()
+	if (!matchesItem(item, route)) {
+		suppressRouteClose = true
+		await window.frappe.set_route('Form', item.reference_type, item.reference_name)
+		return
+	}
+
+	void loadItemContext(item)
+}
+
 watch(currentRoute, () => {
 	void loadActiveContexts()
 })
 
+watch(
+	() => props.approvalTodo,
+	todoName => {
+		void handleApprovalDeepLink(todoName)
+	}
+)
+
+watch(
+	() => items.value.length,
+	() => {
+		void handleApprovalDeepLink(props.approvalTodo)
+	}
+)
+
 onMounted(() => {
 	currentRoute.value = readFormRoute()
 	ensureRouteHandling()
-	void fetchItems()
+	void fetchItems().then(() => {
+		if (props.approvalTodo) {
+			void handleApprovalDeepLink(props.approvalTodo)
+		}
+	})
 })
 
 onUnmounted(() => {

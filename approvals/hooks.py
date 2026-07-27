@@ -80,10 +80,11 @@ app_include_icons = ["approvals/icons/at-icons_approvals-icon.svg"]
 # ----------
 
 # add methods and filters to jinja environment
-# jinja = {
-# 	"methods": "approvals.utils.jinja_methods",
-# 	"filters": "approvals.utils.jinja_filters"
-# }
+jinja = {
+	"methods": [
+		"approvals.approvals.api.get_approval_notification_link",
+	],
+}
 
 # Installation
 # ------------

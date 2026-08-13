@@ -14,6 +14,7 @@ required_apps = ["erpnext", "hrms"]
 # Flyin configuration
 flyin = {
 	"drawer_mode": "push",
+	"click_to_dismiss": True,
 	"slots": {
 		"pending-approvals": {
 			"title": "Pending Approvals",

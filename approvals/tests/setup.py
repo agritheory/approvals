@@ -193,22 +193,6 @@ def create_document_approval_settings(settings=None):
 	das.save()
 
 
-def create_client_scripts(settings=None):
-	cs = frappe.new_doc("Client Script")
-	cs.dt = cs.name = "Purchase Invoice"
-	cs.apply_to = "Form"
-	cs.enabled = 1
-	cs.script = "frappe.ui.form.on('Purchase Invoice', { onload(frm) { frappe.require('approvals.bundle.js', () => { frm.refresh(); frappe.provide('approvals').load_approvals(frm); }) } })"
-	cs.save()
-
-	cs = frappe.new_doc("Client Script")
-	cs.dt = cs.name = "Purchase Order"
-	cs.apply_to = "Form"
-	cs.enabled = 1
-	cs.script = "frappe.ui.form.on('Purchase Order', { onload(frm) { frappe.require('approvals.bundle.js', () => { frm.refresh(); frappe.provide('approvals').load_approvals(frm); }) } })"
-	cs.save()
-
-
 def set_test_user_passwords():
 	from frappe.utils.password import update_password
 

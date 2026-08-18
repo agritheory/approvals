@@ -253,9 +253,9 @@ def approve_document(
 		todo.save(ignore_permissions=True)
 	frappe.db.commit()
 
+	doc = frappe.get_doc(doc.doctype, doc.name)
 	checked_all = check_all_document_approvals(doc, method, include_role=role)
 	if checked_all:
-		doc = frappe.get_doc(doc.doctype, doc.name)
 		finalize_document_after_approval(doc)
 
 	return approval

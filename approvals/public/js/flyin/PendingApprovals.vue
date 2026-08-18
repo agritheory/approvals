@@ -358,6 +358,10 @@ async function approveItem(item: ApprovalItem) {
 				user: window.frappe.session.user,
 			})
 
+			if (window.cur_frm?.doc?.doctype === context.doc.doctype && window.cur_frm?.doc?.name === context.doc.name) {
+				await window.cur_frm.reload_doc()
+			}
+
 			window.frappe.show_alert({ message: 'Document approved', indicator: 'green' })
 			await afterAction(item, { advanceDelayMs: APPROVE_ADVANCE_DELAY_MS })
 		} catch (error) {

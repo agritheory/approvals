@@ -30,7 +30,6 @@ flyin = {
 
 # include js, css files in header of desk.html
 app_include_css = [
-	"/assets/approvals/dist/js/assets/approvals.css",
 	"/assets/approvals/css/flyin.css",
 ]
 app_include_js = ["approvals.bundle.js", "flyin.desk.bundle.js"]

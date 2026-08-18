@@ -18,7 +18,7 @@
 		"dev": "vite build --watch --config=./approvals/public/js/vite.config.ts"
 	},
 	"dependencies": {
-		"@agritheory/flyin": "git+https://github.com/agritheory/flyin.git#v15.0.0",
+		"@agritheory/flyin": "git+https://github.com/agritheory/flyin.git#v15.1.0",
 		"vue": "^3.5.14"
 	},
 	"devDependencies": {

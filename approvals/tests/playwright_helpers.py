@@ -8,27 +8,42 @@ from playwright.sync_api import Page, expect
 
 from approvals.tests.playwright_telemetry import get_playwright_base_url
 
+FLYIN_SLOT = "pending-approvals"
+FLYIN_APPROVE = (
+	".pending-approvals__active button.flyout-action-btn--primary:has-text('Approve'):not([disabled])"
+)
+
 
 def login_as(page: Page, user: str, password: str = "admin"):
 	base_url = get_playwright_base_url()
-	# Authenticate through the login API rather than driving the UI form: the
-	# login page's submit handler may not be bound yet when Playwright clicks,
-	# which makes the button fall back to a native GET and never establishes a
-	# session. page.request shares the browser context cookie jar, so the sid
-	# cookie set here is honored by the subsequent navigation.
-	response = page.request.post(
-		f"{base_url}/api/method/login",
-		form={"usr": user, "pwd": password},
+	# Login in the browser so session cookies are scoped to the site hostname.
+	# page.request posts to 127.0.0.1 with a Host header, but those cookies are
+	# not sent when navigating to the canonical hostname (e.g. fraxinus:8045).
+	page.goto(f"{base_url}/login", wait_until="domcontentloaded")
+	response = page.evaluate(
+		"""async ({ user, password }) => {
+			const res = await fetch('/api/method/login', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+				body: new URLSearchParams({ usr: user, pwd: password }),
+			});
+			return { ok: res.ok, status: res.status, body: await res.text() };
+		}""",
+		{"user": user, "password": password},
 	)
-	if not response.ok:
-		raise AssertionError(f"login failed for {user}: {response.status} {response.text()}")
+	if not response.get("ok"):
+		raise AssertionError(f"login failed for {user}: {response.get('status')} {response.get('body')}")
 	page.goto(f"{base_url}/app")
 	# The desk may settle at "/app" or redirect to "/app/<workspace>"; accept both.
 	page.wait_for_url(re.compile(r"/app(/|\?|$)"), timeout=15000)
 
 
-def form_page_url(doctype: str, name: str):
-	return f"{get_playwright_base_url()}{frappe.utils.get_absolute_url(doctype, name)}"
+def form_page_url(doctype: str, name: str, *, flyin: bool = True):
+	url = f"{get_playwright_base_url()}{frappe.utils.get_absolute_url(doctype, name)}"
+	if flyin:
+		separator = "&" if "?" in url else "?"
+		url = f"{url}{separator}flyin={FLYIN_SLOT}"
+	return url
 
 
 def dismiss_blocking_modals(page: Page):
@@ -54,13 +69,14 @@ def dismiss_blocking_modals(page: Page):
 
 
 def enabled_approve_button(page: Page):
-	return page.locator("#approvals-section button#approve-btn:not([disabled])")
+	return page.locator(FLYIN_APPROVE)
 
 
 def wait_for_enabled_approve(page: Page, timeout: int = 30000):
 	dismiss_blocking_modals(page)
-	expect(page.locator("#approvals-section")).to_be_visible(timeout=timeout)
-	expect(page.locator("#approvals-section li")).not_to_have_count(0, timeout=timeout)
+	expect(page.locator("body.flyin-drawer-open")).to_be_visible(timeout=timeout)
+	expect(page.locator(".pending-approvals")).to_be_visible(timeout=timeout)
+	expect(page.locator(".pending-approvals__context-loading")).to_have_count(0, timeout=timeout)
 	approve = enabled_approve_button(page)
 	expect(approve).to_have_count(1, timeout=timeout)
 	expect(approve).to_be_visible(timeout=timeout)
@@ -92,11 +108,24 @@ def dismiss_confirm_modal(page: Page):
 	expect(modal).to_have_count(0, timeout=5000)
 
 
-def accept_confirm_modal(page: Page):
+def accept_confirm_modal(page: Page, doctype: str, name: str):
 	modal = page.locator(".modal.show")
 	modal.get_by_role("button", name="Yes", exact=True).click()
 	expect(modal).to_have_count(0, timeout=10000)
 	page.wait_for_function(
-		"() => typeof cur_frm !== 'undefined' && cur_frm.doc && cur_frm.doc.docstatus === 1",
-		timeout=15000,
+		"""async ([doctype, name]) => {
+			const docstatus = await frappe.db.get_value(doctype, name, 'docstatus');
+			if (docstatus === 1) {
+				if (typeof cur_frm !== 'undefined' && cur_frm?.doc?.name === name) {
+					await cur_frm.reload_doc();
+				}
+				return true;
+			}
+			if (typeof cur_frm !== 'undefined' && cur_frm?.doc?.name === name) {
+				await cur_frm.reload_doc();
+			}
+			return false;
+		}""",
+		arg=[doctype, name],
+		timeout=30000,
 	)

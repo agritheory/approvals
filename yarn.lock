@@ -2,9 +2,9 @@
 # yarn lockfile v1
 
 
-"@agritheory/flyin@git+https://github.com/agritheory/flyin.git#v15.0.0":
+"@agritheory/flyin@git+https://github.com/agritheory/flyin.git#v15.1.0":
   version "15.0.0"
-  resolved "git+https://github.com/agritheory/flyin.git#41cd793d2a9966f92c66cb3b8e02cbec4ec027e5"
+  resolved "git+https://github.com/agritheory/flyin.git#6956c1ec4c04f2d60e5dc3804187f33c9cb18ba2"
 
 "@babel/helper-string-parser@^7.29.7":
   version "7.29.7"

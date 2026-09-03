@@ -22,7 +22,7 @@
 		top: var(--navbar-height, 60px);
 		bottom: 0;
 		height: auto;
-		z-index: 1030;
+		z-index: var(--flyout-push-z-index, 999);
 	}
 }
 

@@ -130,7 +130,7 @@ def fetch_approvals_and_roles(doc: Document | str, method: str | None = None):
 			approver = "You" if approvals.get(role) == frappe.session.user else approver
 		if "@" in role and assigned_user == "Unassigned":
 			assigned_user = role
-		_role = frappe._dict(
+		role_row = frappe._dict(
 			{
 				"approval_role": "User Approval" if "@" in role else role,
 				"user_has_approval_role": True if (role in user_roles or "@" in role) else False,
@@ -140,7 +140,7 @@ def fetch_approvals_and_roles(doc: Document | str, method: str | None = None):
 				"assigned_username": assignments.get(role, role),
 			}
 		)
-		add_roles.append(_role)
+		add_roles.append(role_row)
 	approval_state = frappe.get_value("Workflow", get_workflow_name(doc.doctype), "approval_state")
 	require_rejection_reason = frappe.get_value(
 		"Workflow", get_workflow_name(doc.doctype), "require_rejection_reason"
@@ -251,7 +251,6 @@ def approve_document(
 		todo = frappe.get_doc("ToDo", todo)
 		todo.status = "Closed"
 		todo.save(ignore_permissions=True)
-	frappe.db.commit()
 
 	doc = frappe.get_doc(doc.doctype, doc.name)
 	checked_all = check_all_document_approvals(doc, method, include_role=role)

@@ -6,6 +6,7 @@ from frappe.model.document import Document
 from frappe.utils.data import today
 from frappe.share import add as add_share
 from approvals.approvals.api import create_approval_notification
+from approvals.approvals.validation import close_open_approval_todos, get_document_approvals
 from frappe import render_template
 from frappe.utils.jinja import validate_template
 from jinja2 import Environment, BaseLoader, TemplateSyntaxError, UndefinedError
@@ -212,6 +213,11 @@ class DocumentApprovalRule(Document):
 		return frappe.render_template(self.message, doc.__dict__)
 
 	def assign_user(self, doc: Document):
+		approvals = get_document_approvals(doc)
+		if self.approval_role in approvals:
+			close_open_approval_todos(doc, self.approval_role)
+			return
+
 		if doc.meta:
 			workflow_name = doc.meta.get_workflow()
 			if workflow_name:
@@ -270,7 +276,7 @@ class DocumentApprovalRule(Document):
 			)
 			todo.save(ignore_permissions=True)
 			if self.message:
-				create_approval_notification(doc, user)
+				create_approval_notification(doc, user, todo_name=todo.name)
 
 
 @frappe.whitelist()

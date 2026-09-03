@@ -32,8 +32,9 @@ class UserDocumentApproval(Document):
 		todo.description = "A document requires your approval"
 		todo.save(ignore_permissions=True)
 		create_approval_notification(
-			self,
+			frappe._dict(doctype=self.reference_doctype, name=self.reference_name),
 			self.approver,
+			todo_name=todo.name,
 		)
 
 	def remove_todo(self):

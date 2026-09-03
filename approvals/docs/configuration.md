@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Configuration
 
 <div class="byline">
-  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-06-23
+  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-07-01
 </div>
 
 ## Creating an Approval Rule
@@ -194,6 +194,53 @@ The app ships with `send_reminder_email()` but does not register a scheduled job
 ```
 
 3. Wire up a scheduled job that calls `approvals.approvals.api.send_reminder_email`. For example, add an hourly entry to `scheduler_events` in the app's `hooks.py` or call the function from a custom bench task on the desired cadence.
+
+The shipped **Pending Approval** email template links each row with `document.url`. Reminder emails and Notification Log entries are built with deep links that open the document, the Pending Approvals flyin, and the matching ToDo (see [Usage — Pending Approvals Drawer](usage.md#pending-approvals-drawer)).
+
+### Customizing Notification Links
+
+To build the same deep-link URL in a custom Email Template, Print Format, or other Jinja template, use `get_approval_notification_link`. The app registers this function as a Jinja method in `hooks.py`.
+
+**Link to a document and open the flyin:**
+
+```jinja
+<a href="{{ get_approval_notification_link(document) }}">{{ document.name }}</a>
+```
+
+**Link to a specific ToDo in the queue:**
+
+```jinja
+<a href="{{ get_approval_notification_link(document, todo_name) }}">{{ document.name }}</a>
+```
+
+Arguments:
+
+| Argument | Description |
+| :--- | :-------- |
+| `doc` | A document object or dict with `doctype` and `name` (or `reference_doctype` and `reference_name`) |
+| `todo_name` | Optional ToDo name passed as `approval_todo` in the URL |
+
+The function returns a desk URL like `/app/purchase-order/PO-001?flyin=pending-approvals&approval_todo=TODO-00001`.
+
+**Example: custom reminder email body**
+
+The default `send_reminder_email` context supplies each row as `doctype`, `name`, and `url` (already a deep link). Use `document.url` when that is enough:
+
+```jinja
+<a href="{{ document.url }}">{{ document.name }}</a>
+```
+
+Use `get_approval_notification_link` when you build the row yourself or need to construct the link from a document object:
+
+```jinja
+<a href="{{ get_approval_notification_link(document) }}">{{ document.name }}</a>
+```
+
+To pre-select a specific ToDo, pass `todo_name` as the second argument. Include `todo_name` on each document dict in the template context when your calling code provides it:
+
+```jinja
+<a href="{{ get_approval_notification_link(document, document.todo_name) }}">{{ document.name }}</a>
+```
 
 ## Connecting to Workflows
 

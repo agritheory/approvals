@@ -28,7 +28,7 @@ from approvals.tests.test_purchase_invoice_non_workflow_approval import (
 	purchase_invoice_for_supplier,
 )
 from approvals.tests.test_approval_workflow import prepare_purchase_order_for_approval
-from approvals.tests.test_utils import use_current_db_transaction
+from approvals.tests.test_utils import use_current_db_transaction, wait_for_docstatus
 
 
 @pytest.fixture(scope="session")
@@ -142,7 +142,8 @@ def test_confirming_submits_invoice(page, supplier, user, approval_role):
 	open_form_page(page, pi.doctype, pi.name)
 	click_approve(page)
 	confirm_modal_visible(page, pi.name)
-	accept_confirm_modal(page)
+	accept_confirm_modal(page, pi.doctype, pi.name)
+	wait_for_docstatus(pi.doctype, pi.name, 1)
 
 	with use_current_db_transaction():
 		pi.reload()

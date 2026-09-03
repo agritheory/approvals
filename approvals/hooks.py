@@ -11,12 +11,28 @@ app_email = "support@agritheory.dev"
 app_license = "MIT"
 required_apps = ["erpnext", "hrms"]
 
+# Flyin configuration
+flyin = {
+	"drawer_mode": "push",
+	"click_to_dismiss": True,
+	"slots": {
+		"pending-approvals": {
+			"title": "Pending Approvals",
+			"icon": "approvals",
+			"component": "./approvals/public/js/flyin/PendingApprovals.vue",
+			"badge_method": "approvals.approvals.api.get_pending_approval_count",
+		},
+	},
+}
+
 # Includes in <head>
 # ------------------
 
 # include js, css files in header of desk.html
-app_include_css = ["/assets/approvals/dist/js/assets/approvals.css"]
-app_include_js = ["approvals.bundle.js"]
+app_include_css = [
+	"/assets/approvals/css/flyin.css",
+]
+app_include_js = ["approvals.bundle.js", "flyin.desk.bundle.js"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/approvals/css/approvals.css"
@@ -37,6 +53,11 @@ app_include_js = ["approvals.bundle.js"]
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
+
+# Svg Icons
+# ------------------
+# include app icons in desk
+app_include_icons = ["approvals/icons/at-icons_approvals-icon.svg"]
 
 # Home Pages
 # ----------
@@ -59,10 +80,11 @@ app_include_js = ["approvals.bundle.js"]
 # ----------
 
 # add methods and filters to jinja environment
-# jinja = {
-# 	"methods": "approvals.utils.jinja_methods",
-# 	"filters": "approvals.utils.jinja_filters"
-# }
+jinja = {
+	"methods": [
+		"approvals.approvals.api.get_approval_notification_link",
+	],
+}
 
 # Installation
 # ------------

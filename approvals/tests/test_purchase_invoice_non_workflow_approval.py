@@ -134,6 +134,15 @@ def test_purchase_invoice_approval_via_api_submits_document(supplier, approver, 
 			"approval_role": approval_role,
 		},
 	)
+	assert not frappe.db.exists(
+		"ToDo",
+		{
+			"reference_type": "Purchase Invoice",
+			"reference_name": pi.name,
+			"status": "Open",
+			"document_approval_rule": ["is", "set"],
+		},
+	)
 
 
 @pytest.mark.order(36)
@@ -163,6 +172,28 @@ def test_partial_purchase_invoice_approval_leaves_invoice_in_draft():
 
 	pi.reload()
 	assert pi.docstatus == 0
+
+	frappe.call("approvals.approvals.api.assign_approvers", doc=pi)
+	frappe.db.commit()
+
+	assert not frappe.db.exists(
+		"ToDo",
+		{
+			"reference_type": "Purchase Invoice",
+			"reference_name": pi.name,
+			"role": "Accounts Manager",
+			"status": "Open",
+		},
+	)
+	assert frappe.db.exists(
+		"ToDo",
+		{
+			"reference_type": "Purchase Invoice",
+			"reference_name": pi.name,
+			"role": "Sales Manager",
+			"status": "Open",
+		},
+	)
 
 	frappe.set_user("mmckay@cfc.co")
 	frappe.call(

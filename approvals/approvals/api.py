@@ -3,6 +3,7 @@
 
 import json
 from typing import TYPE_CHECKING
+from urllib.parse import urlencode
 
 import frappe
 from frappe import _
@@ -15,6 +16,7 @@ from frappe.utils.data import get_url_to_form
 from frappe.share import add as add_share
 from approvals.approvals.validation import (
 	check_all_document_approvals,
+	close_open_approval_todos,
 	doctype_has_approval_rules,
 	get_approval_roles,
 	get_document_approvals,
@@ -27,6 +29,65 @@ if TYPE_CHECKING:
 	from approvals.approvals.doctype.document_approval_rule.document_approval_rule import (
 		DocumentApprovalRule,
 	)
+
+
+FLYIN_APPROVALS_SLOT = "pending-approvals"
+
+
+def get_approval_notification_link(
+	doc: Document | frappe._dict,
+	todo_name: str | None = None,
+) -> str:
+	"""Build a desk URL that opens the document and the approvals flyin."""
+	doctype = getattr(doc, "doctype", None) or doc.get("reference_doctype")
+	name = getattr(doc, "name", None) or doc.get("reference_name")
+	if not doctype or not name:
+		frappe.throw(_("Cannot build approval notification link without a document reference"))
+
+	params = {"flyin": FLYIN_APPROVALS_SLOT}
+	if todo_name:
+		params["approval_todo"] = todo_name
+
+	return f"{get_url_to_form(doctype, name)}?{urlencode(params)}"
+
+
+@frappe.whitelist()
+def get_pending_approval_count() -> int:
+	"""Get count of pending approvals for current user."""
+	return frappe.db.count(
+		"ToDo",
+		{
+			"allocated_to": frappe.session.user,
+			"status": "Open",
+			"document_approval_rule": ["is", "set"],
+		},
+	)
+
+
+@frappe.whitelist()
+def get_pending_approvals() -> list[dict]:
+	"""Get pending approval items assigned to current user."""
+	todos = frappe.get_all(
+		"ToDo",
+		filters={
+			"allocated_to": frappe.session.user,
+			"status": "Open",
+			"document_approval_rule": ["is", "set"],
+		},
+		fields=[
+			"name",
+			"description",
+			"status",
+			"reference_type",
+			"reference_name",
+			"role",
+			"document_approval_rule",
+			"creation",
+		],
+		order_by="creation desc",
+		limit=50,
+	)
+	return todos
 
 
 @frappe.whitelist()
@@ -69,7 +130,7 @@ def fetch_approvals_and_roles(doc: Document | str, method: str | None = None):
 			approver = "You" if approvals.get(role) == frappe.session.user else approver
 		if "@" in role and assigned_user == "Unassigned":
 			assigned_user = role
-		_role = frappe._dict(
+		role_row = frappe._dict(
 			{
 				"approval_role": "User Approval" if "@" in role else role,
 				"user_has_approval_role": True if (role in user_roles or "@" in role) else False,
@@ -79,7 +140,7 @@ def fetch_approvals_and_roles(doc: Document | str, method: str | None = None):
 				"assigned_username": assignments.get(role, role),
 			}
 		)
-		add_roles.append(_role)
+		add_roles.append(role_row)
 	approval_state = frappe.get_value("Workflow", get_workflow_name(doc.doctype), "approval_state")
 	require_rejection_reason = frappe.get_value(
 		"Workflow", get_workflow_name(doc.doctype), "require_rejection_reason"
@@ -190,11 +251,10 @@ def approve_document(
 		todo = frappe.get_doc("ToDo", todo)
 		todo.status = "Closed"
 		todo.save(ignore_permissions=True)
-	frappe.db.commit()
 
+	doc = frappe.get_doc(doc.doctype, doc.name)
 	checked_all = check_all_document_approvals(doc, method, include_role=role)
 	if checked_all:
-		doc = frappe.get_doc(doc.doctype, doc.name)
 		finalize_document_after_approval(doc)
 
 	return approval
@@ -291,11 +351,17 @@ def reset_to_reapproval_state_if_needed(doc: Document, method: str | None = None
 def assign_approvers(doc: Document, method: str | None = None):
 	reset_to_reapproval_state_if_needed(doc, method)
 
+	approvals = get_document_approvals(doc)
+
 	roles = frappe.get_all(
 		"Document Approval Rule", {"approval_doctype": doc.doctype}, pluck="approval_role"
 	)
 
 	for role in roles:
+		if role in approvals:
+			close_open_approval_todos(doc, role)
+			continue
+
 		approval_rule: "DocumentApprovalRule" = frappe.get_cached_doc(
 			"Document Approval Rule",
 			{"approval_doctype": doc.doctype, "approval_role": role},
@@ -342,19 +408,24 @@ def remove_user_approval(doc: Document | str, method: str | None = None, user=No
 
 
 @frappe.whitelist()
-def create_approval_notification(doc: Document | frappe._dict, user):
+def create_approval_notification(
+	doc: Document | frappe._dict,
+	user,
+	todo_name: str | None = None,
+):
 	log = frappe.new_doc("Notification Log")
 	log.flags.ignore_permissions = True
 	log.update(
 		{
-			"document_name": doc.name,
-			"document_type": doc.doctype,
-			"email_content": f"{doc.doctype} {doc.name} requires your approval",
+			"document_name": getattr(doc, "name", None) or doc.get("reference_name"),
+			"document_type": getattr(doc, "doctype", None) or doc.get("reference_doctype"),
+			"email_content": f"{getattr(doc, 'doctype', None) or doc.get('reference_doctype')} {getattr(doc, 'name', None) or doc.get('reference_name')} requires your approval",
 			"for_user": user,
-			"from_user": doc.owner,
+			"from_user": getattr(doc, "owner", None) or frappe.session.user,
 			"owner": "Administrator",
-			"subject": f"A {doc.doctype} requires your approval",
+			"subject": f"A {getattr(doc, 'doctype', None) or doc.get('reference_doctype')} requires your approval",
 			"type": "Assignment",
+			"link": get_approval_notification_link(doc, todo_name=todo_name),
 		}
 	)
 
@@ -390,6 +461,7 @@ def send_reminder_email():
 			ToDo.allocated_to.as_("approver"),
 			ToDo.reference_type.as_("doctype"),
 			ToDo.reference_name.as_("name"),
+			ToDo.name.as_("todo_name"),
 		)
 		.where(
 			(ToDo.status == "Open")
@@ -421,12 +493,25 @@ def send_reminder_email():
 		user = pending["approver"]
 		if user not in approvers:
 			approvers[user] = []
+		todo_name = pending.get("todo_name") or frappe.db.get_value(
+			"ToDo",
+			{
+				"allocated_to": pending["approver"],
+				"reference_type": pending["doctype"],
+				"reference_name": pending["name"],
+				"status": "Open",
+			},
+			"name",
+		)
 		approvers[user].append(
 			frappe._dict(
 				{
 					"doctype": pending["doctype"],
 					"name": pending["name"],
-					"url": get_url_to_form(pending["doctype"], pending["name"]),
+					"url": get_approval_notification_link(
+						frappe._dict(doctype=pending["doctype"], name=pending["name"]),
+						todo_name=todo_name,
+					),
 				}
 			)
 		)

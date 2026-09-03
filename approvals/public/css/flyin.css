@@ -1,0 +1,63 @@
+.flyout-drawer__icon .icon,
+.flyin-nav-item[data-flyin-slot='pending-approvals'] .flyin-trigger > svg {
+	width: 18px;
+	height: 18px;
+	color: var(--text-color, #525252);
+}
+
+/* Push layout — loaded via hooks so it always applies on the approvals bench */
+@media (min-width: 1280px) {
+	body.flyin-drawer-open.flyin-drawer-push #body {
+		margin-right: var(--flyin-push-offset, var(--flyout-width, 380px));
+		transition: margin-right 0.25s ease-out;
+	}
+
+	body.flyin-drawer-open.flyin-drawer-push .page-head .page-head-content {
+		height: auto;
+		min-height: var(--page-head-height);
+		overflow: visible;
+	}
+
+	body.flyin-drawer-open.flyin-drawer-push .flyout-drawer {
+		top: var(--navbar-height, 60px);
+		bottom: 0;
+		height: auto;
+		z-index: var(--flyout-push-z-index, 999);
+	}
+}
+
+.pending-approvals__active .flyout-action-btn--primary {
+	background-color: var(--dark-green-avatar-bg);
+	color: var(--dark-green-avatar-color);
+}
+
+.pending-approvals__active .flyout-action-btn--primary:hover:not(:disabled) {
+	background-color: var(--dark-green-avatar-bg);
+	color: var(--dark-green-avatar-color);
+	font-weight: bold;
+	box-shadow:
+		rgba(0, 0, 0, 0.05) 0px 0.5px 0px 0px,
+		rgba(0, 0, 0, 0.08) 0px 0px 0px 1px,
+		rgba(0, 0, 0, 0.05) 0px 2px 4px 0px;
+}
+
+.pending-approvals__active .flyout-action-btn--danger {
+	background-color: var(--bg-orange);
+	color: var(--text-on-orange);
+}
+
+.pending-approvals__active .flyout-action-btn--danger:hover:not(:disabled) {
+	background-color: var(--bg-orange);
+	color: var(--text-on-orange);
+	font-weight: bold;
+	box-shadow:
+		rgba(0, 0, 0, 0.05) 0px 0.5px 0px 0px,
+		rgba(0, 0, 0, 0.08) 0px 0px 0px 1px,
+		rgba(0, 0, 0, 0.05) 0px 2px 4px 0px;
+}
+
+.pending-approvals__active .flyout-action-btn:disabled {
+	text-decoration: line-through;
+	background: #687178;
+	color: #fff;
+}

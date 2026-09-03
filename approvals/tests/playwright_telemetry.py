@@ -161,7 +161,17 @@ def init_playwright_url_state(base_url: str | None = None) -> dict:
 
 	if base_url:
 		_url_state["playwright_base_url"] = base_url.rstrip("/")
-		_url_state["playwright_resolver_map_host"] = None
+		parsed = urlparse(base_url.rstrip("/"))
+		host = parsed.hostname or ""
+		port = parsed.port or bench_port
+		if (
+			host
+			and host not in ("127.0.0.1", "localhost")
+			and probe_host_port("127.0.0.1", port).get("tcp_reachable")
+		):
+			_url_state["playwright_resolver_map_host"] = host
+		else:
+			_url_state["playwright_resolver_map_host"] = None
 
 	return _url_state
 

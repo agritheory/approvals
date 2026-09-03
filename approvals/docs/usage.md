@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Usage
 
 <div class="byline">
-  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-06-23
+  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-07-01
 </div>
 
 ## Finding Documents That Need Approval
@@ -14,10 +14,40 @@ When someone saves a document that requires approval, the assigned approver know
 - A ToDo appears in their ToDo list with a link to the document
 - A notification may appear depending on notification settings
 - If email reminders are configured, a daily email lists everything waiting
+- A **Pending Approvals** icon in the desk navbar shows a badge count and opens a flyin drawer
 
 Open the document to review it and take action.
 
 The approval sidebar appears only on DocTypes configured with at least one enabled Document Approval Rule. Other forms are unchanged.
+
+## Pending Approvals Drawer
+
+The desk navbar includes a **Pending Approvals** flyin (requires the [Flyin](https://github.com/agritheory/flyin) app). Click the icon to open a queue of every open approval ToDo assigned to the current user.
+
+The drawer uses **push mode**: when open, the main page content shifts left so the form and action buttons stay visible beside the queue instead of being covered.
+
+### Review-First Flow
+
+Each queue item shows the document type, name, assigned role, and how long it has been waiting.
+
+- **Off-document:** only a **Review** button is shown. Clicking it navigates to the document form and keeps the drawer open.
+- **On-document:** when the current route matches the queue item, the drawer shows **Role** and **Approval Rule** context, plus **Approve** and **Reject** buttons.
+- Approve and Reject are enabled only when the current user can act on that document from the sidebar (same rules as the form approval panel).
+
+After **Approve**, the item is removed from the queue immediately. The drawer waits two seconds, then navigates to the next pending document. After **Reject**, it advances to the next item right away.
+
+### Deep Links from Notifications
+
+Notification Log entries and reminder emails link directly into the review flow. A notification URL opens the document form, opens the Pending Approvals flyin, and selects the matching queue item.
+
+Query parameters:
+
+| Parameter | Purpose |
+| :--- | :-------- |
+| `flyin=pending-approvals` | Opens the Pending Approvals drawer |
+| `approval_todo=TODO-00001` | Highlights the specific ToDo in the queue |
+
+These parameters are stripped from the URL after the flyin opens so bookmarks and refreshes stay clean.
 
 ## Approving a Document
 

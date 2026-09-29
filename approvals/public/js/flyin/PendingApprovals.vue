@@ -2,71 +2,117 @@
 	<div class="pending-approvals">
 		<div v-if="loading" class="pending-approvals__loading">Loading...</div>
 
-		<div v-else-if="items.length === 0" class="pending-approvals__empty">
+		<div v-else-if="!hasContent" class="pending-approvals__empty">
 			<p>{{ caughtUp ? 'All caught up.' : 'No pending approvals.' }}</p>
 		</div>
 
 		<template v-else>
-			<div
-				v-for="item in items"
-				:key="item.name"
-				class="flyout-queue-item"
-				:class="{ 'flyout-queue-item--active': isActiveItem(item) }"
-				@click="onItemClick(item)">
-				<div class="flyout-queue-item__title">{{ item.reference_type }}: {{ item.reference_name }}</div>
-				<div class="flyout-queue-item__synopsis">
-					{{ displayRole(item) }}
-				</div>
-				<div class="flyout-queue-item__meta">
-					{{ timeAgo(item.creation) }}
+			<section v-if="currentFormRoute && documentGroup.show" class="pending-approvals__section">
+				<div class="pending-approvals__section-title">{{ currentFormRoute[1] }}: {{ currentFormRoute[2] }}</div>
+
+				<div v-if="documentGroup.loading" class="pending-approvals__context-loading">
+					Loading approvals for this document...
 				</div>
 
-				<div v-if="!isActiveItem(item)" class="flyout-queue-item__actions" @click.stop>
-					<button
-						class="flyout-action-btn flyout-action-btn--primary flyout-action-btn--compact"
-						@click="reviewItem(item)">
-						Review
-					</button>
-				</div>
-
-				<div v-else class="pending-approvals__active" @click.stop>
+				<div
+					v-for="(approval, index) in documentGroupApprovals"
+					v-else
+					:key="documentApprovalKey(approval, index)"
+					class="pending-approvals__document-row">
 					<div class="pending-approvals__context">
 						<div class="pending-approvals__context-row">
 							<span class="pending-approvals__label">Role</span>
-							<span>{{ displayRole(item) }}</span>
+							<span>{{ approval.approval_role }}</span>
 						</div>
-						<div v-if="item.document_approval_rule" class="pending-approvals__context-row">
-							<span class="pending-approvals__label">Approval Rule</span>
-							<span>{{ item.document_approval_rule }}</span>
+						<div class="pending-approvals__context-row">
+							<span class="pending-approvals__label">Assigned to</span>
+							<span>{{ approval.assigned_to_user }}</span>
+						</div>
+						<div v-if="approval.approved" class="pending-approvals__context-row">
+							<span class="pending-approvals__label">Approved by</span>
+							<span>{{ approval.approver }}</span>
 						</div>
 					</div>
 
-					<div v-if="getItemContext(item)?.loading" class="pending-approvals__context-loading">
-						Checking approval status...
-					</div>
-
-					<div v-else class="flyout-queue-item__actions">
+					<div v-if="canActOnDocumentApproval(approval)" class="flyout-queue-item__actions">
 						<button
 							class="flyout-action-btn flyout-action-btn--primary flyout-action-btn--compact"
-							:disabled="!canAct(item)"
-							@click="approveItem(item)">
+							@click="approveDocumentApproval(approval)">
 							Approve
 						</button>
 						<button
 							class="flyout-action-btn flyout-action-btn--danger flyout-action-btn--compact"
-							:disabled="!canAct(item)"
-							@click="rejectItem(item)">
+							@click="rejectDocumentApproval(approval)">
 							Reject
 						</button>
 					</div>
 				</div>
-			</div>
+			</section>
+
+			<section v-if="assignedItems.length" class="pending-approvals__section">
+				<div v-if="currentFormRoute && documentGroup.show" class="pending-approvals__section-title">
+					Assigned to you
+				</div>
+
+				<div
+					v-for="item in assignedItems"
+					:key="item.name"
+					class="flyout-queue-item"
+					:class="{ 'flyout-queue-item--active': isActiveItem(item) }"
+					@click="onItemClick(item)">
+					<div class="flyout-queue-item__title">{{ item.reference_type }}: {{ item.reference_name }}</div>
+					<div class="flyout-queue-item__synopsis">
+						{{ displayRole(item) }}
+					</div>
+					<div class="flyout-queue-item__meta">
+						{{ timeAgo(item.creation) }}
+					</div>
+
+					<div v-if="!isActiveItem(item)" class="flyout-queue-item__actions" @click.stop>
+						<button
+							class="flyout-action-btn flyout-action-btn--primary flyout-action-btn--compact"
+							@click="reviewItem(item)">
+							Review
+						</button>
+					</div>
+
+					<div v-else class="pending-approvals__active" @click.stop>
+						<div class="pending-approvals__context">
+							<div class="pending-approvals__context-row">
+								<span class="pending-approvals__label">Role</span>
+								<span>{{ displayRole(item) }}</span>
+							</div>
+							<div v-if="item.document_approval_rule" class="pending-approvals__context-row">
+								<span class="pending-approvals__label">Approval Rule</span>
+								<span>{{ item.document_approval_rule }}</span>
+							</div>
+						</div>
+
+						<div v-if="getItemContext(item)?.loading" class="pending-approvals__context-loading">
+							Checking approval status...
+						</div>
+
+						<div v-else-if="canAct(item)" class="flyout-queue-item__actions">
+							<button
+								class="flyout-action-btn flyout-action-btn--primary flyout-action-btn--compact"
+								@click="approveItem(item)">
+								Approve
+							</button>
+							<button
+								class="flyout-action-btn flyout-action-btn--danger flyout-action-btn--compact"
+								@click="rejectItem(item)">
+								Reject
+							</button>
+						</div>
+					</div>
+				</div>
+			</section>
 		</template>
 	</div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useFlyin } from '@agritheory/flyin'
 import { useFilePreview } from '@agritheory/flyin/file-preview'
 import {
@@ -110,6 +156,13 @@ interface ItemContext {
 	approvalsData: ApprovalsData | null
 }
 
+interface DocumentGroupState {
+	loading: boolean
+	show: boolean
+	doc: DocLike | null
+	approvalsData: ApprovalsData | null
+}
+
 const flyin = useFlyin()
 const preview = useFilePreview()
 const items = ref<ApprovalItem[]>([])
@@ -118,12 +171,37 @@ const loading = ref(true)
 const caughtUp = ref(false)
 const currentRoute = ref<FormRoute>(null)
 const itemContexts = ref<Map<string, ItemContext>>(new Map())
+const documentGroup = ref<DocumentGroupState>({
+	loading: false,
+	show: false,
+	doc: null,
+	approvalsData: null,
+})
 
 let routeCloseRegistered = false
 let suppressRouteClose = false
 let advanceTimeout: ReturnType<typeof setTimeout> | null = null
 
 const APPROVE_ADVANCE_DELAY_MS = 2000
+
+const currentFormRoute = computed(() => currentRoute.value)
+
+const assignedItems = computed(() => {
+	const route = currentRoute.value
+	if (!route) {
+		return items.value
+	}
+	return items.value.filter(item => !matchesItem(item, route))
+})
+
+const documentGroupApprovals = computed(() => documentGroup.value.approvalsData?.approvals ?? [])
+
+const hasContent = computed(() => {
+	if (documentGroup.value.show && (documentGroup.value.loading || documentGroupApprovals.value.length)) {
+		return true
+	}
+	return assignedItems.value.length > 0
+})
 
 function clearAdvanceTimeout() {
 	if (advanceTimeout) {
@@ -139,14 +217,6 @@ function sleep(ms: number): Promise<void> {
 			resolve()
 		}, ms)
 	})
-}
-
-function closeFlyin() {
-	if (window.flyin?.close) {
-		window.flyin.close()
-		return
-	}
-	flyin.close()
 }
 
 function readFormRoute(): FormRoute {
@@ -170,6 +240,10 @@ function displayRole(item: ApprovalItem): string {
 	return approvalRoleKey(item.role)
 }
 
+function documentApprovalKey(approval: ApprovalRole, index: number): string {
+	return `${approval.approval_role}-${approval.assigned_username}-${index}`
+}
+
 function getItemContext(item: ApprovalItem): ItemContext | undefined {
 	return itemContexts.value.get(item.name)
 }
@@ -182,6 +256,14 @@ function canAct(item: ApprovalItem): boolean {
 
 	const approval = findPendingApproval(context.approvalsData.approvals, item.role)
 	return canActOnApproval(context.doc, approval, context.approvalsData.approval_state)
+}
+
+function canActOnDocumentApproval(approval: ApprovalRole): boolean {
+	const { doc, approvalsData } = documentGroup.value
+	if (!doc || !approvalsData?.show_approvals) {
+		return false
+	}
+	return canActOnApproval(doc, approval, approvalsData.approval_state)
 }
 
 function ensureRouteHandling() {
@@ -198,17 +280,9 @@ function onRouteChange() {
 
 	if (suppressRouteClose) {
 		suppressRouteClose = false
-		void loadActiveContexts()
-		return
 	}
 
-	const route = currentRoute.value
-	const onPending = route && items.value.some(item => matchesItem(item, route))
-	if (!onPending) {
-		closeFlyin()
-		return
-	}
-
+	void loadCurrentDocumentGroup()
 	void loadActiveContexts()
 }
 
@@ -223,6 +297,7 @@ async function fetchItems(silent = false) {
 			caughtUp.value = false
 		}
 		await refreshBadge()
+		void loadCurrentDocumentGroup()
 		void loadActiveContexts()
 	} catch (error) {
 		console.error('[flyin] Failed to fetch pending approvals:', error)
@@ -236,6 +311,34 @@ async function fetchItems(silent = false) {
 
 async function refreshBadge() {
 	await flyin.refreshBadge(SLOT_ID)
+}
+
+async function loadCurrentDocumentGroup() {
+	const route = readFormRoute()
+	if (!route) {
+		documentGroup.value = { loading: false, show: false, doc: null, approvalsData: null }
+		return
+	}
+
+	const [, doctype, name] = route
+	documentGroup.value = { ...documentGroup.value, loading: true, show: false }
+
+	try {
+		const doc = await window.frappe.db.get_doc(doctype, name)
+		const approvalsData = await window.frappe.xcall('approvals.approvals.api.fetch_approvals_and_roles', {
+			doc: JSON.stringify(doc),
+		})
+
+		documentGroup.value = {
+			loading: false,
+			show: Boolean(approvalsData.show_approvals),
+			doc,
+			approvalsData,
+		}
+	} catch (error) {
+		console.error('[flyin] Failed to load document approvals:', error)
+		documentGroup.value = { loading: false, show: false, doc: null, approvalsData: null }
+	}
 }
 
 function timeAgo(dateStr: string): string {
@@ -312,7 +415,7 @@ async function loadItemContext(item: ApprovalItem) {
 }
 
 async function loadActiveContexts() {
-	const activeItems = items.value.filter(isActiveItem)
+	const activeItems = assignedItems.value.filter(isActiveItem)
 	await Promise.all(activeItems.map(loadItemContext))
 }
 
@@ -321,12 +424,15 @@ async function afterAction(completedItem: ApprovalItem, options: { advanceDelayM
 	itemContexts.value.delete(completedItem.name)
 	items.value = items.value.filter(row => row.name !== completedItem.name)
 	await refreshBadge()
+	void loadCurrentDocumentGroup()
 
-	const next = items.value[0]
+	const next = assignedItems.value[0]
 	if (!next) {
 		selected.value = null
-		caughtUp.value = true
-		window.frappe.show_alert({ message: 'All caught up', indicator: 'green' })
+		if (!documentGroup.value.show) {
+			caughtUp.value = true
+			window.frappe.show_alert({ message: 'All caught up', indicator: 'green' })
+		}
 		void fetchItems(true)
 		return
 	}
@@ -339,6 +445,91 @@ async function afterAction(completedItem: ApprovalItem, options: { advanceDelayM
 	selected.value = next.name
 	await window.frappe.set_route('Form', next.reference_type, next.reference_name)
 	void fetchItems(true)
+}
+
+async function approveDocumentApproval(approval: ApprovalRole) {
+	if (!canActOnDocumentApproval(approval)) return
+
+	const { doc, approvalsData } = documentGroup.value
+	if (!doc || !approvalsData) return
+
+	const runApprove = async () => {
+		try {
+			await window.frappe.xcall('approvals.approvals.api.approve_document', {
+				doc: JSON.stringify(doc),
+				role: approval.approval_role,
+				user: window.frappe.session.user,
+			})
+
+			if (window.cur_frm?.doc?.doctype === doc.doctype && window.cur_frm?.doc?.name === doc.name) {
+				await window.cur_frm.reload_doc()
+			}
+
+			window.frappe.show_alert({ message: 'Document approved', indicator: 'green' })
+			await refreshBadge()
+			void loadCurrentDocumentGroup()
+			void fetchItems(true)
+		} catch (error) {
+			console.error('[flyin] Failed to approve document:', error)
+			window.frappe.show_alert({ message: 'Failed to approve', indicator: 'red' })
+		}
+	}
+
+	const isSubmittable = window.frappe.get_meta(doc.doctype)?.is_submittable
+	if (!approvalsData.workflow_exists && isSubmittable) {
+		window.frappe.confirm(`Permanently Submit ${doc.name}?`, runApprove)
+		return
+	}
+
+	await runApprove()
+}
+
+async function rejectDocumentApproval(approval: ApprovalRole) {
+	if (!canActOnDocumentApproval(approval)) return
+
+	const { doc, approvalsData } = documentGroup.value
+	if (!doc || !approvalsData) return
+
+	const requiresReason = await window.frappe.xcall('approvals.approvals.api.check_rejection_reason_required', {
+		doc: JSON.stringify(doc),
+	})
+
+	if (requiresReason) {
+		window.frappe.prompt(
+			{
+				fieldtype: 'Small Text',
+				label: 'Rejection Reason',
+				fieldname: 'reason',
+				reqd: 1,
+			},
+			async (values: { reason: string }) => {
+				await doRejectDocument(approval, doc, values.reason)
+			},
+			'Reject Document',
+			'Reject'
+		)
+		return
+	}
+
+	await doRejectDocument(approval, doc)
+}
+
+async function doRejectDocument(approval: ApprovalRole, doc: DocLike, comment = '') {
+	try {
+		await window.frappe.xcall('approvals.approvals.api.reject_document', {
+			doc: JSON.stringify(doc),
+			role: approval.approval_role,
+			comment,
+		})
+
+		window.frappe.show_alert({ message: 'Document rejected', indicator: 'orange' })
+		await refreshBadge()
+		void loadCurrentDocumentGroup()
+		void fetchItems(true)
+	} catch (error) {
+		console.error('[flyin] Failed to reject document:', error)
+		window.frappe.show_alert({ message: 'Failed to reject', indicator: 'red' })
+	}
 }
 
 async function approveItem(item: ApprovalItem) {
@@ -446,6 +637,7 @@ async function handleApprovalDeepLink(todoName: string | undefined) {
 }
 
 watch(currentRoute, () => {
+	void loadCurrentDocumentGroup()
 	void loadActiveContexts()
 })
 
@@ -490,6 +682,31 @@ onUnmounted(() => {
 	padding: 24px;
 	text-align: center;
 	color: var(--text-muted, #6b7280);
+}
+
+.pending-approvals__section {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.pending-approvals__section + .pending-approvals__section {
+	margin-top: 16px;
+	padding-top: 16px;
+	border-top: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+}
+
+.pending-approvals__section-title {
+	padding: 0 4px 4px;
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	color: var(--text-muted, #6b7280);
+}
+
+.pending-approvals__document-row {
+	padding: 8px 4px;
 }
 
 .pending-approvals__active {

@@ -10,6 +10,7 @@ from approvals.tests.playwright_telemetry import get_playwright_base_url
 
 FLYIN_SLOT = "pending-approvals"
 FLYIN_APPROVE = (
+	".pending-approvals__document-row button.flyout-action-btn--primary:has-text('Approve'):not([disabled]), "
 	".pending-approvals__active button.flyout-action-btn--primary:has-text('Approve'):not([disabled])"
 )
 
@@ -83,10 +84,22 @@ def wait_for_enabled_approve(page: Page, timeout: int = 30000):
 	return approve
 
 
+def wait_for_flyin_loaded(page: Page, timeout: int = 30000):
+	dismiss_blocking_modals(page)
+	expect(page.locator("body.flyin-drawer-open")).to_be_visible(timeout=timeout)
+	expect(page.locator(".pending-approvals")).to_be_visible(timeout=timeout)
+	expect(page.locator(".pending-approvals__context-loading")).to_have_count(0, timeout=timeout)
+
+
 def open_form_page(page: Page, doctype: str, name: str):
 	page.goto(form_page_url(doctype, name), wait_until="domcontentloaded")
 	dismiss_blocking_modals(page)
 	wait_for_enabled_approve(page)
+
+
+def open_form_with_flyin(page: Page, doctype: str, name: str):
+	page.goto(form_page_url(doctype, name), wait_until="domcontentloaded")
+	wait_for_flyin_loaded(page)
 
 
 def click_approve(page: Page):

@@ -46,8 +46,10 @@ export function isApprovableInWorkflow(
 }
 
 export function userCanApprove(approval: ApprovalRole, user: string): boolean {
-	if (approval.approval_role != 'User Approval' && !approval.user_has_approval_role) {
-		return false
+	if (approval.approval_role != 'User Approval') {
+		if (user !== 'Administrator' && !approval.user_has_approval_role) {
+			return false
+		}
 	}
 
 	if (approval.approval_role == 'User Approval' && approval.assigned_username !== user) {

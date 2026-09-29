@@ -13,6 +13,8 @@ class DocumentApproval(Document):
 
 	def validate_user_has_role(self):
 		if not self.user_approval:
+			if self.approver == "Administrator":
+				return
 			if not frappe.get_value("Has Role", {"parent": self.approver, "role": self.approval_role}):
 				frappe.throw(_("Approving User does not have the required Role"), frappe.PermissionError)
 

@@ -20,6 +20,7 @@ from approvals.approvals.validation import (
 	doctype_has_approval_rules,
 	get_approval_roles,
 	get_document_approvals,
+	session_user_has_approval_role,
 )
 from approvals.approvals.workflow import apply_workflow
 from approvals.approvals.workflow import evaluate_workflow_template
@@ -51,43 +52,73 @@ def get_approval_notification_link(
 	return f"{get_url_to_form(doctype, name)}?{urlencode(params)}"
 
 
-@frappe.whitelist()
-def get_pending_approval_count() -> int:
-	"""Get count of pending approvals for current user."""
-	return frappe.db.count(
+def get_pending_approval_todos_for_user(user: str | None = None) -> list[dict]:
+	"""Open approval ToDos assigned to user (rule-based and user-document approvals)."""
+	user = user or frappe.session.user
+	fields = [
+		"name",
+		"description",
+		"status",
+		"reference_type",
+		"reference_name",
+		"role",
+		"document_approval_rule",
+		"creation",
+	]
+
+	rule_todos = frappe.get_all(
 		"ToDo",
-		{
-			"allocated_to": frappe.session.user,
+		filters={
+			"allocated_to": user,
 			"status": "Open",
 			"document_approval_rule": ["is", "set"],
 		},
+		fields=fields,
+		order_by="creation desc",
 	)
+
+	user_approval_todos: list[dict] = []
+	for row in frappe.get_all(
+		"User Document Approval",
+		filters={"approver": user},
+		fields=["reference_doctype", "reference_name"],
+	):
+		user_approval_todos.extend(
+			frappe.get_all(
+				"ToDo",
+				filters={
+					"allocated_to": user,
+					"status": "Open",
+					"reference_type": row.reference_doctype,
+					"reference_name": row.reference_name,
+				},
+				fields=fields,
+			)
+		)
+
+	seen: set[str] = set()
+	merged: list[dict] = []
+	for todo in rule_todos + user_approval_todos:
+		todo_name = todo["name"]
+		if todo_name in seen:
+			continue
+		seen.add(todo_name)
+		merged.append(todo)
+
+	merged.sort(key=lambda row: row["creation"], reverse=True)
+	return merged[:50]
+
+
+@frappe.whitelist()
+def get_pending_approval_count() -> int:
+	"""Get count of pending approvals for current user."""
+	return len(get_pending_approval_todos_for_user())
 
 
 @frappe.whitelist()
 def get_pending_approvals() -> list[dict]:
 	"""Get pending approval items assigned to current user."""
-	todos = frappe.get_all(
-		"ToDo",
-		filters={
-			"allocated_to": frappe.session.user,
-			"status": "Open",
-			"document_approval_rule": ["is", "set"],
-		},
-		fields=[
-			"name",
-			"description",
-			"status",
-			"reference_type",
-			"reference_name",
-			"role",
-			"document_approval_rule",
-			"creation",
-		],
-		order_by="creation desc",
-		limit=50,
-	)
-	return todos
+	return get_pending_approval_todos_for_user()
 
 
 @frappe.whitelist()
@@ -133,7 +164,9 @@ def fetch_approvals_and_roles(doc: Document | str, method: str | None = None):
 		role_row = frappe._dict(
 			{
 				"approval_role": "User Approval" if "@" in role else role,
-				"user_has_approval_role": True if (role in user_roles or "@" in role) else False,
+				"user_has_approval_role": session_user_has_approval_role(
+					frappe.session.user, role, user_roles
+				),
 				"approved": True if approvals.get(role) else False,
 				"approver": approver,
 				"assigned_to_user": assigned_user,

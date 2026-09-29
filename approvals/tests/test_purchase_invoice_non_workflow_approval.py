@@ -88,6 +88,19 @@ def test_cooperative_ag_finance_invoice_has_no_workflow():
 	assert response["show_approvals"] is True
 
 
+@pytest.mark.order(13)
+def test_administrator_may_act_on_role_based_approval_rows():
+	pi = purchase_invoice_for_supplier("Cooperative Ag Finance")
+	frappe.set_user("Administrator")
+	response = frappe.call(
+		"approvals.approvals.api.fetch_approvals_and_roles",
+		doc=frappe.as_json(pi.as_dict()),
+	)
+	role_rows = [row for row in response["approvals"] if row["approval_role"] != "User Approval"]
+	assert role_rows
+	assert all(row["user_has_approval_role"] for row in role_rows)
+
+
 @pytest.mark.order(35)
 @pytest.mark.parametrize(
 	"supplier,approver,approval_role",

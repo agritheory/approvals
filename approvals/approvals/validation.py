@@ -12,6 +12,15 @@ def doctype_has_approval_rules(doctype: str) -> bool:
 	)
 
 
+def session_user_has_approval_role(user: str, role: str, user_roles: list[str]) -> bool:
+	"""Whether the session user may act on a role-based approval row in the UI."""
+	if "@" in role:
+		return True
+	if user == "Administrator":
+		return True
+	return role in user_roles
+
+
 @frappe.whitelist()
 def get_approval_roles(doc: Document | frappe._dict, method: str | None = None):
 	settings = frappe.get_cached_doc("Document Approval Settings")

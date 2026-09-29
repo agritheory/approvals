@@ -99,12 +99,13 @@ def get_pending_approval_todos_for_user(user: str | None = None) -> list[dict]:
 	seen: set[str] = set()
 	merged: list[dict] = []
 	for todo in rule_todos + user_approval_todos:
-		if todo.name in seen:
+		todo_name = todo["name"]
+		if todo_name in seen:
 			continue
-		seen.add(todo.name)
+		seen.add(todo_name)
 		merged.append(todo)
 
-	merged.sort(key=lambda row: row.creation, reverse=True)
+	merged.sort(key=lambda row: row["creation"], reverse=True)
 	return merged[:50]
 
 

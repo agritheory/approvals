@@ -9,18 +9,80 @@ from approvals.approvals.api import create_approval_notification
 from approvals.approvals.validation import close_open_approval_todos, get_document_approvals
 from frappe import render_template
 from frappe.utils.jinja import validate_template
-from jinja2 import Environment, BaseLoader, TemplateSyntaxError, UndefinedError
+from jinja2 import Environment, BaseLoader, TemplateSyntaxError, UndefinedError, meta, nodes
 
 
 class DocumentApprovalRule(Document):
 	def validate(self):
 		self.title = f"{self.approval_doctype} - {self.approval_role}"
 
-		if self.condition:
-			try:
-				validate_template(self.condition)
-			except Exception as e:
-				frappe.throw(f"Invalid Jinja condition: {str(e)}")
+		self.validate_condition()
+
+	def validate_condition(self):
+		"""Reject conditions that would otherwise fail silently when the rule is evaluated."""
+		if not self.condition:
+			return
+
+		title = frappe._("Invalid Condition")
+		jinja_env = get_condition_environment()
+		try:
+			# compiling (not just parsing) also catches unknown filters and tests
+			jinja_env.from_string(self.condition)
+			ast = jinja_env.parse(self.condition)
+		except TemplateSyntaxError as e:
+			frappe.throw(
+				frappe._("Jinja syntax error on line {0}: {1}").format(e.lineno, frappe.bold(e.message)),
+				title=title,
+			)
+
+		literal_text, has_expression = get_condition_literal_text(ast)
+		if literal_text and not has_expression:
+			frappe.throw(
+				frappe._(
+					"The condition has no Jinja expression, so it would apply to every document. Wrap it in {0}."
+				).format(frappe.bold("{{ }}")),
+				title=title,
+			)
+		if literal_text:
+			frappe.throw(
+				frappe._(
+					"The condition has text outside of {0}, so it would apply to every document: {1}"
+				).format(frappe.bold("{{ }}"), frappe.bold(frappe.utils.escape_html(literal_text))),
+				title=title,
+			)
+
+		unknown_tests = sorted(get_condition_test_names(ast) - set(jinja_env.tests))
+		if unknown_tests:
+			frappe.throw(
+				frappe._("Unknown Jinja test in condition: {0}").format(
+					frappe.bold(", ".join(unknown_tests))
+				),
+				title=title,
+			)
+
+		reference_doc = frappe.new_doc(self.approval_doctype)
+		known_variables = set(jinja_env.globals) | set(self.get_jinja_context(reference_doc))
+		unknown_variables = sorted(meta.find_undeclared_variables(ast) - known_variables)
+		if unknown_variables:
+			frappe.throw(
+				frappe._("Unknown variable in condition: {0}").format(
+					frappe.bold(", ".join(unknown_variables))
+				),
+				title=title,
+			)
+
+		unknown_fields = sorted(
+			fieldname
+			for fieldname in get_condition_doc_fields(ast)
+			if not reference_doc.meta.has_field(fieldname) and not hasattr(reference_doc, fieldname)
+		)
+		if unknown_fields:
+			frappe.throw(
+				frappe._("{0} has no field: {1}").format(
+					self.approval_doctype, frappe.bold(", ".join(unknown_fields))
+				),
+				title=title,
+			)
 
 	@frappe.whitelist()
 	def test_condition(self, doctype: str, docname: str):
@@ -87,8 +149,7 @@ class DocumentApprovalRule(Document):
 		try:
 			context = self.get_jinja_context(doc)
 
-			# Create Jinja environment
-			jinja_env = Environment(loader=BaseLoader(), autoescape=True)
+			jinja_env = get_condition_environment()
 			template = jinja_env.from_string(self.condition)
 			result = template.render(**context)
 
@@ -300,6 +361,70 @@ def get_users(role: str):
 	)
 
 	return [d["parent"] for d in result]
+
+
+def get_condition_environment():
+	return Environment(loader=BaseLoader(), autoescape=True)
+
+
+def get_condition_literal_text(ast: nodes.Template):
+	"""
+	Return the top-level text outside of Jinja tags and whether the template has any expression.
+
+	Top-level text always renders, so the result can never be falsy and the rule always applies.
+	"""
+	literal_text = []
+	has_expression = False
+	for node in ast.body:
+		if not isinstance(node, nodes.Output):
+			has_expression = True
+			continue
+		for child in node.nodes:
+			if isinstance(child, nodes.TemplateData):
+				literal_text.append(child.data)
+			else:
+				has_expression = True
+	return "".join(literal_text).strip(), has_expression
+
+
+def get_condition_test_names(ast: nodes.Template):
+	"""Test names passed as strings to filters, e.g. the 'equalto' in selectattr('field', 'equalto', value)."""
+	test_argument_index = {"selectattr": 1, "rejectattr": 1, "select": 0, "reject": 0}
+	tests = set()
+	for node in ast.find_all(nodes.Filter):
+		index = test_argument_index.get(node.name)
+		if index is None or len(node.args) <= index:
+			continue
+		argument = node.args[index]
+		if isinstance(argument, nodes.Const) and isinstance(argument.value, str):
+			tests.add(argument.value)
+	return tests
+
+
+def get_condition_doc_fields(ast: nodes.Template):
+	"""Fieldnames read from `doc` as `doc.fieldname`, `doc['fieldname']` or `doc.get('fieldname')`."""
+
+	def is_doc(node):
+		return isinstance(node, nodes.Name) and node.name == "doc"
+
+	fields = set()
+	for node in ast.find_all(nodes.Getattr):
+		if is_doc(node.node):
+			fields.add(node.attr)
+	for node in ast.find_all(nodes.Getitem):
+		if is_doc(node.node) and isinstance(node.arg, nodes.Const) and isinstance(node.arg.value, str):
+			fields.add(node.arg.value)
+	for node in ast.find_all(nodes.Call):
+		if (
+			isinstance(node.node, nodes.Getattr)
+			and is_doc(node.node.node)
+			and node.node.attr == "get"
+			and node.args
+			and isinstance(node.args[0], nodes.Const)
+			and isinstance(node.args[0].value, str)
+		):
+			fields.add(node.args[0].value)
+	return fields
 
 
 def account_numbers(*args):

@@ -105,11 +105,11 @@
 			"fieldname": "condition_help",
 			"fieldtype": "HTML",
 			"label": "Condition Help",
-			"options": "<h4>Condition Example</h4>\n\n\n<h4>Basic field value check:</h4>\n<pre>{{ doc.total_amount &gt; 10000 }}\n</pre>\n<h4>Complex nested condition:</h4>\n<pre>{{ \n  any([i.expense_account in account_numbers('12345', '1.2.3.4') for i in doc.items]) or \n  any([i.account_head in account_numbers('12345', '1.2.3.4') for i in doc.taxes]) \n}}</pre>\n<h4>How to get fieldnames</h4>\n\n<p>The fieldnames you can use in your condition are the fields in the document from which you are using for approval. You can find out the fields of any documents via Setup &gt; Customize Form View and selecting the document type (e.g. Purchase Order)</p>\n\n<h4>Templating</h4>\n\n<p>Templates are compiled using the Jinja Templating Language. To learn more about Jinja, <a class=\"strong\" href=\"http://jinja.pocoo.org/docs/dev/templates/\">read this documentation.</a></p>\n"
+			"options": "<h4>Condition Example</h4>\n\n\n<h4>Basic field value check:</h4>\n<pre>{{ doc.grand_total &gt; 10000 }}\n</pre>\n<h4>Child table check (any item in a cost center):</h4>\n<pre>{{ doc.items | selectattr('cost_center', 'equalto', 'Engineering - CO') | list | length &gt; 0 }}\n</pre>\n<h4>Complex nested condition:</h4>\n<pre>{{\n  doc.items | selectattr('expense_account', 'in', account_numbers('12345', '1.2.3.4')) | list | length &gt; 0 or\n  doc.taxes | selectattr('account_head', 'in', account_numbers('12345', '1.2.3.4')) | list | length &gt; 0\n}}</pre>\n<h4>Syntax notes</h4>\n\n<p>Wrap the whole condition in <code>{{ }}</code>; a condition without braces applies to every document. Use Jinja syntax (<code>and</code>, <code>or</code>, <code>not</code>). Python list comprehensions, <code>lambda</code> and <code>&amp;&amp;</code> are not supported. Use the Test Condition button to check a condition against a real document.</p>\n<h4>How to get fieldnames</h4>\n\n<p>The fieldnames you can use in your condition are the fields in the document from which you are using for approval. You can find out the fields of any documents via Setup &gt; Customize Form View and selecting the document type (e.g. Purchase Order)</p>\n\n<h4>Templating</h4>\n\n<p>Templates are compiled using the Jinja Templating Language. To learn more about Jinja, <a class=\"strong\" href=\"http://jinja.pocoo.org/docs/dev/templates/\">read this documentation.</a></p>\n"
 		}
 	],
 	"links": [],
-	"modified": "2025-07-31 04:59:06.977356",
+	"modified": "2026-10-01 20:00:00.000000",
 	"modified_by": "Administrator",
 	"module": "Approvals",
 	"name": "Document Approval Rule",

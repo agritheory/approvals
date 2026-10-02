@@ -35,7 +35,13 @@ Conditions are Jinja templates that evaluate against the document. When the cond
 **Require approval when items hit specific expense accounts:**
 
 ```jinja
-{{ any([i.expense_account in account_numbers('Capital Equipment - CO', 'Office Supplies - CO') for i in doc.items]) }}
+{{ doc.items | selectattr('expense_account', 'in', account_numbers('Capital Equipment - CO', 'Office Supplies - CO')) | list | length > 0 }}
+```
+
+**Require approval when any item is charged to a specific cost center:**
+
+```jinja
+{{ doc.items | selectattr('cost_center', 'equalto', 'Engineering - CO') | list | length > 0 }}
 ```
 
 **Require approval for a specific supplier:**
@@ -52,15 +58,26 @@ Conditions can combine multiple checks:
 
 Use the Test Condition button to verify a condition works against a real document before enabling the rule.
 
+### Writing Conditions That Evaluate Correctly
+
+A condition is rendered as a Jinja template and the resulting text decides whether the rule applies. The rule does **not** apply when the text is `False`, `0`, `None`, `null`, or empty. Any other text means the rule applies.
+
+- Wrap the whole expression in `{{ }}`. A condition without braces, such as `doc.grand_total > 10000`, is rendered as literal text and the rule applies to every document.
+- Use Jinja syntax, not Python or JavaScript. Use `and`, `or`, and `not` rather than `&&` and `||`. List comprehensions (`[x for x in ...]`) and `lambda` are not supported.
+- To check child table rows, filter them with `selectattr` and compare the count, as in the examples above. The comparison is a Jinja test name such as `equalto`, `ne`, `in`, `gt`, or `lt`. Do not output the filtered list itself: an empty list renders as `[]`, which counts as true.
+- Reference fields that exist on the document. A condition that fails to evaluate, for example because of a misspelled field name, is recorded in the Error Log and the rule does not apply.
+
+Saving a rule checks the condition and reports an error for Jinja syntax errors, text outside of `{{ }}`, unknown variables, unknown test names in `selectattr`, and fields that do not exist on the DocType. Fields on child table rows (such as the `cost_center` passed to `selectattr`) are not checked, so confirm those with Test Condition.
+
 ### Available Context
 
 Conditions have access to the full document as `doc`, plus several helpers:
 
 - `doc.fieldname` accesses any field on the document
-- `doc.items` accesses child table rows for iteration
+- `doc.items` accesses child table rows. Filter them with `selectattr`, for example `doc.items | selectattr('cost_center', 'equalto', 'Engineering - CO') | list`
 - `expense_accounts`, `income_accounts`, `tax_accounts`, and `asset_accounts` are pre-fetched lists of account names by type
 - `account_numbers('Capital Equipment - CO', 'Office Supplies - CO')` returns a list of exact account names to check against. Pass each account name as it appears in ERPNext; the helper does not expand ranges.
-- `any()` and `all()` are Python built-ins for checking lists
+- `any()` and `all()` are Python built-ins that accept a list, for example `any(doc.items | map(attribute='is_fixed_asset') | list)`
 - `frappe.get_value()` and `frappe.get_all()` perform database lookups when related data is needed
 
 To find field names for conditions, navigate to Setup > Customize Form, select the DocType, and review the field names in the Fields table.
@@ -75,7 +92,7 @@ A DocType can have multiple rules. Each rule that matches creates an approval re
 | :--- | :--- | :-------- |
 | 1 | Purchase Manager | `{{ doc.grand_total > 5000 }}` |
 | 2 | Finance Manager | `{{ doc.grand_total > 25000 }}` |
-| 3 | Accounts Manager | `{{ any([i.expense_account in expense_accounts for i in doc.items]) }}` |
+| 3 | Accounts Manager | `{{ doc.items \| selectattr('expense_account', 'in', expense_accounts) \| list \| length > 0 }}` |
 
 A $30,000 order with expense items requires approval from all three roles. A $3,000 order with no expense items requires none.
 

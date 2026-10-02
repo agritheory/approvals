@@ -15,5 +15,5 @@ class DocumentApprovalSettings(Document):
 			frappe.throw(frappe._("Invalid JSON"))
 
 	def get_settings(self):
-		settings = json.loads(self.settings)
+		settings = json.loads(self.settings or "{}")
 		return frappe._dict(settings)

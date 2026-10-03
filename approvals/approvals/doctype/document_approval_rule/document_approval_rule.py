@@ -47,16 +47,16 @@ class DocumentApprovalRule(Document):
 			frappe.throw(
 				frappe._(
 					"The condition has text outside of {0}, so it would apply to every document: {1}"
-				).format(frappe.bold("{{ }}"), frappe.bold(frappe.utils.escape_html(literal_text))),
+				).format(
+					frappe.bold("{{ }}"), frappe.bold(frappe.utils.escape_html(literal_text))
+				),
 				title=title,
 			)
 
 		unknown_tests = sorted(get_condition_test_names(ast) - set(jinja_env.tests))
 		if unknown_tests:
 			frappe.throw(
-				frappe._("Unknown Jinja test in condition: {0}").format(
-					frappe.bold(", ".join(unknown_tests))
-				),
+				frappe._("Unknown Jinja test in condition: {0}").format(frappe.bold(", ".join(unknown_tests))),
 				title=title,
 			)
 

@@ -37,7 +37,10 @@ def test_valid_conditions_are_accepted(condition):
 		("{{ doc.grand_total > 500 && doc.supplier }}", "syntax error"),
 		("{{ any([i.cost_center == 'Main - CFC' for i in doc.items]) }}", "syntax error"),
 		("{{ doc.items | not_a_filter }}", "syntax error"),
-		("{{ doc.items | selectattr('cost_center', 'notequalto', 'Main - CFC') | list }}", "Unknown Jinja test"),
+		(
+			"{{ doc.items | selectattr('cost_center', 'notequalto', 'Main - CFC') | list }}",
+			"Unknown Jinja test",
+		),
 		("{{ grand_total > 500 }}", "Unknown variable"),
 		("{{ doc.total_amount > 500 }}", "no field"),
 		("{{ doc.get('total_amount') > 500 }}", "no field"),

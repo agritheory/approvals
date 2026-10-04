@@ -21,29 +21,59 @@
 					class="pending-approvals__document-row">
 					<div class="pending-approvals__context">
 						<div class="pending-approvals__context-row">
-							<span class="pending-approvals__label">Role</span>
+							<span class="pending-approvals__label">Role:</span>
 							<span>{{ approval.approval_role }}</span>
 						</div>
 						<div class="pending-approvals__context-row">
-							<span class="pending-approvals__label">Assigned to</span>
+							<span class="pending-approvals__label">Assigned to:</span>
 							<span>{{ approval.assigned_to_user }}</span>
 						</div>
+						<div v-if="approval.requested_by_name" class="pending-approvals__context-row">
+							<span class="pending-approvals__label">Requested by:</span>
+							<span>{{ approval.requested_by_name }}</span>
+						</div>
+						<div v-if="approval.reason" class="pending-approvals__context-row">
+							<span class="pending-approvals__label">Reason:</span>
+							<span>{{ approval.reason }}</span>
+						</div>
 						<div v-if="approval.approved" class="pending-approvals__context-row">
-							<span class="pending-approvals__label">Approved by</span>
+							<span class="pending-approvals__label">Approved by:</span>
 							<span>{{ approval.approver }}</span>
 						</div>
 					</div>
 
-					<div v-if="canActOnDocumentApproval(approval)" class="flyout-queue-item__actions">
+					<div
+						v-if="documentApprovalRowShowsActions(approval, index)"
+						class="flyout-queue-item__actions pending-approvals__row-actions">
+						<template v-if="canActOnDocumentApproval(approval)">
+							<button
+								class="flyout-action-btn flyout-action-btn--success flyout-action-btn--compact"
+								@click="approveDocumentApproval(approval)">
+								Approve
+							</button>
+							<button
+								class="flyout-action-btn flyout-action-btn--danger flyout-action-btn--compact"
+								@click="rejectDocumentApproval(approval)">
+								Reject
+							</button>
+						</template>
 						<button
-							class="flyout-action-btn flyout-action-btn--primary flyout-action-btn--compact"
-							@click="approveDocumentApproval(approval)">
-							Approve
+							v-if="approval.can_reassign"
+							class="flyout-action-btn flyout-action-btn--warning flyout-action-btn--compact"
+							@click="reassignApprover(approval)">
+							Reassign
 						</button>
 						<button
+							v-if="approval.can_remove"
 							class="flyout-action-btn flyout-action-btn--danger flyout-action-btn--compact"
-							@click="rejectDocumentApproval(approval)">
-							Reject
+							@click="removeApprover(approval)">
+							Remove
+						</button>
+						<button
+							v-if="showAddApproverOnRow(index)"
+							class="flyout-action-btn flyout-action-btn--secondary flyout-action-btn--compact"
+							@click="addApprover">
+							Add approver
 						</button>
 					</div>
 				</div>
@@ -79,11 +109,11 @@
 					<div v-else class="pending-approvals__active" @click.stop>
 						<div class="pending-approvals__context">
 							<div class="pending-approvals__context-row">
-								<span class="pending-approvals__label">Role</span>
+								<span class="pending-approvals__label">Role:</span>
 								<span>{{ displayRole(item) }}</span>
 							</div>
 							<div v-if="item.document_approval_rule" class="pending-approvals__context-row">
-								<span class="pending-approvals__label">Approval Rule</span>
+								<span class="pending-approvals__label">Approval rule:</span>
 								<span>{{ item.document_approval_rule }}</span>
 							</div>
 						</div>
@@ -94,7 +124,7 @@
 
 						<div v-else-if="canAct(item)" class="flyout-queue-item__actions">
 							<button
-								class="flyout-action-btn flyout-action-btn--primary flyout-action-btn--compact"
+								class="flyout-action-btn flyout-action-btn--success flyout-action-btn--compact"
 								@click="approveItem(item)">
 								Approve
 							</button>
@@ -108,6 +138,15 @@
 				</div>
 			</section>
 		</template>
+
+		<p class="pending-approvals__shortcut-hint" aria-hidden="true">
+			Toggle drawer:
+			<kbd>Ctrl</kbd>
+			+
+			<kbd>Shift</kbd>
+			+
+			<kbd>X</kbd>
+		</p>
 	</div>
 </template>
 
@@ -148,6 +187,7 @@ interface ApprovalsData {
 	workflow_exists: boolean
 	require_rejection_reason?: boolean
 	show_approvals: boolean
+	can_add?: boolean
 }
 
 interface ItemContext {
@@ -266,6 +306,22 @@ function canActOnDocumentApproval(approval: ApprovalRole): boolean {
 	return canActOnApproval(doc, approval, approvalsData.approval_state)
 }
 
+function showAddApproverOnRow(index: number): boolean {
+	if (!documentGroup.value.approvalsData?.can_add) {
+		return false
+	}
+	return index === documentGroupApprovals.value.length - 1
+}
+
+function documentApprovalRowShowsActions(approval: ApprovalRole, index: number): boolean {
+	return (
+		Boolean(approval.can_reassign) ||
+		Boolean(approval.can_remove) ||
+		canActOnDocumentApproval(approval) ||
+		showAddApproverOnRow(index)
+	)
+}
+
 function ensureRouteHandling() {
 	if (routeCloseRegistered) return
 	const router = window.frappe?.router as { on?: (event: string, callback: () => void) => void } | undefined
@@ -311,6 +367,31 @@ async function fetchItems(silent = false) {
 
 async function refreshBadge() {
 	await flyin.refreshBadge(SLOT_ID)
+}
+
+/** Sidebar “Assigned To” reads frappe.model.docinfo.assignments, not the form doc. */
+async function refreshFormAssignedTo(doctype: string, name: string) {
+	const frm = window.cur_frm as
+		| {
+				doc?: { doctype?: string; name?: string }
+				assign_to?: { refresh: () => void }
+				timeline?: { refresh: () => void }
+		  }
+		| undefined
+	if (!frm?.doc || frm.doc.doctype !== doctype || frm.doc.name !== name) {
+		return
+	}
+	await window.frappe.xcall('frappe.desk.form.load.get_docinfo', { doctype, name })
+	frm.assign_to?.refresh()
+	frm.timeline?.refresh()
+}
+
+async function reloadOpenFormAndFlyin(doc: { doctype?: string; name?: string }) {
+	if (doc.doctype && doc.name) {
+		await refreshFormAssignedTo(doc.doctype, doc.name)
+	}
+	await loadCurrentDocumentGroup()
+	await fetchItems(true)
 }
 
 async function loadCurrentDocumentGroup() {
@@ -445,6 +526,129 @@ async function afterAction(completedItem: ApprovalItem, options: { advanceDelayM
 	selected.value = next.name
 	await window.frappe.set_route('Form', next.reference_type, next.reference_name)
 	void fetchItems(true)
+}
+
+type UserApprovalDialogOptions = {
+	reassignRole?: string | null
+	fromApprover?: string | null
+	excludeUser?: string | null
+}
+
+function userApprovalDialog(
+	title: string,
+	primaryLabel: string,
+	options: UserApprovalDialogOptions = {}
+): Promise<{ user: string; reason?: string }> {
+	return new Promise(resolve => {
+		const userField: Record<string, unknown> = {
+			fieldtype: 'Link',
+			label: 'User',
+			fieldname: 'approval_user',
+			reqd: 1,
+			options: 'User',
+		}
+		if (options.reassignRole || options.fromApprover) {
+			userField.get_query = () => ({
+				query: 'approvals.approvals.api.query_reassign_users',
+				filters: {
+					role: options.reassignRole || '',
+					from_approver: options.fromApprover || '',
+					exclude_user: options.excludeUser || '',
+				},
+			})
+		}
+
+		const dialog = new window.frappe.ui.Dialog({
+			title,
+			fields: [
+				userField,
+				{
+					fieldtype: 'Small Text',
+					label: 'Reason',
+					fieldname: 'reason',
+				},
+			],
+			primary_action: () => {
+				const values = dialog.get_values()
+				dialog.hide()
+				resolve({ user: values.approval_user, reason: values.reason })
+			},
+			primary_action_label: primaryLabel,
+		})
+		dialog.show()
+	})
+}
+
+async function addApprover() {
+	const { doc } = documentGroup.value
+	if (!doc) return
+
+	const values = await userApprovalDialog('Add a user to approve this document', 'Add approver')
+	try {
+		await window.frappe.xcall('approvals.approvals.api.add_user_approval', {
+			doc: JSON.stringify(doc),
+			user: values.user,
+			reason: values.reason,
+		})
+		window.frappe.show_alert({ message: 'Approver added', indicator: 'green' })
+		await refreshBadge()
+		await reloadOpenFormAndFlyin(doc)
+	} catch (error) {
+		console.error('[flyin] Failed to add approver:', error)
+		window.frappe.show_alert({ message: 'Failed to add approver', indicator: 'red' })
+	}
+}
+
+async function removeApprover(approval: ApprovalRole) {
+	const { doc } = documentGroup.value
+	if (!doc || !approval.uda_name) return
+
+	window.frappe.confirm('Remove this approver?', async () => {
+		try {
+			await window.frappe.xcall('approvals.approvals.api.remove_user_approval', {
+				doc: JSON.stringify(doc),
+				uda_name: approval.uda_name,
+			})
+			window.frappe.show_alert({ message: 'Approver removed', indicator: 'green' })
+			await refreshBadge()
+			await reloadOpenFormAndFlyin(doc)
+		} catch (error) {
+			console.error('[flyin] Failed to remove approver:', error)
+			window.frappe.show_alert({ message: 'Failed to remove approver', indicator: 'red' })
+		}
+	})
+}
+
+async function reassignApprover(approval: ApprovalRole) {
+	const { doc } = documentGroup.value
+	if (!doc) return
+
+	const target = approval.approval_role === 'User Approval' ? approval.uda_name : approval.approval_role
+	if (!target) return
+
+	const reassignRole =
+		approval.approval_role && approval.approval_role !== 'User Approval' ? approval.approval_role : null
+	const fromApprover = !reassignRole && approval.assigned_username ? approval.assigned_username : null
+
+	const values = await userApprovalDialog('Reassign this approver', 'Reassign approver', {
+		reassignRole,
+		fromApprover,
+		excludeUser: approval.assigned_username || undefined,
+	})
+	try {
+		await window.frappe.xcall('approvals.approvals.api.reassign_user_approval', {
+			doc: JSON.stringify(doc),
+			uda_name_or_role: target,
+			to_user: values.user,
+			reason: values.reason,
+		})
+		window.frappe.show_alert({ message: 'Approver reassigned', indicator: 'green' })
+		await refreshBadge()
+		await reloadOpenFormAndFlyin(doc)
+	} catch (error) {
+		console.error('[flyin] Failed to reassign approver:', error)
+		window.frappe.show_alert({ message: 'Failed to reassign approver', indicator: 'red' })
+	}
 }
 
 async function approveDocumentApproval(approval: ApprovalRole) {
@@ -675,6 +879,28 @@ onUnmounted(() => {
 	display: flex;
 	flex-direction: column;
 	height: 100%;
+	min-height: 100%;
+}
+
+.pending-approvals__shortcut-hint {
+	margin-top: auto;
+	padding: 12px 8px 4px;
+	font-size: 11px;
+	line-height: 1.5;
+	color: var(--text-muted, #6b7280);
+	text-align: center;
+}
+
+.pending-approvals__shortcut-hint kbd {
+	display: inline-block;
+	margin: 0 1px;
+	padding: 1px 5px;
+	border-radius: 4px;
+	border: 1px solid var(--border-color, rgba(0, 0, 0, 0.12));
+	background: var(--control-bg, rgba(0, 0, 0, 0.04));
+	font-family: inherit;
+	font-size: 10px;
+	font-weight: 600;
 }
 
 .pending-approvals__loading,
@@ -725,9 +951,12 @@ onUnmounted(() => {
 
 .pending-approvals__context-row {
 	display: flex;
-	flex-direction: column;
-	gap: 2px;
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: 0.35em;
+	align-items: baseline;
 	font-size: 13px;
+	line-height: 1.4;
 }
 
 .pending-approvals__label {
@@ -742,5 +971,12 @@ onUnmounted(() => {
 	margin-bottom: 8px;
 	font-size: 12px;
 	color: var(--text-muted, #6b7280);
+}
+
+.pending-approvals__row-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
 }
 </style>

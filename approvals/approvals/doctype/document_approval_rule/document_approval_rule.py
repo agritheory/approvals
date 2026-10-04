@@ -69,11 +69,7 @@ class DocumentApprovalRule(Document):
 			return True
 
 		try:
-			result = self.evaluate_jinja_condition(doc)
-
-			if result and self.assign_users:
-				self.assign_user(doc)
-			return result
+			return bool(self.evaluate_jinja_condition(doc))
 
 		except Exception as e:
 			frappe.log_error(

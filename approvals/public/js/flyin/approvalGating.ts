@@ -8,6 +8,14 @@ export interface ApprovalRole {
 	assigned_to_user?: string
 	assigned_username?: string
 	user_has_approval_role?: boolean
+	uda_name?: string | null
+	origin?: string | null
+	requested_by_name?: string
+	reason?: string | null
+	satisfies_role?: string | null
+	can_approve?: boolean
+	can_remove?: boolean
+	can_reassign?: boolean
 }
 
 export interface DocLike {
@@ -46,13 +54,11 @@ export function isApprovableInWorkflow(
 }
 
 export function userCanApprove(approval: ApprovalRole, user: string): boolean {
-	if (approval.approval_role != 'User Approval') {
-		if (user !== 'Administrator' && !approval.user_has_approval_role) {
-			return false
-		}
+	if (approval.approval_role === 'User Approval') {
+		return approval.assigned_username === user
 	}
 
-	if (approval.approval_role == 'User Approval' && approval.assigned_username !== user) {
+	if (user !== 'Administrator' && !approval.user_has_approval_role) {
 		return false
 	}
 
@@ -67,6 +73,10 @@ export function canActOnApproval(
 ): boolean {
 	if (!approval) {
 		return false
+	}
+
+	if (typeof approval.can_approve === 'boolean') {
+		return isApprovableInWorkflow(doc, approval, approvalStateName) && approval.can_approve
 	}
 
 	const sessionUser = user || window.frappe.session.user

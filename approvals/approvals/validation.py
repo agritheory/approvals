@@ -40,14 +40,15 @@ def get_approval_roles(doc: Document | frappe._dict, method: str | None = None):
 	user_approvals = frappe.get_all(
 		"User Document Approval",
 		{"reference_doctype": doc.doctype, "reference_name": doc.name},
-		pluck="approver",
+		["approver", "satisfies_role"],
 	)
 
-	roles.extend(user_approvals)
+	additional_approvers = [row.approver for row in user_approvals if not row.satisfies_role]
+	roles.extend(additional_approvers)
 
 	if not roles:
 		if not doctype_has_approval_rules(doc.doctype):
-			return user_approvals
+			return additional_approvers
 		fallback_approver = settings.fallback_approver_role
 		if not fallback_approver:
 			frappe.throw(
@@ -80,6 +81,23 @@ def close_open_approval_todos(doc: Document, role: str | None = None):
 	if role:
 		filters["role"] = role
 	for todo_name in frappe.get_all("ToDo", filters=filters, pluck="name"):
+		todo = frappe.get_doc("ToDo", todo_name)
+		todo.status = "Closed"
+		todo.save(ignore_permissions=True)
+
+
+def close_open_role_todos(doc: Document, role: str):
+	"""Close every open ToDo for this document and approval role (rule-backed or delegate)."""
+	for todo_name in frappe.get_all(
+		"ToDo",
+		{
+			"reference_type": doc.doctype,
+			"reference_name": doc.name,
+			"status": "Open",
+			"role": role,
+		},
+		pluck="name",
+	):
 		todo = frappe.get_doc("ToDo", todo_name)
 		todo.status = "Closed"
 		todo.save(ignore_permissions=True)

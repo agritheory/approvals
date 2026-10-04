@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Configuration
 
 <div class="byline">
-  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-07-01
+  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-09-03
 </div>
 
 ## Creating an Approval Rule
@@ -314,6 +314,46 @@ Sites that use **status** as the workflow state field typically also customize P
 ### Where the Sidebar Appears
 
 The approval sidebar appears only on DocTypes that have at least one enabled Document Approval Rule. DocTypes without rules do not show the panel, even when a fallback approver is configured in settings. The fallback applies when rules exist for the DocType but none match the current document.
+
+## User Approval Settings and Extension Points
+
+### User Approval Manager Role
+
+In **Document Approval Settings**, **User Approval Manager Role** (default: System Manager) may add, remove, or reassign any user approval, including rows created by approver providers.
+
+### Hook: `approvals_user_approval_permission`
+
+Register callables that receive `action` (`add`, `remove`, or `reassign`), `doc`, `user`, and optional `uda`. Return `True`, `False`, or `None`. The first non-`None` result wins; otherwise built-in defaults apply.
+
+### Hook: `approvals_approver_providers`
+
+Map DocType names (or `"*"`) to dotted paths of functions `fn(doc) -> list[{"user": "...", "reason": "...", "satisfies_role": "..."}]`. Providers run on each `assign_approvers` sync. Rows are keyed by `origin` (the provider path).
+
+**Example — project manager from a linked project:**
+
+```python
+# hooks.py
+approvals_approver_providers = {
+    "Purchase Order": ["myapp.approvals.project_manager_provider"],
+}
+
+# myapp/approvals.py
+def project_manager_provider(doc):
+    manager = frappe.db.get_value("Project", doc.project, "project_manager")
+    return [{"user": manager, "reason": "Project manager sign-off"}] if manager else []
+```
+
+### Hook: `approvals_user_approval_events`
+
+Optional handlers for `added`, `removed`, and `reassigned` events. The app always runs a default handler afterward that writes Notification Log entries and timeline comments unless `frappe.flags.skip_user_approval_events` is set.
+
+### Worked examples
+
+| Story | Mechanism |
+| :--- | :--- |
+| Ask someone extra to review | **Add approver** with `origin = manual` |
+| Approver from configuration data | **approvals_approver_providers** |
+| Delegation / out of office | **Reassign** (creates or updates a `satisfies_role` row) |
 
 ## Example: Customer Credit Limit
 

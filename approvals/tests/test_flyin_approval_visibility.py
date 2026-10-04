@@ -8,7 +8,12 @@ import pytest
 from frappe.database.mariadb.database import MariaDBDatabase
 from playwright.sync_api import expect
 
-from approvals.tests.playwright_helpers import login_as, open_form_with_flyin
+from approvals.tests.playwright_helpers import (
+	DOCUMENT_ROW_APPROVE,
+	DOCUMENT_ROW_REJECT,
+	login_as,
+	open_form_with_flyin,
+)
 from approvals.tests.playwright_telemetry import (
 	ensure_bench_web_running,
 	init_playwright_url_state,
@@ -118,8 +123,8 @@ def test_viewer_sees_required_approvals_with_actions_disabled(page):
 		expect(document_section).to_contain_text("Accounts Manager")
 		expect(document_section).to_contain_text("User Approval")
 		expect(document_section.locator(".pending-approvals__document-row")).to_have_count(2)
-		expect(document_section.locator("button:has-text('Approve')")).to_have_count(0)
-		expect(document_section.locator("button:has-text('Reject')")).to_have_count(0)
+		expect(document_section.locator(DOCUMENT_ROW_APPROVE)).to_have_count(0)
+		expect(document_section.locator(DOCUMENT_ROW_REJECT)).to_have_count(0)
 
 		assigned_section = page.locator(".pending-approvals__section").nth(1)
 		expect(assigned_section).to_contain_text("Assigned to you")

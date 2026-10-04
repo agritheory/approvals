@@ -49,3 +49,15 @@ Setup test data
 bench --site {{ site name }} set-config server_script_enabled true
 bench --site {{ site name }} execute 'approvals.tests.setup.before_test'
 ```
+
+## Frontend (Flyin)
+
+Approvals depends on [@agritheory/flyin](https://github.com/agritheory/flyin) `v15.2.3`, pinned by git tag in `package.json`. Install needs Node `^22.22.2` (or `^24.15.0`, or `>=26`).
+
+From the approvals app directory:
+
+```bash
+yarn install   # installs flyin v15.2.3 and builds its package
+yarn build     # approvals Vite bundle + flyin desk bundle
+bench build --app approvals
+```

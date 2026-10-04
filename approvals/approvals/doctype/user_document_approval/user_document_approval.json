@@ -3,7 +3,18 @@
 	"doctype": "DocType",
 	"editable_grid": 1,
 	"engine": "InnoDB",
-	"field_order": ["reference_doctype", "reference_name", "approver", "title"],
+	"field_order": [
+		"reference_doctype",
+		"reference_name",
+		"approver",
+		"column_break_meta",
+		"requested_by",
+		"origin",
+		"satisfies_role",
+		"reason",
+		"todo",
+		"title"
+	],
 	"fields": [
 		{
 			"fieldname": "reference_doctype",
@@ -27,6 +38,44 @@
 			"in_list_view": 1,
 			"label": "Approver",
 			"options": "User",
+			"read_only": 1
+		},
+		{
+			"fieldname": "column_break_meta",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "requested_by",
+			"fieldtype": "Link",
+			"label": "Requested By",
+			"options": "User",
+			"read_only": 1
+		},
+		{
+			"default": "manual",
+			"fieldname": "origin",
+			"fieldtype": "Data",
+			"label": "Origin",
+			"read_only": 1
+		},
+		{
+			"fieldname": "satisfies_role",
+			"fieldtype": "Link",
+			"label": "Satisfies Role",
+			"options": "Role",
+			"read_only": 1
+		},
+		{
+			"fieldname": "reason",
+			"fieldtype": "Small Text",
+			"label": "Reason",
+			"read_only": 1
+		},
+		{
+			"fieldname": "todo",
+			"fieldtype": "Link",
+			"label": "ToDo",
+			"options": "ToDo",
 			"read_only": 1
 		},
 		{
@@ -55,16 +104,13 @@
 			"write": 1
 		},
 		{
-			"create": 1,
-			"delete": 1,
 			"email": 1,
 			"export": 1,
 			"print": 1,
 			"read": 1,
 			"report": 1,
 			"role": "All",
-			"share": 1,
-			"write": 1
+			"share": 1
 		}
 	],
 	"sort_field": "modified",

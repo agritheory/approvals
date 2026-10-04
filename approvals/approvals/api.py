@@ -13,7 +13,6 @@ from frappe.model.workflow import get_workflow_name
 from frappe.query_builder import DocType
 from frappe.utils import cint, cstr, get_datetime
 from frappe.utils.data import get_url_to_form
-from frappe.share import add as add_share
 from approvals.approvals.validation import (
 	check_all_document_approvals,
 	close_open_approval_todos,
@@ -21,6 +20,18 @@ from approvals.approvals.validation import (
 	get_approval_roles,
 	get_document_approvals,
 	session_user_has_approval_role,
+)
+from approvals.approvals.user_approvals import (
+	add_user_approval as add_user_approval_operation,
+	can_add_user_approval,
+	get_assignable_reassign_users,
+	get_uda_for_role_key,
+	build_fetch_row_permissions,
+	remove_user_approval as remove_user_approval_operation,
+	reassign_user_approval as reassign_user_approval_operation,
+	sync_provider_approvers,
+	reopen_user_approval_todos,
+	get_satisfies_role_delegates,
 )
 from approvals.approvals.workflow import apply_workflow
 from approvals.approvals.workflow import evaluate_workflow_template
@@ -145,32 +156,56 @@ def fetch_approvals_and_roles(doc: Document | str, method: str | None = None):
 	user_roles = [
 		i["role"] for i in frappe.get_all("Has Role", {"parent": frappe.session.user}, "role")
 	]
-	assignments = {
-		a["role"] if a["role"] else a["allocated_to"]: a["allocated_to"]
-		for a in frappe.get_all("ToDo", {"reference_name": doc.name}, ["allocated_to", "role"])
-	}
+	assignments: dict[str, str] = {}
+	for row in frappe.get_all(
+		"ToDo",
+		{
+			"reference_type": doc.doctype,
+			"reference_name": doc.name,
+			"status": "Open",
+		},
+		["allocated_to", "role"],
+		order_by="modified desc",
+	):
+		key = row["role"] if row["role"] else row["allocated_to"]
+		if key not in assignments:
+			assignments[key] = row["allocated_to"]
+	delegates = get_satisfies_role_delegates(doc)
 	add_roles = []
 	for role in roles:
-		assigned_user = (
-			frappe.get_value("User", assignments.get(role, role), "full_name") or "Unassigned"
-		)
-		assigned_user = "You" if assignments.get(role, role) == frappe.session.user else assigned_user
+		assigned_username = delegates.get(role) or assignments.get(role) or role
+		assigned_user = frappe.get_value("User", assigned_username, "full_name") or "Unassigned"
+		assigned_user = "You" if assigned_username == frappe.session.user else assigned_user
 		approver = ""
 		if approvals.get(role):
 			approver = frappe.get_value("User", approvals.get(role), "full_name")
 			approver = "You" if approvals.get(role) == frappe.session.user else approver
 		if "@" in role and assigned_user == "Unassigned":
 			assigned_user = role
+		approved = bool(approvals.get(role))
+		permissions = build_fetch_row_permissions(doc, role, frappe.session.user, user_roles, approved)
+		uda = get_uda_for_role_key(doc, role)
+		requested_by_name = ""
+		if uda and uda.requested_by:
+			requested_by_name = frappe.get_value("User", uda.requested_by, "full_name") or uda.requested_by
 		role_row = frappe._dict(
 			{
 				"approval_role": "User Approval" if "@" in role else role,
 				"user_has_approval_role": session_user_has_approval_role(
 					frappe.session.user, role, user_roles
 				),
-				"approved": True if approvals.get(role) else False,
+				"approved": approved,
 				"approver": approver,
 				"assigned_to_user": assigned_user,
-				"assigned_username": assignments.get(role, role),
+				"assigned_username": assigned_username,
+				"uda_name": uda.name if uda else None,
+				"origin": uda.origin if uda else None,
+				"requested_by_name": requested_by_name,
+				"reason": uda.reason if uda else None,
+				"satisfies_role": uda.satisfies_role if uda else None,
+				"can_approve": permissions.can_approve,
+				"can_remove": permissions.can_remove,
+				"can_reassign": permissions.can_reassign,
 			}
 		)
 		add_roles.append(role_row)
@@ -185,6 +220,7 @@ def fetch_approvals_and_roles(doc: Document | str, method: str | None = None):
 		"require_rejection_reason": require_rejection_reason,
 		"workflow_exists": bool(get_workflow_name(doc.doctype)),
 		"show_approvals": True,
+		"can_add": can_add_user_approval(doc, frappe.session.user),
 	}
 
 
@@ -279,9 +315,14 @@ def approve_document(
 		comment_by=user,
 	)
 
-	todo = frappe.get_value("ToDo", {"reference_name": doc.name, "role": role}, "name")
-	if todo:
-		todo = frappe.get_doc("ToDo", todo)
+	todo_filters = {"reference_name": doc.name, "reference_type": doc.doctype, "status": "Open"}
+	if role and role != "User Approval":
+		todo_filters["role"] = role
+	else:
+		todo_filters["allocated_to"] = user
+		todo_filters["document_approval_rule"] = ["is", "not set"]
+	for todo_name in frappe.get_all("ToDo", filters=todo_filters, pluck="name"):
+		todo = frappe.get_doc("ToDo", todo_name)
 		todo.status = "Closed"
 		todo.save(ignore_permissions=True)
 
@@ -335,11 +376,7 @@ def revoke_approvals_on_reject(doc: Document, method: str | None = None):
 		"Document Approval", filters={"reference_doctype": doc.doctype, "reference_name": doc.name}
 	):
 		frappe.get_doc("Document Approval", approval).delete(ignore_permissions=True)
-	for approval in frappe.get_all(
-		"User Document Approval",
-		filters={"reference_doctype": doc.doctype, "reference_name": doc.name},
-	):
-		frappe.get_doc("User Document Approval", approval).delete(ignore_permissions=True)
+	reopen_user_approval_todos(doc)
 
 
 def reset_to_reapproval_state_if_needed(doc: Document, method: str | None = None):
@@ -382,6 +419,9 @@ def reset_to_reapproval_state_if_needed(doc: Document, method: str | None = None
 
 @frappe.whitelist()
 def assign_approvers(doc: Document, method: str | None = None):
+	if frappe.flags.get("skip_assign_approvers"):
+		return
+
 	reset_to_reapproval_state_if_needed(doc, method)
 
 	approvals = get_document_approvals(doc)
@@ -399,45 +439,75 @@ def assign_approvers(doc: Document, method: str | None = None):
 			"Document Approval Rule",
 			{"approval_doctype": doc.doctype, "approval_role": role},
 		)
-		if approval_rule.apply(doc):
+		if approval_rule.apply(doc) and approval_rule.assign_users:
 			approval_rule.assign_user(doc)
 
+	sync_provider_approvers(doc)
+
 
 @frappe.whitelist()
-def add_user_approval(doc: Document | str, method: str | None = None, user: str | None = None):
-	if not user:
-		return
-	doc = frappe.get_doc(json.loads(doc)) if isinstance(doc, str) else doc
-	if not frappe.has_permission(doc.doctype, ptype="read", user=user, doc=doc.name):
-		add_share(doc.doctype, doc.name, user, read=True, write=True, share=True)
-
-	uda = frappe.new_doc("User Document Approval")
-	uda.reference_doctype = doc.doctype
-	uda.reference_name = doc.name
-	uda.approver = user
-	uda.save(ignore_permissions=True)
-
-	doc.add_comment(
-		comment_type="Comment",
-		text=f"<b>{user}<b> added as approver by <b>{frappe.session.user}</b>",
-		comment_by=user,
+def add_user_approval(
+	doc: Document | str,
+	method: str | None = None,
+	user: str | None = None,
+	reason: str | None = None,
+	satisfies_role: str | None = None,
+):
+	return add_user_approval_operation(
+		doc=doc,
+		method=method,
+		user=user,
+		reason=reason,
+		satisfies_role=satisfies_role,
 	)
 
 
 @frappe.whitelist()
-def remove_user_approval(doc: Document | str, method: str | None = None, user=None):
-	doc = frappe.get_doc(json.loads(doc)) if isinstance(doc, str) else doc
-	user_approval = frappe.get_doc(
-		"User Document Approval",
-		{"reference_doctype": doc.doctype, "reference_name": doc.name, "approver": user},
+def remove_user_approval(
+	doc: Document | str,
+	method: str | None = None,
+	user=None,
+	uda_name: str | None = None,
+	reason: str | None = None,
+):
+	return remove_user_approval_operation(
+		doc=doc,
+		method=method,
+		user=user,
+		uda_name=uda_name,
+		reason=reason,
 	)
-	user_approval.delete()
 
-	doc.add_comment(
-		comment_type="Comment",
-		text=f"<b>{user}<b> removed as approver by <b>{frappe.session.user}</b>",
-		comment_by=user,
+
+@frappe.whitelist()
+def reassign_user_approval(
+	doc: Document | str,
+	uda_name_or_role: str,
+	to_user: str,
+	reason: str | None = None,
+):
+	return reassign_user_approval_operation(
+		doc=doc,
+		uda_name_or_role=uda_name_or_role,
+		to_user=to_user,
+		reason=reason,
 	)
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def query_reassign_users(doctype, txt, searchfield, start, page_len, filters):
+	filters = filters or {}
+	users = get_assignable_reassign_users(
+		role=filters.get("role") or None,
+		from_approver=filters.get("from_approver") or None,
+		exclude_user=filters.get("exclude_user") or None,
+		search=txt or "",
+	)
+	start_index = cint(start)
+	page_length = cint(page_len)
+	page = users[start_index : start_index + page_length]
+	return [[name, name] for name in page]
 
 
 @frappe.whitelist()

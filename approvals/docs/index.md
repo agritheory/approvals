@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Approvals
 
 <div class="byline">
-  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-07-01
+  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-09-03
 </div>
 
 Approvals is a document approval workflow app for Frappe and ERPNext. It allows organizations to define conditional approval rules for business documents based on configurable criteria. It supports submittable documents (Purchase Order, Purchase Invoice) with or without a Frappe Workflow, and non-submittable documents through workflow configuration.
@@ -21,4 +21,4 @@ Administrators set up approval rules that define which roles must approve each d
 
 ### [Usage](usage.md)
 
-Users work with approvals through a sidebar panel on configured DocTypes and a **Pending Approvals** flyin in the desk navbar. From the sidebar or flyin, a user can review, approve, or reject documents, and add other users as approvers when needed. Notification and reminder links open the document with the flyin pre-selected. The panel does not appear on DocTypes without approval rules.
+Users work with approvals through a **Pending Approvals** flyin in the desk navbar on configured DocTypes. From the flyin, users can review, approve, reject, and manage user approvals (add, remove, reassign) when permitted. Notification and reminder links open the document with the flyin pre-selected. The panel does not appear on DocTypes without approval rules.

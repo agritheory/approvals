@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Usage
 
 <div class="byline">
-  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-07-01
+  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-09-03
 </div>
 
 ## Finding Documents That Need Approval
@@ -79,13 +79,60 @@ When no workflow exists for the DocType, Reject does not change document status.
 
 The owner can then edit the document and resubmit for approval.
 
-## Adding User Approvals
+## User Approvals (Add, Remove, Reassign)
 
-Sometimes a document needs review from someone outside the normal approval roles. This might be a subject matter expert, a department head for a special case, or a colleague covering for someone.
+When a document is open in the Pending Approvals flyin, **Add approver** is available while approvals are active on that document (draft, or in the workflow approval state when a workflow is configured). Document ownership and write permission are not used for this action. Each added approver becomes an extra requirement until they approve. The flyin shows who requested the approval and any reason that was entered.
 
-Any user can be added as an approver on a specific document. They appear in the approval panel alongside the role-based approvals. The document does not proceed until they have also approved.
+**Remove** applies only to **extra** approvers added for a specific document (manual **Add approver** rows). It does **not** apply to requirements created by a **Document Approval Rule** that currently matches the document. Those rule-driven roles stay on the document until the rule no longer applies or an administrator changes configuration; use **Reassign** to change who acts for that role instead of removing the requirement.
 
-The added user automatically receives read and write access to the document if they do not already have it.
+Provider-assigned user approvals (`origin` from an approver provider hook) cannot be removed manually except by someone with the **User Approval Manager Role** from Document Approval Settings (default: System Manager). For removable manual rows, **Remove** is available to the person who requested that approver, or to the manager role.
+
+**Reassign** is two different behaviors depending on row type:
+
+- **Document Approval Rule role** (panel shows a role name): reassignment only changes **who holds the open approval ToDo** for that role (linked to the **Document Approval Rule**). The rule requirement stays; no **User Document Approval** row is created.
+- **User Approval** row (panel shows a specific user from **Add approver**): only that named user may **Approve** or **Reject**. **Reassign** is not offered — change assignees with **Remove** and **Add approver** instead.
+
+The user picker for **Reassign** lists only users who hold the same approval role (rule rows).
+
+The added or reassigned user receives read and write access to the document when needed, a ToDo, and a notification. Changes are recorded on the document timeline, and affected users receive Notification Log entries.
+
+### Flyin actions: **Reassign** vs **Remove**
+
+The flyin exposes **Reassign** and **Remove** independently (`can_reassign` and `can_remove` from `fetch_approvals_and_roles`). They answer different questions: *who is assigned this approval?* versus *should this extra approver requirement exist at all?*
+
+| Panel row | Source | **Reassign** | **Remove** |
+| :--- | :--- | :--- | :--- |
+| Role name (e.g. Accounts Manager) | Matching **Document Approval Rule** | Yes — current ToDo assignee or User Approval Manager, while approvals are active and the row is not approved | No — rule requirement is not removable from the document |
+| Same role after **Reassign** | Open rule-linked ToDo for that role | Same as rule row (assignee may have changed) | No |
+| **User Approval** (named user) | **Add approver** (`origin = manual`) | No — use Remove and Add approver | Yes — requester or User Approval Manager |
+| User from provider | **approvals_approver_providers** | Per UDA assignee rules when the row is user-keyed | No, except User Approval Manager |
+
+```mermaid
+flowchart TD
+  Start([User views flyin actions on a row]) --> Track{What does this row represent?}
+
+  Track -->|Required role from a matching Document Approval Rule| Rule[Rule role row]
+  Rule --> ReassignGate{Current user is ToDo assignee for this role<br/>or User Approval Manager?}
+  ReassignGate -->|Yes, and approvals active, row not approved| ShowReassignRule[Show Reassign — replace role ToDo assignee only]
+  ReassignGate -->|No| HideReassignRule[Hide Reassign]
+  Rule --> HideRemoveRule[Hide Remove — requirement stays on document]
+
+  Track -->|Extra approver — manual Add approver<br/>User Document Approval, not rule-backed| UDA[User Approval row]
+  UDA --> HideReassignUda[Hide Reassign — use Remove and Add approver]
+  UDA --> RemoveUda{User Approval Manager?}
+  RemoveUda -->|Yes| ShowRemove[Show Remove]
+  RemoveUda -->|No| Manual{UDA origin manual and user requested it?}
+  Manual -->|Yes| ShowRemove
+  Manual -->|No| HideRemove[Hide Remove]
+
+  Track -->|Provider-synced user approval| Provider[Provider UDA row]
+  Provider --> HideRemoveProv[Hide Remove for non-managers]
+  Provider --> ReassignProv{Assignee on UDA?}
+  ReassignProv -->|Yes| ShowReassignUda
+  ReassignProv -->|No| HideReassignUda
+```
+
+Implementation reference: `build_fetch_row_permissions` and `default_user_approval_permission` in `user_approvals.py` compute `can_reassign` and `can_remove`. **Remove** is always false for rule role rows (no `@` in the row key) and for any User Document Approval with `satisfies_role` set, including after **Reassign** on a Document Approval Rule role. The flyin binds buttons to those flags in `PendingApprovals.vue`.
 
 ## Understanding the Approval Panel
 

@@ -13,8 +13,8 @@
 	},
 	"scripts": {
 		"postinstall": "node scripts/postinstall-flyin.mjs",
-		"build": "vite build --config=./approvals/public/js/vite.config.ts && node node_modules/@agritheory/flyin/dist/cli/build-if-host.js",
-		"build:flyin": "node node_modules/@agritheory/flyin/dist/cli/build-if-host.js",
+		"build": "vite build --config=./approvals/public/js/vite.config.ts && node --import ./scripts/flyin-source-register.mjs ./node_modules/@agritheory/flyin/src/cli/build-if-host.ts",
+		"build:flyin": "node --import ./scripts/flyin-source-register.mjs ./node_modules/@agritheory/flyin/src/cli/build-if-host.ts",
 		"dev": "vite build --watch --config=./approvals/public/js/vite.config.ts"
 	},
 	"dependencies": {

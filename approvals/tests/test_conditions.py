@@ -4,7 +4,7 @@
 import frappe
 import pytest
 
-from approvals.approvals.conditions import evaluate_condition
+from approvals.approvals.conditions import evaluate_condition, validate_condition
 from approvals.patches.convert_conditions_to_python import convert_condition_text
 
 
@@ -37,6 +37,48 @@ def test_approval_condition_context_hook(monkeypatch):
 
 	doc = frappe._dict(grand_total=100)
 	assert evaluate_condition("always_true()", doc) is True
+
+
+def test_condition_accepts_parent_field():
+	validate_condition("doc.grand_total > 1000", "Purchase Order")
+
+
+def test_condition_rejects_missing_parent_field():
+	with pytest.raises(frappe.ValidationError, match="total_amount"):
+		validate_condition("doc.total_amount > 1000", "Purchase Order")
+
+
+def test_condition_accepts_doc_get_field():
+	validate_condition('doc.get("supplier")', "Purchase Order")
+
+
+def test_condition_rejects_missing_doc_get_field():
+	with pytest.raises(frappe.ValidationError, match="not_a_field"):
+		validate_condition('doc.get("not_a_field")', "Purchase Order")
+
+
+def test_condition_ignores_other_method_calls():
+	validate_condition("doc.as_dict()", "Purchase Order")
+
+
+def test_condition_accepts_child_table_field():
+	validate_condition(
+		"any(i.expense_account == 'x' for i in doc.items)",
+		"Purchase Order",
+	)
+
+
+def test_condition_rejects_missing_child_table_field():
+	with pytest.raises(frappe.ValidationError, match="not_a_field"):
+		validate_condition(
+			"any(i.not_a_field == 'x' for i in doc.items)",
+			"Purchase Order",
+		)
+
+
+def test_condition_rejects_index_on_non_table_field():
+	with pytest.raises(frappe.ValidationError, match="not a child table"):
+		validate_condition("doc.grand_total[0].amount", "Purchase Order")
 
 
 def test_condition_cannot_call_db_set_value():

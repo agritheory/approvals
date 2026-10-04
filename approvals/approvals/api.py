@@ -22,8 +22,8 @@ from approvals.approvals.validation import (
 	get_document_approvals,
 	session_user_has_approval_role,
 )
+from approvals.approvals.conditions import evaluate_condition
 from approvals.approvals.workflow import apply_workflow
-from approvals.approvals.workflow import evaluate_workflow_template
 
 
 if TYPE_CHECKING:
@@ -358,7 +358,7 @@ def reset_to_reapproval_state_if_needed(doc: Document, method: str | None = None
 		return
 
 	try:
-		needs_reapproval = evaluate_workflow_template(condition, doc)
+		needs_reapproval = evaluate_condition(condition, doc)
 	except Exception:
 		frappe.log_error(
 			f"Error evaluating reapproval condition for {doc.doctype} {doc.name}",

@@ -26,14 +26,6 @@ def render_workflow_template(template: str, doc) -> str:
 	return env.from_string(template).render(doc=doc, flt=flt, cint=cint)
 
 
-def evaluate_workflow_template(template: str, doc) -> bool:
-	result = render_workflow_template(template, doc)
-	if isinstance(result, str):
-		result = result.strip().lower()
-		return result not in ("false", "0", "", "none", "null")
-	return bool(result)
-
-
 @frappe.whitelist()
 def apply_workflow(doc, action):
 	"""Apply workflow with Jinja support in state update_value."""

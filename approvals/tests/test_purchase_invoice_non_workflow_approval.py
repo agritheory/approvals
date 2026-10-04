@@ -167,7 +167,7 @@ def test_partial_purchase_invoice_approval_leaves_invoice_in_draft():
 	extra_rule = frappe.new_doc("Document Approval Rule")
 	extra_rule.approval_doctype = "Purchase Invoice"
 	extra_rule.approval_role = "Sales Manager"
-	extra_rule.condition = "{{ doc.grand_total > 1000 }}"
+	extra_rule.condition = "doc.grand_total > 1000"
 	extra_rule.primary_assignee = "mmckay@cfc.co"
 	extra_rule.enabled = 1
 	extra_rule.insert(ignore_permissions=True)

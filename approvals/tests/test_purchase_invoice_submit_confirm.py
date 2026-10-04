@@ -166,9 +166,7 @@ def test_workflow_purchase_order_does_not_show_submit_confirm(page):
 	extra_rule = frappe.new_doc("Document Approval Rule")
 	extra_rule.approval_doctype = "Purchase Order"
 	extra_rule.approval_role = "Sales Manager"
-	extra_rule.condition = (
-		"{{ doc.supplier == 'Premier Equipment Leasing' and doc.grand_total > 1000 }}"
-	)
+	extra_rule.condition = "doc.supplier == 'Premier Equipment Leasing' and doc.grand_total > 1000"
 	extra_rule.primary_assignee = "mmckay@cfc.co"
 	extra_rule.enabled = 1
 	extra_rule.insert(ignore_permissions=True)

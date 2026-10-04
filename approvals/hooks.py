@@ -14,7 +14,8 @@ required_apps = ["erpnext", "hrms"]
 # Flyin configuration
 flyin = {
 	"drawer_mode": "push",
-	"click_to_dismiss": True,
+	# Keep open while Frappe dialogs (add/reassign) receive clicks outside the drawer.
+	"click_to_dismiss": False,
 	"slots": {
 		"pending-approvals": {
 			"title": "Pending Approvals",
@@ -208,3 +209,8 @@ override_whitelisted_methods = {
 # auth_hooks = [
 # 	"approvals.auth.validate"
 # ]
+
+# User approval extension points (see docs/extending.md):
+# approvals_user_approval_permission = ["app.module.permission_hook"]
+# approvals_approver_providers = {"Purchase Order": ["app.module.provider_fn"]}
+# approvals_user_approval_events = ["app.module.custom_event_handler"]

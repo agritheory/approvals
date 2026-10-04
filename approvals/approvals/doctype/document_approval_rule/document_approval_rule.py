@@ -64,11 +64,7 @@ class DocumentApprovalRule(Document):
 			return True
 
 		try:
-			result = evaluate_condition(self.condition, doc)
-
-			if result and self.assign_users:
-				self.assign_user(doc)
-			return result
+			return bool(evaluate_condition(self.condition, doc))
 
 		except Exception as e:
 			frappe.log_error(

@@ -252,7 +252,7 @@
 			"sort_options": 0,
 			"translatable": 0,
 			"unique": 0,
-			"description": "Jinja condition. When true on save, the document returns to Approval State."
+			"description": "Python expression. When true on save, the document returns to Approval State."
 		}
 	],
 	"doctype": "Workflow",

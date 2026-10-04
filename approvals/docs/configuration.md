@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Configuration
 
 <div class="byline">
-  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-07-01
+  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-09-03
 </div>
 
 ## Creating an Approval Rule
@@ -24,46 +24,65 @@ Check the Enabled box and save. Every document of that type now requires approva
 
 Not every purchase order needs manager approval. Only the expensive ones might. A condition makes a rule selective.
 
-Conditions are Jinja templates that evaluate against the document. When the condition returns true, the rule applies. When it returns false, the rule does not apply.
+Conditions are Python expressions evaluated against the document. When the expression is truthy, the rule applies. When it is falsy, the rule does not apply.
 
 **Require approval for orders over $10,000:**
 
-```jinja
-{{ doc.grand_total > 10000 }}
+```python
+doc.grand_total > 10000
 ```
 
 **Require approval when items hit specific expense accounts:**
 
-```jinja
-{{ any([i.expense_account in account_numbers('Capital Equipment - CO', 'Office Supplies - CO') for i in doc.items]) }}
+```python
+any(i.expense_account in ("Capital Equipment - CO", "Office Supplies - CO") for i in doc.items)
 ```
 
 **Require approval for a specific supplier:**
 
-```jinja
-{{ doc.supplier == "SUPPLIER-001" }}
+```python
+doc.supplier == "SUPPLIER-001"
 ```
 
 Conditions can combine multiple checks:
 
-```jinja
-{{ doc.grand_total > 5000 and doc.company == "Main Company" }}
+```python
+doc.grand_total > 5000 and doc.company == "Main Company"
 ```
 
 Use the Test Condition button to verify a condition works against a real document before enabling the rule.
 
-### Available Context
+### Available names
 
-Conditions have access to the full document as `doc`, plus several helpers:
+- `doc` — any field on the document, including child tables such as `doc.items`
+- `settings` — parsed JSON from Document Approval Settings (see [Using Settings in Conditions](#using-settings-in-conditions))
+- `frappe.utils` — `flt`, `cint`, `getdate`, `nowdate`, `add_days`, `date_diff`, and related helpers
+- `frappe.db` — read-only lookups: `get_value`, `exists`, `count`, `get_all`, `get_single_value`
+- `frappe.get_doc` and `frappe.get_cached_doc` — return dicts, not live documents
+- Python built-ins such as `any`, `all`, `min`, `max`, and `sum`
 
-- `doc.fieldname` accesses any field on the document
-- `doc.items` accesses child table rows for iteration
-- `expense_accounts`, `income_accounts`, `tax_accounts`, and `asset_accounts` are pre-fetched lists of account names by type
-- `account_numbers('Capital Equipment - CO', 'Office Supplies - CO')` returns a list of exact account names to check against. Pass each account name as it appears in ERPNext; the helper does not expand ranges.
-- `any()` and `all()` are Python built-ins for checking lists
-- `frappe.get_value()` and `frappe.get_all()` perform database lookups when related data is needed
+Write operations such as `frappe.db.set_value` are not available in conditions.
 
 To find field names for conditions, navigate to Setup > Customize Form, select the DocType, and review the field names in the Fields table.
+
+### Extending conditions from your app
+
+Register a function in your app's `hooks.py` under `approval_condition_context`. The function takes no arguments and returns a dict of names to add to the condition environment:
+
+```python
+# my_app/hooks.py
+approval_condition_context = ["my_app.approvals.condition_context"]
+
+# my_app/approvals.py
+def condition_context():
+	return {"is_capital_account": is_capital_account}
+```
+
+Use the new name in a rule condition:
+
+```python
+any(is_capital_account(i.expense_account) for i in doc.items)
+```
 
 ## Multiple Rules for the Same Document
 
@@ -73,9 +92,9 @@ A DocType can have multiple rules. Each rule that matches creates an approval re
 
 | Rule | Role | Condition |
 | :--- | :--- | :-------- |
-| 1 | Purchase Manager | `{{ doc.grand_total > 5000 }}` |
-| 2 | Finance Manager | `{{ doc.grand_total > 25000 }}` |
-| 3 | Accounts Manager | `{{ any([i.expense_account in expense_accounts for i in doc.items]) }}` |
+| 1 | Purchase Manager | `doc.grand_total > 5000` |
+| 2 | Finance Manager | `doc.grand_total > 25000` |
+| 3 | Accounts Manager | `any(i.expense_account.startswith("6") for i in doc.items)` |
 
 A $30,000 order with expense items requires approval from all three roles. A $3,000 order with no expense items requires none.
 
@@ -105,7 +124,7 @@ The fallback does not apply to DocTypes with no approval rules at all. Those Doc
 
 ## Using Settings in Conditions
 
-Document Approval Settings includes a **Settings** field that accepts arbitrary JSON. The parsed values are available in every condition template as `settings`.
+Document Approval Settings includes a **Settings** field that accepts arbitrary JSON. The parsed values are available in every condition as `settings`.
 
 Store thresholds, account lists, or other site-specific values in the JSON blob instead of hard-coding them in each rule. For example, set the Settings field to:
 
@@ -118,8 +137,8 @@ Store thresholds, account lists, or other site-specific values in the JSON blob 
 
 Then reference those values in a condition:
 
-```jinja
-{{ doc.grand_total > settings.approval_threshold or doc.supplier in settings.high_risk_suppliers }}
+```python
+doc.grand_total > settings.approval_threshold or doc.supplier in settings.high_risk_suppliers
 ```
 
 Changes to the settings JSON apply to all rules immediately. No code changes are required.
@@ -147,9 +166,9 @@ Workflows remain optional. Use them when you need explicit approval states, reje
 
 | Rule | Role | Condition | Primary Assignee |
 | :--- | :--- | :-------- | :--------------- |
-| 1 | Stock Manager | `{{ doc.grand_total > 200 and doc.grand_total < 500 }}` | (round-robin) |
-| 2 | Sales Manager | `{{ doc.grand_total > 500 and doc.grand_total < 1000 }}` | (round-robin) |
-| 3 | Accounts Manager | `{{ doc.grand_total > 1000 }}` | Morgan Britt |
+| 1 | Stock Manager | `doc.grand_total > 200 and doc.grand_total < 500` | (round-robin) |
+| 2 | Sales Manager | `doc.grand_total > 500 and doc.grand_total < 1000` | (round-robin) |
+| 3 | Accounts Manager | `doc.grand_total > 1000` | Morgan Britt |
 
 A $250 invoice from Sphere Cellular requires Stock Manager approval. A $5,000 invoice from Cooperative Ag Finance requires Accounts Manager approval. A $150 invoice matches no rule and needs no approval unless the fallback role is configured.
 
@@ -257,7 +276,7 @@ The app adds these fields to the standard Workflow DocType:
 | **Approval State** | Workflow state where approval rules run and the form is locked |
 | **Approval Action** | Workflow transition action applied when all sidebar approvals are recorded (submittable doctypes) |
 | **Require Rejection Reason** | Prompt approvers for a comment when rejecting |
-| **Reapproval Condition** | Jinja condition that returns a document to Approval State on save |
+| **Reapproval Condition** | Python expression that returns a document to Approval State on save |
 
 **Submittable DocTypes** (like Purchase Order) need **Approval State** and **Approval Action** set on the Workflow, plus a matching transition from the approval state to a submitted state (`doc_status=1`). Example: Approval State = `Pending`, Approval Action = `Approve`, with an Approve transition from Pending → Approved. If **Approval Action** is empty, the app defaults to `Approve`.
 
@@ -265,15 +284,15 @@ The app adds these fields to the standard Workflow DocType:
 
 ### Reapproval Condition
 
-Use Reapproval Condition when a saved change should send the document back for approval without a manual workflow action. The condition is a Jinja template evaluated on every save. When it returns true and the document is not already in Approval State, the workflow state resets to Approval State, existing approvals are cleared, and matching rules assign approvers again.
+Use Reapproval Condition when a saved change should send the document back for approval without a manual workflow action. The condition is a Python expression evaluated on every save. When it is truthy and the document is not already in Approval State, the workflow state resets to Approval State, existing approvals are cleared, and matching rules assign approvers again.
 
 **Return a Customer to approval when the credit limit changes:**
 
-```jinja
-{{ doc.credit_limits and flt(doc.credit_limits[0].credit_limit) != flt(doc.last_approved_credit_limit or 0) }}
+```python
+doc.credit_limits and frappe.utils.flt(doc.credit_limits[0].credit_limit) != frappe.utils.flt(doc.last_approved_credit_limit or 0)
 ```
 
-Reapproval conditions can reference any field on the document, including child tables. The `flt` helper is available in workflow templates.
+Reapproval conditions use the same available names as Document Approval Rule conditions.
 
 ### State Field Updates
 
@@ -305,8 +324,8 @@ When the last sidebar approval is recorded, the app applies the configured **App
 
 Document Approval Rule conditions should match documents in the approval state using the same field the workflow uses, for example:
 
-```jinja
-{{ doc.status == 'Pending' }}
+```python
+doc.status == 'Pending'
 ```
 
 Sites that use **status** as the workflow state field typically also customize Purchase Order `set_status` so ERPNext does not overwrite workflow-driven values such as Pending and Approved on save. That override is site-specific and is not part of the approvals app.

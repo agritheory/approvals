@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from frappe.share import add_docshare
 from frappe.utils.data import today
@@ -40,7 +41,7 @@ class UserDocumentApproval(Document):
 		todo.date = today()
 		todo.status = "Open"
 		todo.priority = "Medium"
-		todo.description = self.reason or "A document requires your approval"
+		todo.description = self.reason or _("A document requires your approval")
 		todo.save(ignore_permissions=True)
 		self.todo = todo.name
 

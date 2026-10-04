@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from frappe.utils.data import today
 from frappe.share import add as add_share
@@ -25,23 +26,23 @@ class DocumentApprovalRule(Document):
 			try:
 				validate_condition(self.condition, self.approval_doctype)
 			except Exception as e:
-				return frappe._(f"Invalid condition expression: {str(e)}")
+				return _("Invalid condition expression: {0}").format(str(e))
 
 		if not self.enabled:
 			return frappe._("Document Approval Rule is disabled")
 
 		if self.skip_for_auto_repeat and doc.get("auto_repeat"):
-			return frappe._(
-				f"Document Approval Rule skipped: {doctype} {docname} is an Auto Repeat document"
+			return _("Document Approval Rule skipped: {0} {1} is an Auto Repeat document").format(
+				doctype, docname
 			)
 
 		try:
 			result = True if not self.condition else evaluate_condition(self.condition, doc)
 			if result:
-				return frappe._(f"Document Approval Rule applies to {doctype} {docname}")
-			return frappe._(f"Document Approval Rule does not apply to {doctype} {docname}")
+				return _("Document Approval Rule applies to {0} {1}").format(doctype, docname)
+			return _("Document Approval Rule does not apply to {0} {1}").format(doctype, docname)
 		except Exception as e:
-			return frappe._(f"Error evaluating condition: {str(e)}")
+			return _("Error evaluating condition: {0}").format(str(e))
 
 	def apply(
 		self,
@@ -95,7 +96,7 @@ class DocumentApprovalRule(Document):
 		users = get_users(self.approval_role)
 		# get index of current user
 		if not users:
-			frappe.throw(f"No users are assigned this approval role: {self.approval_role}")
+			frappe.throw(_("No users are assigned this approval role: {0}").format(self.approval_role))
 		if self.primary_assignee:
 			self.last_user = self.primary_assignee
 			user = self.primary_assignee

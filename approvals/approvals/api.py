@@ -175,13 +175,19 @@ def fetch_approvals_and_roles(doc: Document | str, method: str | None = None):
 	for role in roles:
 		assigned_username = delegates.get(role) or assignments.get(role) or role
 		assigned_user = frappe.get_value("User", assigned_username, "full_name") or "Unassigned"
-		assigned_user = "You" if assigned_username == frappe.session.user else assigned_user
+		if assigned_username == frappe.session.user:
+			assigned_user = "You"
 		approver = ""
 		if approvals.get(role):
 			approver = frappe.get_value("User", approvals.get(role), "full_name")
-			approver = "You" if approvals.get(role) == frappe.session.user else approver
+			if approvals.get(role) == frappe.session.user:
+				approver = _("You")
 		if "@" in role and assigned_user == "Unassigned":
 			assigned_user = role
+		elif assigned_user == "You":
+			assigned_user = _("You")
+		elif assigned_user == "Unassigned":
+			assigned_user = _("Unassigned")
 		approved = bool(approvals.get(role))
 		permissions = build_fetch_row_permissions(doc, role, frappe.session.user, user_roles, approved)
 		uda = get_uda_for_role_key(doc, role)
@@ -311,7 +317,7 @@ def approve_document(
 	# TODO: is this required?
 	doc.add_comment(
 		comment_type="Comment",
-		text=f"Document approved by <b>{frappe.session.user}</b>",
+		text=_("Document approved by <b>{0}</b>").format(frappe.session.user),
 		comment_by=user,
 	)
 
@@ -339,7 +345,7 @@ def set_status_to_approved(doc: Document, method: str | None = None, automatic=F
 	if doc.status != "Approved":
 		return
 	if not check_all_document_approvals(doc, method, automatic):
-		frappe.throw("All Approvers are required to Submit this document")
+		frappe.throw(_("All Approvers are required to Submit this document"))
 
 
 @frappe.whitelist()
@@ -356,13 +362,13 @@ def reject_document(doc: Document | str, role=None, comment: str = "", method: s
 			frappe.log_error(
 				f"Workflow transition failed for {doc.doctype} {doc.name} with error: {str(e)}"
 			)
-			frappe.throw(f"Could not apply 'Reject' workflow action: {str(e)}")
+			frappe.throw(_("Could not apply 'Reject' workflow action: {0}").format(str(e)))
 	else:
-		frappe.msgprint(f"No workflow found for {doc.doctype}. Status not changed.")
+		frappe.msgprint(_("No workflow found for {0}. Status not changed.").format(doc.doctype))
 
 	rejection = doc.add_comment(
 		comment_type="Comment",
-		text=comment or f"Document rejected by <b>{frappe.session.user}</b>",
+		text=comment or _("Document rejected by <b>{0}</b>").format(frappe.session.user),
 		comment_by=frappe.session.user,
 	)
 
@@ -518,15 +524,20 @@ def create_approval_notification(
 ):
 	log = frappe.new_doc("Notification Log")
 	log.flags.ignore_permissions = True
+	doctype_name = getattr(doc, "doctype", None) or doc.get("reference_doctype")
+	document_name = getattr(doc, "name", None) or doc.get("reference_name")
 	log.update(
 		{
-			"document_name": getattr(doc, "name", None) or doc.get("reference_name"),
-			"document_type": getattr(doc, "doctype", None) or doc.get("reference_doctype"),
-			"email_content": f"{getattr(doc, 'doctype', None) or doc.get('reference_doctype')} {getattr(doc, 'name', None) or doc.get('reference_name')} requires your approval",
+			"document_name": document_name,
+			"document_type": doctype_name,
+			"email_content": _("{0} {1} requires your approval").format(
+				_(doctype_name) if doctype_name else "",
+				document_name,
+			),
 			"for_user": user,
 			"from_user": getattr(doc, "owner", None) or frappe.session.user,
 			"owner": "Administrator",
-			"subject": f"A {getattr(doc, 'doctype', None) or doc.get('reference_doctype')} requires your approval",
+			"subject": _("A {0} requires your approval").format(_(doctype_name) if doctype_name else ""),
 			"type": "Assignment",
 			"link": get_approval_notification_link(doc, todo_name=todo_name),
 		}
@@ -625,7 +636,7 @@ def send_reminder_email():
 		approver_data = {"documents": approver_data}
 		frappe.sendmail(
 			recipients=approver_email,
-			subject=email_template.subject,
+			subject=_("Documents Pending Approval"),
 			message=frappe.render_template(email_template.response_html, approver_data),
 			add_unsubscribe_link=False,
 			reference_doctype=None,

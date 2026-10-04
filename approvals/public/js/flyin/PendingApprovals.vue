@@ -1,17 +1,17 @@
 <template>
 	<div class="pending-approvals">
-		<div v-if="loading" class="pending-approvals__loading">Loading...</div>
+		<div v-if="loading" class="pending-approvals__loading">{{ __('Loading...') }}</div>
 
 		<div v-else-if="!hasContent" class="pending-approvals__empty">
-			<p>{{ caughtUp ? 'All caught up.' : 'No pending approvals.' }}</p>
+			<p>{{ caughtUp ? __('All caught up.') : __('No pending approvals.') }}</p>
 		</div>
 
 		<template v-else>
 			<section v-if="currentFormRoute && documentGroup.show" class="pending-approvals__section">
-				<div class="pending-approvals__section-title">{{ currentFormRoute[1] }}: {{ currentFormRoute[2] }}</div>
+				<div class="pending-approvals__section-title">{{ __(currentFormRoute[1]) }}: {{ currentFormRoute[2] }}</div>
 
 				<div v-if="documentGroup.loading" class="pending-approvals__context-loading">
-					Loading approvals for this document...
+					{{ __('Loading approvals for this document...') }}
 				</div>
 
 				<div
@@ -21,23 +21,23 @@
 					class="pending-approvals__document-row">
 					<div class="pending-approvals__context">
 						<div class="pending-approvals__context-row">
-							<span class="pending-approvals__label">Role:</span>
-							<span>{{ approval.approval_role }}</span>
+							<span class="pending-approvals__label">{{ __('Role') }}</span>
+							<span>{{ translateRole(approval.approval_role) }}</span>
 						</div>
 						<div class="pending-approvals__context-row">
-							<span class="pending-approvals__label">Assigned to:</span>
+							<span class="pending-approvals__label">{{ __('Assigned to') }}</span>
 							<span>{{ approval.assigned_to_user }}</span>
 						</div>
 						<div v-if="approval.requested_by_name" class="pending-approvals__context-row">
-							<span class="pending-approvals__label">Requested by:</span>
+							<span class="pending-approvals__label">{{ __('Requested by') }}</span>
 							<span>{{ approval.requested_by_name }}</span>
 						</div>
 						<div v-if="approval.reason" class="pending-approvals__context-row">
-							<span class="pending-approvals__label">Reason:</span>
+							<span class="pending-approvals__label">{{ __('Reason') }}</span>
 							<span>{{ approval.reason }}</span>
 						</div>
 						<div v-if="approval.approved" class="pending-approvals__context-row">
-							<span class="pending-approvals__label">Approved by:</span>
+							<span class="pending-approvals__label">{{ __('Approved by') }}</span>
 							<span>{{ approval.approver }}</span>
 						</div>
 					</div>
@@ -49,31 +49,31 @@
 							<button
 								class="flyout-action-btn flyout-action-btn--success flyout-action-btn--compact"
 								@click="approveDocumentApproval(approval)">
-								Approve
+								{{ __('Approve') }}
 							</button>
 							<button
 								class="flyout-action-btn flyout-action-btn--danger flyout-action-btn--compact"
 								@click="rejectDocumentApproval(approval)">
-								Reject
+								{{ __('Reject') }}
 							</button>
 						</template>
 						<button
 							v-if="approval.can_reassign"
 							class="flyout-action-btn flyout-action-btn--warning flyout-action-btn--compact"
 							@click="reassignApprover(approval)">
-							Reassign
+							{{ __('Reassign') }}
 						</button>
 						<button
 							v-if="approval.can_remove"
 							class="flyout-action-btn flyout-action-btn--danger flyout-action-btn--compact"
 							@click="removeApprover(approval)">
-							Remove
+							{{ __('Remove') }}
 						</button>
 						<button
 							v-if="showAddApproverOnRow(index)"
 							class="flyout-action-btn flyout-action-btn--secondary flyout-action-btn--compact"
 							@click="addApprover">
-							Add approver
+							{{ __('Add approver') }}
 						</button>
 					</div>
 				</div>
@@ -81,7 +81,7 @@
 
 			<section v-if="assignedItems.length" class="pending-approvals__section">
 				<div v-if="currentFormRoute && documentGroup.show" class="pending-approvals__section-title">
-					Assigned to you
+					{{ __('Assigned to you') }}
 				</div>
 
 				<div
@@ -90,7 +90,7 @@
 					class="flyout-queue-item"
 					:class="{ 'flyout-queue-item--active': isActiveItem(item) }"
 					@click="onItemClick(item)">
-					<div class="flyout-queue-item__title">{{ item.reference_type }}: {{ item.reference_name }}</div>
+					<div class="flyout-queue-item__title">{{ __(item.reference_type) }}: {{ item.reference_name }}</div>
 					<div class="flyout-queue-item__synopsis">
 						{{ displayRole(item) }}
 					</div>
@@ -102,36 +102,36 @@
 						<button
 							class="flyout-action-btn flyout-action-btn--primary flyout-action-btn--compact"
 							@click="reviewItem(item)">
-							Review
+							{{ __('Review') }}
 						</button>
 					</div>
 
 					<div v-else class="pending-approvals__active" @click.stop>
 						<div class="pending-approvals__context">
 							<div class="pending-approvals__context-row">
-								<span class="pending-approvals__label">Role:</span>
+								<span class="pending-approvals__label">{{ __('Role') }}</span>
 								<span>{{ displayRole(item) }}</span>
 							</div>
 							<div v-if="item.document_approval_rule" class="pending-approvals__context-row">
-								<span class="pending-approvals__label">Approval rule:</span>
+								<span class="pending-approvals__label">{{ __('Approval Rule') }}</span>
 								<span>{{ item.document_approval_rule }}</span>
 							</div>
 						</div>
 
 						<div v-if="getItemContext(item)?.loading" class="pending-approvals__context-loading">
-							Checking approval status...
+							{{ __('Checking approval status...') }}
 						</div>
 
 						<div v-else-if="canAct(item)" class="flyout-queue-item__actions">
 							<button
 								class="flyout-action-btn flyout-action-btn--success flyout-action-btn--compact"
 								@click="approveItem(item)">
-								Approve
+								{{ __('Approve') }}
 							</button>
 							<button
 								class="flyout-action-btn flyout-action-btn--danger flyout-action-btn--compact"
 								@click="rejectItem(item)">
-								Reject
+								{{ __('Reject') }}
 							</button>
 						</div>
 					</div>
@@ -140,7 +140,7 @@
 		</template>
 
 		<p class="pending-approvals__shortcut-hint" aria-hidden="true">
-			Toggle drawer:
+			{{ __('Toggle drawer:') }}
 			<kbd>Ctrl</kbd>
 			+
 			<kbd>Shift</kbd>
@@ -161,6 +161,12 @@ import {
 	type ApprovalRole,
 	type DocLike,
 } from './approvalGating'
+
+const __ = (
+	window as Window & {
+		__: (message: string, replace?: Array<string | number> | null, context?: string | null) => string
+	}
+).__
 
 const props = defineProps<{
 	approvalTodo?: string
@@ -276,8 +282,16 @@ function isActiveItem(item: ApprovalItem): boolean {
 	return matchesItem(item, currentRoute.value)
 }
 
+function translateRole(role: string | null | undefined): string {
+	const key = approvalRoleKey(role)
+	if (key === 'User Approval') {
+		return __('User Approval')
+	}
+	return __(key)
+}
+
 function displayRole(item: ApprovalItem): string {
-	return approvalRoleKey(item.role)
+	return translateRole(item.role)
 }
 
 function documentApprovalKey(approval: ApprovalRole, index: number): string {
@@ -428,11 +442,11 @@ function timeAgo(dateStr: string): string {
 	const diffMs = now.getTime() - date.getTime()
 	const diffMins = Math.floor(diffMs / 60000)
 
-	if (diffMins < 60) return `${diffMins}m ago`
+	if (diffMins < 60) return __('{0}m ago', [diffMins])
 	const diffHours = Math.floor(diffMins / 60)
-	if (diffHours < 24) return `${diffHours}h ago`
+	if (diffHours < 24) return __('{0}h ago', [diffHours])
 	const diffDays = Math.floor(diffHours / 24)
-	return `${diffDays}d ago`
+	return __('{0}d ago', [diffDays])
 }
 
 async function previewAttachments(item: ApprovalItem) {
@@ -448,7 +462,7 @@ async function previewAttachments(item: ApprovalItem) {
 		if (attachments.length > 0) {
 			preview.show({
 				url: attachments[0].file_url,
-				title: `${item.reference_type}: ${item.reference_name}`,
+				title: `${__(item.reference_type)}: ${item.reference_name}`,
 			})
 		} else {
 			preview.close()
@@ -512,7 +526,7 @@ async function afterAction(completedItem: ApprovalItem, options: { advanceDelayM
 		selected.value = null
 		if (!documentGroup.value.show) {
 			caughtUp.value = true
-			window.frappe.show_alert({ message: 'All caught up', indicator: 'green' })
+			window.frappe.show_alert({ message: __('All caught up'), indicator: 'green' })
 		}
 		void fetchItems(true)
 		return
@@ -542,7 +556,7 @@ function userApprovalDialog(
 	return new Promise(resolve => {
 		const userField: Record<string, unknown> = {
 			fieldtype: 'Link',
-			label: 'User',
+			label: __('User'),
 			fieldname: 'approval_user',
 			reqd: 1,
 			options: 'User',
@@ -564,7 +578,7 @@ function userApprovalDialog(
 				userField,
 				{
 					fieldtype: 'Small Text',
-					label: 'Reason',
+					label: __('Reason'),
 					fieldname: 'reason',
 				},
 			],
@@ -583,19 +597,19 @@ async function addApprover() {
 	const { doc } = documentGroup.value
 	if (!doc) return
 
-	const values = await userApprovalDialog('Add a user to approve this document', 'Add approver')
+	const values = await userApprovalDialog(__('Add a user to approve this document'), __('Add approver'))
 	try {
 		await window.frappe.xcall('approvals.approvals.api.add_user_approval', {
 			doc: JSON.stringify(doc),
 			user: values.user,
 			reason: values.reason,
 		})
-		window.frappe.show_alert({ message: 'Approver added', indicator: 'green' })
+		window.frappe.show_alert({ message: __('Approver added'), indicator: 'green' })
 		await refreshBadge()
 		await reloadOpenFormAndFlyin(doc)
 	} catch (error) {
 		console.error('[flyin] Failed to add approver:', error)
-		window.frappe.show_alert({ message: 'Failed to add approver', indicator: 'red' })
+		window.frappe.show_alert({ message: __('Failed to add approver'), indicator: 'red' })
 	}
 }
 
@@ -603,18 +617,18 @@ async function removeApprover(approval: ApprovalRole) {
 	const { doc } = documentGroup.value
 	if (!doc || !approval.uda_name) return
 
-	window.frappe.confirm('Remove this approver?', async () => {
+	window.frappe.confirm(__('Remove this approver?'), async () => {
 		try {
 			await window.frappe.xcall('approvals.approvals.api.remove_user_approval', {
 				doc: JSON.stringify(doc),
 				uda_name: approval.uda_name,
 			})
-			window.frappe.show_alert({ message: 'Approver removed', indicator: 'green' })
+			window.frappe.show_alert({ message: __('Approver removed'), indicator: 'green' })
 			await refreshBadge()
 			await reloadOpenFormAndFlyin(doc)
 		} catch (error) {
 			console.error('[flyin] Failed to remove approver:', error)
-			window.frappe.show_alert({ message: 'Failed to remove approver', indicator: 'red' })
+			window.frappe.show_alert({ message: __('Failed to remove approver'), indicator: 'red' })
 		}
 	})
 }
@@ -630,7 +644,7 @@ async function reassignApprover(approval: ApprovalRole) {
 		approval.approval_role && approval.approval_role !== 'User Approval' ? approval.approval_role : null
 	const fromApprover = !reassignRole && approval.assigned_username ? approval.assigned_username : null
 
-	const values = await userApprovalDialog('Reassign this approver', 'Reassign approver', {
+	const values = await userApprovalDialog(__('Reassign this approver'), __('Reassign approver'), {
 		reassignRole,
 		fromApprover,
 		excludeUser: approval.assigned_username || undefined,
@@ -642,12 +656,12 @@ async function reassignApprover(approval: ApprovalRole) {
 			to_user: values.user,
 			reason: values.reason,
 		})
-		window.frappe.show_alert({ message: 'Approver reassigned', indicator: 'green' })
+		window.frappe.show_alert({ message: __('Approver reassigned'), indicator: 'green' })
 		await refreshBadge()
 		await reloadOpenFormAndFlyin(doc)
 	} catch (error) {
 		console.error('[flyin] Failed to reassign approver:', error)
-		window.frappe.show_alert({ message: 'Failed to reassign approver', indicator: 'red' })
+		window.frappe.show_alert({ message: __('Failed to reassign approver'), indicator: 'red' })
 	}
 }
 
@@ -669,19 +683,19 @@ async function approveDocumentApproval(approval: ApprovalRole) {
 				await window.cur_frm.reload_doc()
 			}
 
-			window.frappe.show_alert({ message: 'Document approved', indicator: 'green' })
+			window.frappe.show_alert({ message: __('Document approved'), indicator: 'green' })
 			await refreshBadge()
 			void loadCurrentDocumentGroup()
 			void fetchItems(true)
 		} catch (error) {
 			console.error('[flyin] Failed to approve document:', error)
-			window.frappe.show_alert({ message: 'Failed to approve', indicator: 'red' })
+			window.frappe.show_alert({ message: __('Failed to approve'), indicator: 'red' })
 		}
 	}
 
 	const isSubmittable = window.frappe.get_meta(doc.doctype)?.is_submittable
 	if (!approvalsData.workflow_exists && isSubmittable) {
-		window.frappe.confirm(`Permanently Submit ${doc.name}?`, runApprove)
+		window.frappe.confirm(__('Permanently Submit {0}?', [doc.name]), runApprove)
 		return
 	}
 
@@ -702,15 +716,15 @@ async function rejectDocumentApproval(approval: ApprovalRole) {
 		window.frappe.prompt(
 			{
 				fieldtype: 'Small Text',
-				label: 'Rejection Reason',
+				label: __('Rejection Reason'),
 				fieldname: 'reason',
 				reqd: 1,
 			},
 			async (values: { reason: string }) => {
 				await doRejectDocument(approval, doc, values.reason)
 			},
-			'Reject Document',
-			'Reject'
+			__('Reject Document'),
+			__('Reject')
 		)
 		return
 	}
@@ -726,13 +740,13 @@ async function doRejectDocument(approval: ApprovalRole, doc: DocLike, comment = 
 			comment,
 		})
 
-		window.frappe.show_alert({ message: 'Document rejected', indicator: 'orange' })
+		window.frappe.show_alert({ message: __('Document rejected'), indicator: 'orange' })
 		await refreshBadge()
 		void loadCurrentDocumentGroup()
 		void fetchItems(true)
 	} catch (error) {
 		console.error('[flyin] Failed to reject document:', error)
-		window.frappe.show_alert({ message: 'Failed to reject', indicator: 'red' })
+		window.frappe.show_alert({ message: __('Failed to reject'), indicator: 'red' })
 	}
 }
 
@@ -757,17 +771,17 @@ async function approveItem(item: ApprovalItem) {
 				await window.cur_frm.reload_doc()
 			}
 
-			window.frappe.show_alert({ message: 'Document approved', indicator: 'green' })
+			window.frappe.show_alert({ message: __('Document approved'), indicator: 'green' })
 			await afterAction(item, { advanceDelayMs: APPROVE_ADVANCE_DELAY_MS })
 		} catch (error) {
 			console.error('[flyin] Failed to approve document:', error)
-			window.frappe.show_alert({ message: 'Failed to approve', indicator: 'red' })
+			window.frappe.show_alert({ message: __('Failed to approve'), indicator: 'red' })
 		}
 	}
 
 	const isSubmittable = window.frappe.get_meta(item.reference_type)?.is_submittable
 	if (!context.approvalsData.workflow_exists && isSubmittable) {
-		window.frappe.confirm(`Permanently Submit ${item.reference_name}?`, runApprove)
+		window.frappe.confirm(__('Permanently Submit {0}?', [item.reference_name]), runApprove)
 		return
 	}
 
@@ -791,15 +805,15 @@ async function rejectItem(item: ApprovalItem) {
 		window.frappe.prompt(
 			{
 				fieldtype: 'Small Text',
-				label: 'Rejection Reason',
+				label: __('Rejection Reason'),
 				fieldname: 'reason',
 				reqd: 1,
 			},
 			async (values: { reason: string }) => {
 				await doReject(item, approval, context.doc!, values.reason)
 			},
-			'Reject Document',
-			'Reject'
+			__('Reject Document'),
+			__('Reject')
 		)
 		return
 	}
@@ -815,11 +829,11 @@ async function doReject(item: ApprovalItem, approval: ApprovalRole, doc: DocLike
 			comment,
 		})
 
-		window.frappe.show_alert({ message: 'Document rejected', indicator: 'orange' })
+		window.frappe.show_alert({ message: __('Document rejected'), indicator: 'orange' })
 		await afterAction(item)
 	} catch (error) {
 		console.error('[flyin] Failed to reject document:', error)
-		window.frappe.show_alert({ message: 'Failed to reject', indicator: 'red' })
+		window.frappe.show_alert({ message: __('Failed to reject'), indicator: 'red' })
 	}
 }
 

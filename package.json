@@ -13,12 +13,12 @@
 	},
 	"scripts": {
 		"postinstall": "node scripts/postinstall-flyin.mjs",
-		"build": "vite build --config=./approvals/public/js/vite.config.ts && node --import ./scripts/flyin-source-register.mjs ./node_modules/@agritheory/flyin/src/cli/build-if-host.ts",
-		"build:flyin": "node --import ./scripts/flyin-source-register.mjs ./node_modules/@agritheory/flyin/src/cli/build-if-host.ts",
+		"build": "vite build --config=./approvals/public/js/vite.config.ts && yarn --cwd node_modules/@agritheory/flyin build:flyin",
+		"build:flyin": "yarn --cwd node_modules/@agritheory/flyin build:flyin",
 		"dev": "vite build --watch --config=./approvals/public/js/vite.config.ts"
 	},
 	"dependencies": {
-		"@agritheory/flyin": "git+https://github.com/agritheory/flyin.git#v15.2.3",
+		"@agritheory/flyin": "git+https://github.com/agritheory/flyin.git#v15.2.4",
 		"vue": "^3.5.14"
 	},
 	"devDependencies": {

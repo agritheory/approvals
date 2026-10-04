@@ -54,7 +54,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          # flyin v15.2.3 resolves nopt@10, which requires Node ^22.22.2 or newer.
+          # flyin v15.2.4 resolves nopt@10, which requires Node ^22.22.2 or newer.
           node-version: 22
           check-latest: true
           cache: 'yarn'

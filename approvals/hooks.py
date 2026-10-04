@@ -210,7 +210,7 @@ override_whitelisted_methods = {
 # 	"approvals.auth.validate"
 # ]
 
-# User approval extension points (see docs/configuration.md):
+# User approval extension points (see docs/extending.md):
 # approvals_user_approval_permission = ["app.module.permission_hook"]
 # approvals_approver_providers = {"Purchase Order": ["app.module.provider_fn"]}
 # approvals_user_approval_events = ["app.module.custom_event_handler"]

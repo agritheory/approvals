@@ -7,7 +7,10 @@ This changelog was automatically generated from GitHub releases and pull request
 
 ## Unreleased
 
-Users can now import custom functions into conditions using a hook. This allows for more flexibility and customization in document approval rules.
+### Breaking Changes
+
+- **Document Approval Rule** and **Workflow Reapproval Condition** fields now accept a Python expression, not a Jinja template. Remove `{{ }}` wrappers from existing conditions. A migration patch unwraps simple one-block conditions on migrate.
+- Removed app-specific condition helpers (`account_numbers`, pre-fetched account lists, `total_amount`, and similar shortcuts). Use `doc` fields, `frappe.utils`, and read-only `frappe.db` lookups instead, or register site-specific helpers through the `approval_condition_context` hook in your app's `hooks.py`.
 
 ## [v15.3.3] - 2025-07-29
 

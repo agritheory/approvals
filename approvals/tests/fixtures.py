@@ -23,8 +23,8 @@ customers = [
 
 # Customer credit limit example — test data only, not installed with the app.
 customer_credit_limit_reapproval_condition = (
-	"{{ doc.credit_limits and flt(doc.credit_limits[0].credit_limit) "
-	"!= flt(doc.last_approved_credit_limit or 0) }}"
+	"doc.credit_limits and frappe.utils.flt(doc.credit_limits[0].credit_limit) "
+	"!= frappe.utils.flt(doc.last_approved_credit_limit or 0)"
 )
 
 customer_custom_fields = [
@@ -122,7 +122,7 @@ customer_credit_limit_workflow = {
 customer_credit_limit_approval_rule = {
 	"approval_doctype": "Customer",
 	"approval_role": "Sales Manager",
-	"condition": "{{ doc.workflow_state == 'Pending Approval' }}",
+	"condition": "doc.workflow_state == 'Pending Approval'",
 	"enabled": 1,
 	"message": "Customer credit limit requires your approval",
 }
@@ -132,42 +132,42 @@ document_approval_rules = [
 		"approval_doctype": "Purchase Order",
 		"approval_role": "Accounts Manager",
 		"primary_assignee": "mbritt@cfc.co",
-		"condition": "{{ doc.grand_total > 1000 }}",
+		"condition": "doc.grand_total > 1000",
 		"enabled": 1,
 	},
 	{
 		"approval_doctype": "Purchase Invoice",
 		"approval_role": "Accounts Manager",
 		"primary_assignee": "mbritt@cfc.co",
-		"condition": "{{ doc.grand_total > 1000 }}",
+		"condition": "doc.grand_total > 1000",
 		"enabled": 1,
 	},
 	{
 		"approval_doctype": "Purchase Order",
 		"approval_role": "Stock Manager",
 		"primary_assignee": "arivers@cfc.co",
-		"condition": "{{ doc.grand_total > 200 and doc.grand_total < 500 }}",
+		"condition": "doc.grand_total > 200 and doc.grand_total < 500",
 		"enabled": 1,
 	},
 	{
 		"approval_doctype": "Purchase Invoice",
 		"approval_role": "Stock Manager",
 		"primary_assignee": "arivers@cfc.co",
-		"condition": "{{ doc.grand_total > 200 and doc.grand_total < 500 }}",
+		"condition": "doc.grand_total > 200 and doc.grand_total < 500",
 		"enabled": 1,
 	},
 	{
 		"approval_doctype": "Purchase Order",
 		"approval_role": "Sales Manager",
 		"primary_assignee": "mmckay@cfc.co",
-		"condition": "{{ doc.grand_total > 500 and doc.grand_total < 1000 }}",
+		"condition": "doc.grand_total > 500 and doc.grand_total < 1000",
 		"enabled": 1,
 	},
 	{
 		"approval_doctype": "Purchase Invoice",
 		"approval_role": "Sales Manager",
 		"primary_assignee": "mmckay@cfc.co",
-		"condition": "{{ doc.grand_total > 500 and doc.grand_total < 1000 }}",
+		"condition": "doc.grand_total > 500 and doc.grand_total < 1000",
 		"enabled": 1,
 	},
 	customer_credit_limit_approval_rule | {"primary_assignee": "mmckay@cfc.co"},

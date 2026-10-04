@@ -262,7 +262,7 @@ def test_workflow_approve_blocked_until_all_required_roles_approve():
 	extra_rule.approval_doctype = "Purchase Order"
 	extra_rule.approval_role = "Sales Manager"
 	extra_rule.condition = (
-		"{{ doc.supplier == 'North County Grain Cooperative' and doc.grand_total > 1000 }}"
+		"doc.supplier == 'North County Grain Cooperative' and doc.grand_total > 1000"
 	)
 	extra_rule.primary_assignee = "mmckay@cfc.co"
 	extra_rule.enabled = 1

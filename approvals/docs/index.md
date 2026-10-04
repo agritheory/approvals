@@ -4,21 +4,29 @@ For license information, please see license.txt-->
 # Approvals
 
 <div class="byline">
-  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-09-03
+  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-10-04
 </div>
 
-Approvals is a document approval workflow app for Frappe and ERPNext. It allows organizations to define conditional approval rules for business documents based on configurable criteria. It supports submittable documents (Purchase Order, Purchase Invoice) with or without a Frappe Workflow, and non-submittable documents through workflow configuration.
+Approvals adds conditional sign-off to business documents in ERPNext. An administrator decides which documents need approval and who should give it. For example, a company might require a manager's approval on every Purchase Invoice over $1,000, or a sales manager's approval whenever a customer's credit limit changes. When a document matches, the app assigns the right people, collects their approvals, and then submits the document or moves it to its approved workflow state.
+
+The app works with submittable documents such as Purchase Order and Purchase Invoice, with or without a Workflow. It also works with documents that are never submitted, such as Customer, when paired with a Workflow.
 
 ## Design Philosophy
 
-The app routes documents to roles, not people. People change positions, leave organizations, and take time off. Roles persist. When organizational changes happen, approval logic stays intact.
+Approval rules route documents to roles, not to people. People change positions, leave the organization, and take time off. Roles persist. When the organization changes, the approval rules keep working.
+
+People still matter when a specific document needs a specific person. Approvers can bring an extra person into a single document, or hand an assignment to a colleague while they are away, without changing the rules for every other document.
 
 ## Documentation
 
-### [Configuration](configuration.md)
-
-Administrators set up approval rules that define which roles must approve each document type and under what conditions. Rules use Jinja templates to match documents based on field values like amounts, accounts, or other criteria. Submittable documents can use sidebar-only approval without a workflow, or pair rules with workflows for approval states, rejection, and reapproval. Global settings control fallback approvers and email reminder timing. Custom email templates can use `get_approval_notification_link` to deep-link approvers into the Pending Approvals flyin.
-
 ### [Usage](usage.md)
 
-Users work with approvals through a **Pending Approvals** flyin in the desk navbar on configured DocTypes. From the flyin, users can review, approve, reject, and manage user approvals (add, remove, reassign) when permitted. Notification and reminder links open the document with the flyin pre-selected. The panel does not appear on DocTypes without approval rules.
+Approvers work from the Pending Approvals drawer in the desk navbar. It lists everything waiting on the current user and shows every required approval on the open document. This page covers reviewing, approving, and rejecting documents. It also covers adding an extra approver to a document, reassigning an approval to a colleague, and removing an approver who is no longer needed.
+
+### [Configuration](configuration.md)
+
+Administrators create Document Approval Rules that decide which documents need approval and which role approves them. This page covers rule conditions, assignment, fallback approvers, reminder emails, and how approvals work with and without a Workflow.
+
+### [Extending Approvals](extending.md)
+
+Developers can add names to rule conditions, supply approvers from their own data, change who may manage approvers, and build links into the drawer from custom templates.

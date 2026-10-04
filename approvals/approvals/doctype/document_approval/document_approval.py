@@ -15,6 +15,16 @@ class DocumentApproval(Document):
 		if not self.user_approval:
 			if self.approver == "Administrator":
 				return
+			if frappe.db.exists(
+				"User Document Approval",
+				{
+					"reference_doctype": self.reference_doctype,
+					"reference_name": self.reference_name,
+					"approver": self.approver,
+					"satisfies_role": self.approval_role,
+				},
+			):
+				return
 			if not frappe.get_value("Has Role", {"parent": self.approver, "role": self.approval_role}):
 				frappe.throw(_("Approving User does not have the required Role"), frappe.PermissionError)
 

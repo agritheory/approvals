@@ -15,7 +15,7 @@ class DocumentApprovalRule(Document):
 		self.title = f"{self.approval_doctype} - {self.approval_role}"
 
 		if self.condition:
-			validate_condition(self.condition)
+			validate_condition(self.condition, self.approval_doctype)
 
 	@frappe.whitelist()
 	def test_condition(self, doctype: str, docname: str):
@@ -23,7 +23,7 @@ class DocumentApprovalRule(Document):
 
 		if self.condition:
 			try:
-				validate_condition(self.condition)
+				validate_condition(self.condition, self.approval_doctype)
 			except Exception as e:
 				return frappe._(f"Invalid condition expression: {str(e)}")
 

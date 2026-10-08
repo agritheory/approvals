@@ -267,6 +267,19 @@ function readFormRoute(): FormRoute {
 	return null
 }
 
+function formIsNew(route: FormRoute): boolean {
+	const frm = window.cur_frm as
+		| {
+				is_new?: () => boolean | number
+				doc?: { doctype?: string; name?: string }
+		  }
+		| undefined
+	if (!route || !frm?.is_new?.()) {
+		return false
+	}
+	return frm.doc?.doctype === route[1] && frm.doc?.name === route[2]
+}
+
 function matchesItem(item: ApprovalItem, route: FormRoute): boolean {
 	if (!route) return false
 	return route[1] === item.reference_type && route[2] === item.reference_name
@@ -396,7 +409,7 @@ async function reloadOpenFormAndFlyin(doc: { doctype?: string; name?: string }) 
 
 async function loadCurrentDocumentGroup() {
 	const route = readFormRoute()
-	if (!route) {
+	if (!route || formIsNew(route)) {
 		documentGroup.value = { loading: false, show: false, doc: null, approvalsData: null }
 		return
 	}

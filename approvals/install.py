@@ -1,6 +1,8 @@
 # Copyright (c) 2026, AgriTheory and contributors
 # For license information, please see license.txt
 
+from pathlib import Path
+
 import frappe
 
 
@@ -11,12 +13,13 @@ def after_install():
 def add_pending_approval_email_template():
 	if not frappe.db.exists("Email Template", "Pending Approval"):
 		email_template = frappe.new_doc("Email Template")
+		template_path = Path(__file__).parent.joinpath("templates/emails/pending_approval.html")
 		email_template.update(
 			{
 				"name": "Pending Approval",
 				"subject": "Documents Pending Approval",
 				"use_html": 1,
-				"response_html": '<p>The following documents require your approval:</p>\n<br>\n<table class="table table-bordered">\n\t<tr>\n\t\t<th>Document Type</th>\n\t\t<th>Name</th>\n\t</tr>\n\t{% for document in documents %}\n\t\t<tr>\n\t\t\t<td>{{ document.doctype }}</td>\n\t\t\t<td><a href="{{ document.url }}">{{ document.name }}</a></td>\n\t\t</tr>\n\t{% endfor %}\n</table>',
+				"response_html": template_path.read_text(),
 			}
 		)
 		email_template.insert()

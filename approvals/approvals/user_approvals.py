@@ -393,15 +393,20 @@ def build_timeline_comment(
 	reason: str | None,
 	previous_approver: str | None,
 ) -> str:
-	reason_suffix = f" Reason: {frappe.utils.escape_html(reason)}" if reason else ""
+	reason_suffix = _(" Reason: {0}").format(frappe.utils.escape_html(reason)) if reason else ""
 	if event == "added":
-		return f"<b>{approver}</b> added as approver by <b>{actor}</b>.{reason_suffix}"
+		return _("<b>{0}</b> added as approver by <b>{1}</b>.").format(approver, actor) + reason_suffix
 	if event == "removed":
-		return f"<b>{approver}</b> removed as approver by <b>{actor}</b>.{reason_suffix}"
+		return _("<b>{0}</b> removed as approver by <b>{1}</b>.").format(approver, actor) + reason_suffix
 	if event == "reassigned":
-		previous = previous_approver or "the previous approver"
-		return f"Approval for <b>{approver}</b> reassigned from <b>{previous}</b> by <b>{actor}</b>.{reason_suffix}"
-	return f"User approval updated by <b>{actor}</b>.{reason_suffix}"
+		previous = previous_approver or _("the previous approver")
+		return (
+			_("Approval for <b>{0}</b> reassigned from <b>{1}</b> by <b>{2}</b>.").format(
+				approver, previous, actor
+			)
+			+ reason_suffix
+		)
+	return _("User approval updated by <b>{0}</b>.").format(actor) + reason_suffix
 
 
 def ensure_share(doc: Document, user: str):

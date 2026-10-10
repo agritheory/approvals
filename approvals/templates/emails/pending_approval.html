@@ -1,0 +1,14 @@
+<p>{{ _("The following documents require your approval:") }}</p>
+<br>
+<table class="table table-bordered">
+	<tr>
+		<th>{{ _("Document Type") }}</th>
+		<th>{{ _("Name") }}</th>
+	</tr>
+	{% for document in documents %}
+		<tr>
+			<td>{{ _(document.doctype) }}</td>
+			<td><a href="{{ document.url }}">{{ document.name }}</a></td>
+		</tr>
+	{% endfor %}
+</table>

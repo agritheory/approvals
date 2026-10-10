@@ -131,8 +131,9 @@ after_install = "approvals.install.after_install"
 
 doc_events = {
 	"*": {
+		"validate": "approvals.approvals.api.lock_fields_in_approval_state",
 		"on_update": "approvals.approvals.api.assign_approvers",
-		"before_submit": "approvals.approvals.validation.validate_all_approvals_complete",
+		"before_submit": "approvals.approvals.api.validate_all_approvals_complete",
 	},
 }
 

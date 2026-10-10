@@ -43,7 +43,7 @@ Each approval on the open document has its own row. A row shows:
 
 - Role: the role the rule requires, or "User Approval" when a specific person was added to this document
 - Assigned to: the person currently responsible, "You" when it is the current user, or "Unassigned"
-- Requested by and Reason: who added a person to this document and why (only on User Approval rows)
+- Rule, Requested by, or Source and Reason: which User rule or integration created the row, who added a person manually, or which provider ran; plus optional reason (User Approval rows)
 - Approved by: who approved it, once someone has
 
 The buttons under a row depend on the row type and the current user. The following sections explain each one.
@@ -82,10 +82,12 @@ There are two kinds of rows, and each supports different actions.
 
 | Row | Created by | Approve | Reassign | Remove |
 | :--- | :--- | :--- | :--- | :--- |
-| Rule row (shows a role, such as Accounts Manager) | A matching Document Approval Rule | The assignee, or anyone with the role if unassigned | Yes | No |
-| User Approval row (shows a person) | Add approver, or an integration set up by a developer | Only that person | No | Yes |
+| Rule row (shows a role, such as Accounts Manager) | A matching Document Approval Rule (Role type) | The assignee, or anyone with the role if unassigned | Yes | No |
+| User Approval row from a User rule | A User-type Document Approval Rule | Only that person | Only if the rule has an Approval Role: the assignee if they hold it, or a User Approval Manager | No |
+| User Approval row from a provider | An integration hook | Only that person | No | No |
+| User Approval row added in the drawer | Add approver | Only that person | No | Yes (requester or User Approval Manager) |
 
-A rule row cannot be removed because the rule still applies to the document. To drop that requirement, an administrator changes the rule or its condition. A User Approval row cannot be reassigned because it asks for one particular person. To ask someone else, remove that row and add the other person.
+A rule row cannot be removed because the rule still applies to the document. A User Approval row from a rule or provider also cannot be removed; the app syncs it from the rule expression or provider. To drop that requirement, change the rule, the document so the rule no longer applies, or disable the rule. Manual User Approval rows cannot be reassigned; remove the row and add someone else. A User rule's rows can be reassigned within the rule's Approval Role, as described in [Configuration](configuration.md#approving-by-a-person-on-the-document).
 
 ### Adding an Approver
 
@@ -97,9 +99,9 @@ The added person becomes an additional required approval. The document does not 
 
 ### Reassigning an Approval
 
-Click Reassign on a rule row to hand that approval to someone else. Choose a user and optionally enter a reason. The user list shows only active desk users who hold the same role. The reason becomes the description on the new person's ToDo.
+Click Reassign on a rule row to hand that approval to someone else. Choose a user and optionally enter a reason. The user list shows only active desk users who hold the rule's role. For a User rule, that is the rule's Approval Role. The reason becomes the description on the new person's ToDo.
 
-Reassign appears when the row has not been approved yet and approvals are active. It appears only to the person currently assigned or to a user with the User Approval Manager Role.
+Reassign appears when the row has not been approved yet and approvals are active. It appears only to the person currently assigned or to a user with the User Approval Manager Role. On a User rule's row, the assignee must also hold the rule's Approval Role, and the button never appears if the rule has none. You cannot reassign to someone who already has an approval row on the document.
 
 The app closes the previous person's ToDo, creates a ToDo for the new person, and shares the document with them if needed. Both people receive a notification, and the change is recorded on the timeline. From then on, only the new assignee (or Administrator) can approve that row. The rule requirement itself does not change.
 

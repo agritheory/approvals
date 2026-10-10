@@ -4,13 +4,16 @@
 import frappe
 import pytest
 
-from approvals.approvals.api import revoke_approvals_on_reject
+from approvals.approvals.api import get_approval_roles, revoke_approvals_on_reject
 from approvals.approvals.user_approvals import MANUAL_ORIGIN, can_manage_user_approval
 from approvals.approvals.doctype.document_approval_rule.document_approval_rule import get_users
+from approvals.approvals.workflow import apply_workflow
+from approvals.tests.fixtures import timesheet_approval_employees
 from approvals.tests.test_purchase_invoice_non_workflow_approval import (
 	create_draft_purchase_invoice_for_supplier,
 	ensure_purchase_invoice_assignments,
 )
+from approvals.tests.test_utils import restore_timesheet_employee, timesheet_for_fixture
 
 
 ROLE_ACCOUNTS_MANAGER = "Accounts Manager"
@@ -661,3 +664,255 @@ def test_approved_rule_row_hides_reassign_and_remove():
 	finally:
 		frappe.set_user("Administrator")
 		delete_test_purchase_invoice(pi.name)
+
+
+def create_user_approval_rule(
+	*, approvers: str, enabled: int = 1, approval_role: str | None = None
+):
+	rule = frappe.new_doc("Document Approval Rule")
+	rule.approval_doctype = "Purchase Invoice"
+	rule.approver_type = "User"
+	rule.approvers = approvers
+	rule.approval_role = approval_role
+	rule.enabled = enabled
+	rule.insert(ignore_permissions=True)
+	frappe.db.commit()
+	return rule
+
+
+def delete_document_approval_rule(rule_name: str):
+	if frappe.db.exists("Document Approval Rule", rule_name):
+		frappe.delete_doc("Document Approval Rule", rule_name, ignore_permissions=True)
+		frappe.db.commit()
+
+
+def set_role_rules_enabled(enabled: int):
+	for name in frappe.get_all(
+		"Document Approval Rule",
+		filters={"approval_doctype": "Purchase Invoice"},
+		pluck="name",
+	):
+		if frappe.db.get_value("Document Approval Rule", name, "approver_type") == "User":
+			continue
+		frappe.db.set_value("Document Approval Rule", name, "enabled", enabled)
+	frappe.db.commit()
+
+
+@pytest.mark.order(50)
+def test_user_rule_adds_and_removes_approver():
+	from approvals.tests.fixtures import suppliers
+
+	supplier_match = "Cooperative Ag Finance"
+	other_supplier = "Exceptional Grid"
+	approver = "mmckay@cfc.co"
+	rule = create_user_approval_rule(
+		approvers=f"['{approver}'] if doc.supplier == '{supplier_match}' else []",
+	)
+	pi = create_draft_purchase_invoice_for_supplier(supplier_match)
+
+	try:
+		frappe.call("approvals.approvals.api.assign_approvers", doc=pi)
+		assert frappe.db.exists(
+			"User Document Approval",
+			{
+				"reference_name": pi.name,
+				"approver": approver,
+				"origin": rule.name,
+			},
+		)
+
+		response = fetch_approvals_for_pi(pi)
+		user_row = approval_row(response, "User Approval")
+		assert user_row["can_remove"] is False
+		assert user_row["source_label"] == "Rule"
+		assert rule.title in user_row["source_name"]
+
+		frappe.set_user("Administrator")
+		with pytest.raises(frappe.ValidationError):
+			frappe.call(
+				"approvals.approvals.api.remove_user_approval",
+				doc=frappe.as_json(pi.as_dict()),
+				uda_name=user_row["uda_name"],
+			)
+
+		pi.supplier = other_supplier
+		pi.items = []
+		other_row = next(row for row in suppliers if row[0] == other_supplier)
+		pi.append("items", {"item_code": other_row[1], "rate": other_row[3], "qty": 1})
+		pi.save()
+		frappe.call("approvals.approvals.api.assign_approvers", doc=pi)
+		assert not frappe.db.exists(
+			"User Document Approval",
+			{"reference_name": pi.name, "approver": approver, "origin": rule.name},
+		)
+	finally:
+		frappe.set_user("Administrator")
+		delete_test_purchase_invoice(pi.name)
+		delete_document_approval_rule(rule.name)
+
+
+@pytest.mark.order(51)
+def test_disabled_user_rule_cleans_up_rows():
+	supplier_match = "Cooperative Ag Finance"
+	approver = "mmckay@cfc.co"
+	rule = create_user_approval_rule(
+		approvers=f"['{approver}'] if doc.supplier == '{supplier_match}' else []",
+	)
+	pi = create_draft_purchase_invoice_for_supplier(supplier_match)
+
+	try:
+		frappe.call("approvals.approvals.api.assign_approvers", doc=pi)
+		assert frappe.db.exists(
+			"User Document Approval",
+			{"reference_name": pi.name, "approver": approver, "origin": rule.name},
+		)
+
+		frappe.db.set_value("Document Approval Rule", rule.name, "enabled", 0)
+		frappe.call("approvals.approvals.api.assign_approvers", doc=pi)
+		assert not frappe.db.exists(
+			"User Document Approval",
+			{"reference_name": pi.name, "approver": approver, "origin": rule.name},
+		)
+	finally:
+		frappe.set_user("Administrator")
+		delete_test_purchase_invoice(pi.name)
+		delete_document_approval_rule(rule.name)
+
+
+@pytest.mark.order(52)
+def test_user_rule_resolving_no_users_adds_nothing():
+	supplier_match = "Cooperative Ag Finance"
+	rule = create_user_approval_rule(approvers="[]")
+	pi = create_draft_purchase_invoice_for_supplier(supplier_match)
+
+	try:
+		frappe.call("approvals.approvals.api.assign_approvers", doc=pi)
+		assert not frappe.db.exists(
+			"User Document Approval",
+			{"reference_name": pi.name, "origin": rule.name},
+		)
+	finally:
+		frappe.set_user("Administrator")
+		delete_test_purchase_invoice(pi.name)
+		delete_document_approval_rule(rule.name)
+
+
+@pytest.mark.order(53)
+def test_only_user_rules_skip_fallback_and_block_submit():
+	supplier_match = "Exceptional Grid"
+	approver = "mmckay@cfc.co"
+	set_role_rules_enabled(0)
+	rule = create_user_approval_rule(
+		approvers=f"['{approver}'] if doc.supplier == '{supplier_match}' else []",
+	)
+	pi = create_draft_purchase_invoice_for_supplier(supplier_match)
+
+	other_pi = None
+	try:
+		frappe.call("approvals.approvals.api.assign_approvers", doc=pi)
+		roles = get_approval_roles(pi)
+		assert approver in roles
+
+		other_pi = create_draft_purchase_invoice_for_supplier("Sphere Cellular")
+		assert get_approval_roles(other_pi) == []
+
+		with pytest.raises(frappe.ValidationError):
+			pi.submit()
+	finally:
+		frappe.set_user("Administrator")
+		delete_test_purchase_invoice(pi.name)
+		if other_pi:
+			delete_test_purchase_invoice(other_pi.name)
+		delete_document_approval_rule(rule.name)
+		set_role_rules_enabled(1)
+
+
+@pytest.mark.order(54)
+def test_role_and_user_rules_together():
+	supplier_match = "Cooperative Ag Finance"
+	user_approver = "mmckay@cfc.co"
+	rule = create_user_approval_rule(
+		approvers=f"['{user_approver}'] if doc.supplier == '{supplier_match}' else []",
+	)
+	pi = create_draft_purchase_invoice_for_supplier(supplier_match)
+
+	try:
+		frappe.call("approvals.approvals.api.assign_approvers", doc=pi)
+		roles = get_approval_roles(pi)
+		assert ROLE_ACCOUNTS_MANAGER in roles
+		assert user_approver in roles
+		response = fetch_approvals_for_pi(pi)
+		assert approval_row(response, ROLE_ACCOUNTS_MANAGER)
+		assert len(user_approval_rows(response)) == 1
+	finally:
+		frappe.set_user("Administrator")
+		delete_test_purchase_invoice(pi.name)
+		delete_document_approval_rule(rule.name)
+
+
+@pytest.mark.order(55)
+def test_user_rule_resolves_manager_from_timesheet_employee():
+	"""
+	Marcellus Reeves logs time; the Timesheet User rule assigns Arden Rivers (reports_to manager).
+
+	| Employee         | User             | Role in story        |
+	| ---------------- | ---------------- | -------------------- |
+	| Marcellus Reeves | (technician)     | Submitter on sheet   |
+	| Arden Rivers     | arivers@cfc.co   | Required approver    |
+	| Darnell Benton   | dbenton@cfc.co   | Executive, no manager |
+	"""
+	rule_name = frappe.db.get_value(
+		"Document Approval Rule",
+		{"approval_doctype": "Timesheet", "approver_type": "User"},
+		"name",
+	)
+	assert rule_name, "Install Timesheet manager User rule via approvals.tests.setup.before_test"
+
+	technician = timesheet_approval_employees["technician"]
+	manager_user = timesheet_approval_employees["manager_user"]
+	director = timesheet_approval_employees["director"]
+
+	manager_employee = frappe.db.get_value("Employee", {"employee_name": "Arden Rivers"}, "name")
+	technician_employee = frappe.db.get_value("Employee", {"employee_name": technician}, "name")
+	assert frappe.db.get_value("Employee", technician_employee, "reports_to") == manager_employee
+
+	timesheet = timesheet_for_fixture("marcellus_billable_week")
+	submit_timesheet = timesheet_for_fixture("marcellus_submit_blocked")
+
+	try:
+		frappe.call("approvals.approvals.api.assign_approvers", doc=timesheet)
+		assert frappe.db.exists(
+			"User Document Approval",
+			{
+				"reference_doctype": "Timesheet",
+				"reference_name": timesheet.name,
+				"approver": manager_user,
+				"origin": rule_name,
+			},
+		)
+		assert manager_user in get_approval_roles(timesheet)
+
+		director_employee = frappe.db.get_value("Employee", {"employee_name": director}, "name")
+		timesheet.employee = director_employee
+		timesheet.save()
+		frappe.call("approvals.approvals.api.assign_approvers", doc=timesheet)
+		assert not frappe.db.exists(
+			"User Document Approval",
+			{
+				"reference_doctype": "Timesheet",
+				"reference_name": timesheet.name,
+				"approver": manager_user,
+				"origin": rule_name,
+			},
+		)
+		assert get_approval_roles(timesheet) == []
+
+		frappe.call("approvals.approvals.api.assign_approvers", doc=submit_timesheet)
+		submit_timesheet.reload()
+		assert submit_timesheet.workflow_state == "Pending Approval"
+		with pytest.raises(frappe.ValidationError):
+			apply_workflow(submit_timesheet, "Approve")
+	finally:
+		frappe.set_user("Administrator")
+		restore_timesheet_employee(timesheet, technician)
+		restore_timesheet_employee(submit_timesheet, technician)

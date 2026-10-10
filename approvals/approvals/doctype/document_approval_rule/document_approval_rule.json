@@ -6,6 +6,7 @@
 	"editable_grid": 1,
 	"engine": "InnoDB",
 	"field_order": [
+		"approver_type",
 		"approval_doctype",
 		"approval_role",
 		"enabled",
@@ -16,6 +17,7 @@
 		"skip_for_auto_repeat",
 		"section_break_6",
 		"condition",
+		"approvers",
 		"section_break_4",
 		"message",
 		"title",
@@ -32,14 +34,32 @@
 			"reqd": 1
 		},
 		{
+			"default": "Role",
+			"fieldname": "approver_type",
+			"fieldtype": "Select",
+			"in_list_view": 1,
+			"label": "Approver Type",
+			"options": "Role\nUser"
+		},
+		{
+			"description": "For User rules this is optional: an approver can be reassigned only to users with this role. Without it, User rule approvers cannot be reassigned.",
 			"fieldname": "approval_role",
 			"fieldtype": "Link",
 			"in_list_view": 1,
 			"label": "Approval Role",
-			"options": "Role",
-			"reqd": 1
+			"mandatory_depends_on": "eval:doc.approver_type=='Role'",
+			"options": "Role"
 		},
 		{
+			"depends_on": "eval:doc.approver_type=='User'",
+			"fieldname": "approvers",
+			"fieldtype": "Code",
+			"label": "Approvers",
+			"mandatory_depends_on": "eval:doc.approver_type=='User'",
+			"options": "Python"
+		},
+		{
+			"depends_on": "eval:doc.approver_type=='Role'",
 			"fieldname": "condition",
 			"fieldtype": "Text",
 			"label": "Condition"
@@ -49,6 +69,7 @@
 			"fieldtype": "Section Break"
 		},
 		{
+			"depends_on": "eval:doc.approver_type=='Role'",
 			"fieldname": "last_user",
 			"fieldtype": "Link",
 			"label": "Last user",
@@ -60,6 +81,7 @@
 			"label": "Message"
 		},
 		{
+			"depends_on": "eval:doc.approver_type=='Role'",
 			"fieldname": "primary_assignee",
 			"fieldtype": "Link",
 			"label": "Primary Assignee",
@@ -87,6 +109,7 @@
 		},
 		{
 			"default": "1",
+			"depends_on": "eval:doc.approver_type=='Role'",
 			"fieldname": "assign_users",
 			"fieldtype": "Check",
 			"label": "Automatically Assign Users?"
@@ -98,22 +121,24 @@
 			"label": "Skip for Auto Repeat"
 		},
 		{
+			"depends_on": "eval:doc.approver_type=='Role'",
 			"fieldname": "section_break_lilq",
 			"fieldtype": "Section Break"
 		},
 		{
+			"depends_on": "eval:doc.approver_type=='Role'",
 			"fieldname": "condition_help",
 			"fieldtype": "HTML",
 			"label": "Condition Help",
-			"options": "<h4>Condition examples</h4>\n\n<h4>Basic field value check</h4>\n<pre>doc.grand_total &gt; 10000</pre>\n\n<h4>Child table check</h4>\n<pre>any(i.expense_account == 'Capital Equipment - CO' for i in doc.items)</pre>\n\n<h4>Settings JSON</h4>\n<pre>doc.grand_total &gt; settings.approval_threshold</pre>\n\n<h4>Available names</h4>\n<ul>\n<li><code>doc</code> — the document being evaluated</li>\n<li><code>settings</code> — parsed JSON from Document Approval Settings</li>\n<li><code>frappe.utils</code> — <code>flt</code>, <code>cint</code>, <code>getdate</code>, and related helpers</li>\n<li><code>frappe.db</code> — read-only lookups (<code>get_value</code>, <code>exists</code>, <code>get_all</code>, …)</li>\n<li>Python built-ins such as <code>any</code>, <code>all</code>, <code>min</code>, <code>max</code>, and <code>sum</code></li>\n</ul>\n\n<p>Installed apps can register additional names with the <code>approval_condition_context</code> hook in <code>hooks.py</code>.</p>\n\n<h4>Field names</h4>\n<p>Use field names from the approval DocType. Find them under Setup &gt; Customize Form.</p>\n"
+			"options": "<h4>Condition examples</h4>\n\n<h4>Basic field value check</h4>\n<pre>doc.grand_total &gt; 10000</pre>\n\n<h4>Child table check</h4>\n<pre>any(i.expense_account == 'Capital Equipment - CO' for i in doc.items)</pre>\n\n<h4>Settings JSON</h4>\n<pre>doc.grand_total &gt; settings.approval_threshold</pre>\n\n<h4>Available names</h4>\n<ul>\n<li><code>doc</code> \u2014 the document being evaluated</li>\n<li><code>settings</code> \u2014 parsed JSON from Document Approval Settings</li>\n<li><code>frappe.utils</code> \u2014 <code>flt</code>, <code>cint</code>, <code>getdate</code>, and related helpers</li>\n<li><code>frappe.db</code> \u2014 read-only lookups (<code>get_value</code>, <code>exists</code>, <code>get_all</code>, \u2026)</li>\n<li>Python built-ins such as <code>any</code>, <code>all</code>, <code>min</code>, <code>max</code>, and <code>sum</code></li>\n</ul>\n\n<p>Installed apps can register additional names with the <code>approval_condition_context</code> hook in <code>hooks.py</code>.</p>\n\n<h4>Field names</h4>\n<p>Use field names from the approval DocType. Find them under Setup &gt; Customize Form.</p>\n"
 		}
 	],
 	"links": [],
-	"modified": "2025-07-31 04:59:06.977356",
+	"modified": "2026-10-10 12:50:00.000000",
 	"modified_by": "Administrator",
 	"module": "Approvals",
 	"name": "Document Approval Rule",
-	"naming_rule": "Expression",
+	"naming_rule": "Expression (old style)",
 	"owner": "Administrator",
 	"permissions": [
 		{

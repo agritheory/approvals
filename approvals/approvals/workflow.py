@@ -15,8 +15,6 @@ from frappe.utils import cint, cstr, flt
 from frappe.utils.scheduler import is_scheduler_inactive
 from jinja2 import BaseLoader, Environment
 
-from approvals.approvals.validation import validate_all_approvals_complete
-
 
 def render_workflow_template(template: str, doc) -> str:
 	if not template or "{{" not in template:
@@ -56,6 +54,8 @@ def apply_workflow(doc, action):
 	)
 
 	if is_leaving_approval and will_finalize:
+		from approvals.approvals.api import validate_all_approvals_complete
+
 		validate_all_approvals_complete(doc, method="before_submit")
 
 	doc.set(workflow.workflow_state_field, transition.next_state)

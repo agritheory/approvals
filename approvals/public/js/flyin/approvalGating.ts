@@ -11,11 +11,14 @@ export interface ApprovalRole {
 	uda_name?: string | null
 	origin?: string | null
 	requested_by_name?: string
+	source_label?: string
+	source_name?: string
 	reason?: string | null
 	satisfies_role?: string | null
 	can_approve?: boolean
 	can_remove?: boolean
 	can_reassign?: boolean
+	reassign_role?: string | null
 }
 
 export interface DocLike {

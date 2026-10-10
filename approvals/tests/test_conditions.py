@@ -4,7 +4,11 @@
 import frappe
 import pytest
 
-from approvals.approvals.conditions import evaluate_condition, validate_condition
+from approvals.approvals.doctype.document_approval_rule.document_approval_rule import (
+	evaluate_condition,
+	evaluate_expression,
+	validate_condition,
+)
 from approvals.patches.convert_conditions_to_python import convert_condition_text
 
 
@@ -66,6 +70,12 @@ def test_condition_accepts_child_table_field():
 		"any(i.expense_account == 'x' for i in doc.items)",
 		"Purchase Order",
 	)
+
+
+def test_expression_list_comprehension_can_read_doc_in_filter():
+	doc = frappe._dict(employee="HR-EMP-00004")
+	expression = "[u for u in ['arivers@cfc.co'] if doc.employee]"
+	assert evaluate_expression(expression, doc) == ["arivers@cfc.co"]
 
 
 def test_condition_rejects_missing_child_table_field():

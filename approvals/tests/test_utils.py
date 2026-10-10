@@ -6,6 +6,8 @@ from contextlib import contextmanager
 
 import frappe
 
+from approvals.tests.fixtures import timesheet_approval_employees, timesheet_fixture_note_prefix
+
 
 @contextmanager
 def use_current_db_transaction():
@@ -36,3 +38,21 @@ def wait_for_docstatus(doctype: str, name: str, docstatus: int, timeout: float =
 				return
 		time.sleep(0.25)
 	raise AssertionError(f"{doctype} {name} docstatus={last}, expected {docstatus}")
+
+
+def timesheet_for_fixture(fixture_key: str):
+	note = f"{timesheet_fixture_note_prefix}{fixture_key}"
+	name = frappe.db.get_value("Timesheet", {"note": note}, "name")
+	assert name, (
+		f"Missing Timesheet fixture {fixture_key}. "
+		"Run bench execute 'approvals.tests.setup.before_test'."
+	)
+	return frappe.get_doc("Timesheet", name)
+
+
+def restore_timesheet_employee(timesheet, employee_name: str | None = None):
+	employee_name = employee_name or timesheet_approval_employees["technician"]
+	employee = frappe.db.get_value("Employee", {"employee_name": employee_name}, "name")
+	timesheet.employee = employee
+	timesheet.save()
+	frappe.call("approvals.approvals.api.assign_approvers", doc=timesheet)

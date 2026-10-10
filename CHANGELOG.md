@@ -7,6 +7,10 @@ This changelog was automatically generated from GitHub releases and pull request
 
 ## Unreleased
 
+### Features
+
+- **Document Approval Rule** supports **Approver Type** `User`: resolve approvers from an **Approvers** Python expression (same evaluation context as **Condition**). **Condition** is used for Role rules only; an empty approvers result means no approval from that rule. User rules sync as User Document Approval rows and do not trigger the role-based fallback approver.
+
 ### Breaking Changes
 
 - **Document Approval Rule** and **Workflow Reapproval Condition** fields now accept a Python expression, not a Jinja template. Remove `{{ }}` wrappers from existing conditions. A migration patch unwraps simple one-block conditions on migrate.

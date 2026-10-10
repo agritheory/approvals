@@ -14,9 +14,11 @@ Organizations often want certain documents reviewed before they post. Purchase O
 Navigate to Document Approval Rule and create a new record. A rule answers two questions:
 
 1. Which documents need approval? Select the DocType, for example Purchase Order or Purchase Invoice.
-2. Who should approve them? Select a Role, for example Accounts Manager or Purchase Manager.
+2. Who should approve them? Choose **Approver Type**:
+   - **Role** — someone with a given role, for example Accounts Manager or Purchase Manager.
+   - **User** — specific people resolved from the document through an **Approvers** expression (see [Approving by a person on the document](#approving-by-a-person-on-the-document)).
 
-Check Enabled and save. Every document of that type now requires approval from someone with that role.
+Check Enabled and save. Every document of that type now requires the configured approval.
 
 ## Narrowing Down with Conditions
 
@@ -48,7 +50,44 @@ Combine checks with `and` and `or`:
 doc.grand_total > 5000 and doc.company == "Chelsea Fruit Co"
 ```
 
-Before enabling a rule, use the Test Condition button to check the condition against a real document.
+Before enabling a rule, use the Test Condition button to check the condition against a real document. For User rules, the same button shows which users the **Approvers** expression resolves to.
+
+## Approving by a person on the document
+
+Set **Approver Type** to **User** when specific people on the document must approve. **Condition** applies only to Role rules. For User rules, the **Approvers** expression is the whole rule: it returns a user id or list of user ids. An empty list means this rule adds no approvers for that document (put any “when” logic in the expression itself).
+
+Example: project managers on purchase lines in selected cost centers:
+
+```python
+list({
+    frappe.db.get_value("Project", i.project, "project_manager")
+    for i in doc.items
+    if i.project and i.cost_center in settings.pm_approval_cost_centers
+    and frappe.db.get_value("Project", i.project, "project_manager")
+})
+```
+
+On a **Timesheet**, the employee's manager via **Employee.reports_to**:
+
+```python
+[
+    u
+    for u in [
+        frappe.db.get_value(
+            "Employee",
+            frappe.db.get_value("Employee", doc.employee, "reports_to"),
+            "user_id",
+        )
+    ]
+    if doc.employee
+]
+```
+
+**Approval Role** is optional on a User rule and controls reassignment. With a role set, the approver the rule named can hand the approval to another user who holds that role, as long as they hold the role too. A user with the User Approval Manager Role can reassign it to any holder of the role. Without a role, nobody can reassign the rule's approvers, including managers. For the Timesheet example above, setting Approval Role to Projects Manager lets a manager who is away pass timesheet approval to another Projects Manager. The role does not add a required approval. Only the people the expression returns must approve.
+
+When the document is saved again, the rule runs again. A reassigned approval stays with the new person as long as the rule still names the original approver. If the rule stops naming them, the reassigned row is removed like any other, unless it has already been approved.
+
+User rules appear in the Pending Approvals drawer as **User Approval** rows, the same as approvers added by hand or by an integration hook. They do not use Primary Assignee or role rotation.
 
 ### What a Condition Can Use
 
@@ -99,7 +138,9 @@ When a DocType has rules but none of them match a document, the app needs to kno
 
 Navigate to Document Approval Settings and set a Fallback Approver Role. Documents that match no rule then require approval from that role. To send them to one person instead, set a Fallback Approver.
 
-The fallback only applies to DocTypes that have at least one rule. DocTypes without rules never need approval.
+The fallback only applies when the DocType has at least one enabled **Role** rule. **User** rules never trigger the fallback. If a User rule's **Approvers** expression returns no users, the app adds no approver and does not fall back to the fallback role.
+
+DocTypes without any enabled rules never need approval.
 
 ## Using Settings in Conditions
 
@@ -166,7 +207,7 @@ The standard Submit button stays blocked until every required approval is record
 | | No Workflow | With a Workflow |
 | :--- | :--- | :--- |
 | When rules are checked | On every save while the document is a draft | When the document is in the approval state |
-| Editing during approval | The draft stays editable | The form is read-only in the approval state |
+| Editing during approval | The draft stays editable | Saves are blocked in the approval state, except for fields marked Allow on Submit |
 | After the last approval | The document submits | The workflow's approval action runs, or the document moves to its approved state |
 | Rejection | Clears recorded approvals; status does not change | Clears recorded approvals and applies the Reject action, usually back to Draft |
 | Reapproval after a change | The next save re-checks the rules | A Reapproval Condition can send the document back for approval |
@@ -178,6 +219,10 @@ Without a Workflow, a rejection leaves the document as a draft for its author to
 Approvals can also work inside a Workflow. The Workflow tells the app which state means "waiting for approval," and the app takes care of the approval step.
 
 A typical Workflow for a Purchase Order has the states Draft, Pending Approval, and Approved, with a Reject transition from Pending Approval back to Draft. When a document enters Pending Approval, the rules are checked and approvals are assigned. The form is read-only while the document waits.
+
+The server enforces this as well, so every approver reviews the same details. A save that keeps the document in the approval state is rejected if it changes any field not marked Allow on Submit. This applies to saves from the form, the API, and imports. Fields marked Allow on Submit, such as a Purchase Order's order confirmation number, can still change. To make other edits, reject the document back to Draft, edit it, and send it for approval again. Workflow transitions into and out of the approval state are not blocked.
+
+Whenever a document moves into the approval state from another state, the app clears the approvals already recorded. This happens however the document left the approval state: the approvals drawer's Reject, the workflow's own Reject or Revert to Draft action, or a direct save. Approvals given while the document was still a draft are cleared too. Every approval that counts was given while the document was in the approval state, where it cannot change.
 
 The app adds these fields to the Workflow DocType:
 

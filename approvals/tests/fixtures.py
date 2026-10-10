@@ -127,6 +127,174 @@ customer_credit_limit_approval_rule = {
 	"message": "Customer credit limit requires your approval",
 }
 
+timesheet_activity_type = "Billable Development"
+
+timesheet_approval_employees = {
+	"technician": "Marcellus Reeves",
+	"manager_user": "arivers@cfc.co",
+	"director": "Darnell Benton",
+}
+
+timesheet_fixture_note_prefix = "TEST_FIXTURE:"
+
+# Fixed log times so multiple sheets for one employee never overlap (ERPNext validate_overlap).
+timesheet_fixture_epoch = "2020-06-01 09:00:00"
+
+# Timesheet workflow (light T&E-style). Saving the Workflow creates workflow_state via Frappe.
+timesheet_workflow = {
+	"name": "Timesheet",
+	"docstatus": 0,
+	"idx": 0,
+	"workflow_name": "Timesheet",
+	"document_type": "Timesheet",
+	"is_active": 1,
+	"override_status": 0,
+	"send_email_alert": 0,
+	"workflow_state_field": "workflow_state",
+	"approval_state": "Pending Approval",
+	"approval_action": "Approve",
+	"states": [
+		{
+			"idx": 1,
+			"state": "Draft",
+			"doc_status": "0",
+			"is_optional_state": 0,
+			"avoid_status_override": 0,
+			"allow_edit": "All",
+		},
+		{
+			"idx": 2,
+			"state": "Pending Approval",
+			"doc_status": "0",
+			"is_optional_state": 0,
+			"avoid_status_override": 0,
+			"allow_edit": "All",
+			"style": "Warning",
+		},
+		{
+			"idx": 3,
+			"state": "Rejected",
+			"doc_status": "0",
+			"is_optional_state": 0,
+			"avoid_status_override": 0,
+			"allow_edit": "All",
+			"style": "Danger",
+		},
+		{
+			"idx": 4,
+			"state": "Approved",
+			"doc_status": "1",
+			"is_optional_state": 0,
+			"avoid_status_override": 0,
+			"allow_edit": "All",
+		},
+		{
+			"idx": 5,
+			"state": "Cancelled",
+			"doc_status": "2",
+			"is_optional_state": 0,
+			"avoid_status_override": 0,
+			"allow_edit": "All",
+			"style": "Inverse",
+		},
+	],
+	"transitions": [
+		{
+			"idx": 1,
+			"state": "Draft",
+			"action": "Save",
+			"next_state": "Draft",
+			"allowed": "All",
+			"allow_self_approval": 1,
+		},
+		{
+			"idx": 2,
+			"state": "Draft",
+			"action": "Send for Approval",
+			"next_state": "Pending Approval",
+			"allowed": "All",
+			"allow_self_approval": 1,
+		},
+		{
+			"idx": 3,
+			"state": "Pending Approval",
+			"action": "Revert to Draft",
+			"next_state": "Draft",
+			"allowed": "All",
+			"allow_self_approval": 1,
+		},
+		{
+			"idx": 4,
+			"state": "Pending Approval",
+			"action": "Approve",
+			"next_state": "Approved",
+			"allowed": "All",
+			"allow_self_approval": 1,
+		},
+		{
+			"idx": 5,
+			"state": "Pending Approval",
+			"action": "Reject",
+			"next_state": "Rejected",
+			"allowed": "All",
+			"allow_self_approval": 1,
+		},
+		{
+			"idx": 6,
+			"state": "Rejected",
+			"action": "Revert to Draft",
+			"next_state": "Draft",
+			"allowed": "All",
+			"allow_self_approval": 1,
+		},
+		{
+			"idx": 7,
+			"state": "Approved",
+			"action": "Cancel",
+			"next_state": "Cancelled",
+			"allowed": "All",
+			"allow_self_approval": 1,
+		},
+	],
+}
+
+timesheets = [
+	{
+		"fixture_key": "marcellus_billable_week",
+		"employee_name": "Marcellus Reeves",
+		"hours": 1,
+		"start_offset_hours": 0,
+	},
+	{
+		"fixture_key": "marcellus_submit_blocked",
+		"employee_name": "Marcellus Reeves",
+		"hours": 1,
+		"start_offset_hours": 4,
+		"send_for_approval": True,
+	},
+]
+
+timesheet_manager_user_approval_rule = {
+	"approval_doctype": "Timesheet",
+	"approver_type": "User",
+	"approvers": """[
+    u
+    for u in [
+        frappe.db.get_value(
+            "Employee",
+            frappe.db.get_value("Employee", doc.employee, "reports_to"),
+            "user_id",
+        )
+    ]
+    if doc.employee
+]""",
+	"enabled": 1,
+}
+
+user_document_approval_rules = [
+	timesheet_manager_user_approval_rule,
+]
+
 document_approval_rules = [
 	{
 		"approval_doctype": "Purchase Order",
@@ -273,6 +441,7 @@ workflows = [
 		],
 	},
 	customer_credit_limit_workflow,
+	timesheet_workflow,
 ]
 
 

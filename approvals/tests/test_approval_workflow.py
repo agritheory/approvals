@@ -306,3 +306,205 @@ def test_workflow_approve_blocked_until_all_required_roles_approve():
 		)
 		frappe.db.commit()
 		extra_rule.delete(ignore_permissions=True)
+
+
+@pytest.mark.order(61)
+def test_pending_approval_document_is_locked_except_allow_on_submit_fields():
+	"""
+	While a Purchase Order waits in Pending Approval, only allow_on_submit fields can change.
+	Rejecting returns it to Draft, where it is editable again.
+
+	| State            | Change                        | Outcome               |
+	| ---------------- | ----------------------------- | --------------------- |
+	| Pending Approval | order_confirmation_no (AoS)   | saved                 |
+	| Pending Approval | item qty 1 -> 5               | UpdateAfterSubmitError |
+	| Draft (rejected) | item qty 1 -> 5               | saved                 |
+	"""
+	frappe.set_user("Administrator")
+	po = prepare_purchase_order_for_approval("HIJ Telecom, Inc")
+
+	po.order_confirmation_no = "CONF-1001"
+	po.save()
+	po.reload()
+	assert po.order_confirmation_no == "CONF-1001"
+	assert po.workflow_state == "Pending Approval"
+
+	po.items[0].qty = 5
+	with pytest.raises(frappe.UpdateAfterSubmitError):
+		po.save()
+
+	po.reload()
+	assert po.items[0].qty == 1
+
+	apply_workflow(po, "Reject")
+	po.reload()
+	assert po.workflow_state == "Draft"
+
+	po.items[0].qty = 5
+	po.save()
+	po.reload()
+	assert po.items[0].qty == 5
+
+	po.items[0].qty = 1
+	po.order_confirmation_no = None
+	po.save()
+
+
+@pytest.mark.order(62)
+def test_pending_approval_lock_holds_for_api_saves_and_added_rows():
+	"""
+	Morgan Britt (Purchase User) tries to change a Purchase Order waiting in Pending Approval
+	without going through the form, which only hides edits on the client.
+
+	| Path                     | Change                  | Outcome                |
+	| ------------------------ | ----------------------- | ---------------------- |
+	| frappe.client.save       | terms                   | UpdateAfterSubmitError |
+	| frappe.client.set_value  | terms                   | UpdateAfterSubmitError |
+	| Document.save            | add a second item row   | UpdateAfterSubmitError |
+	"""
+	frappe.set_user("Administrator")
+	po = prepare_purchase_order_for_approval("HIJ Telecom, Inc")
+	original_terms = po.terms
+	original_item_count = len(po.items)
+
+	try:
+		frappe.set_user("mbritt@cfc.co")
+		tampered = po.as_dict()
+		tampered["terms"] = "Net 90, freight prepaid by buyer"
+		with pytest.raises(frappe.UpdateAfterSubmitError):
+			frappe.call("frappe.client.save", doc=frappe.as_json(tampered))
+
+		with pytest.raises(frappe.UpdateAfterSubmitError):
+			frappe.call(
+				"frappe.client.set_value",
+				doctype="Purchase Order",
+				name=po.name,
+				fieldname="terms",
+				value="Net 90, freight prepaid by buyer",
+			)
+
+		po = frappe.get_doc("Purchase Order", po.name)
+		po.append(
+			"items",
+			{
+				"item_code": po.items[0].item_code,
+				"qty": 10,
+				"rate": po.items[0].rate,
+				"schedule_date": po.schedule_date,
+			},
+		)
+		with pytest.raises(frappe.UpdateAfterSubmitError):
+			po.save()
+	finally:
+		frappe.set_user("Administrator")
+
+	stored = frappe.get_doc("Purchase Order", po.name)
+	assert stored.terms == original_terms
+	assert len(stored.items) == original_item_count
+	assert stored.workflow_state == "Pending Approval"
+
+
+def purchase_order_approvals(po):
+	return frappe.get_all(
+		"Document Approval",
+		filters={"reference_doctype": "Purchase Order", "reference_name": po.name},
+		fields=["approver", "approval_role", "user_approval"],
+	)
+
+
+@pytest.mark.order(64)
+def test_approvals_recorded_before_resubmission_do_not_carry_over():
+	"""
+	A $5,000 Premier Equipment Leasing lease needs Morgan Britt (Accounts Manager) and
+	Arden Rivers (added User Approval). The author collects Morgan's approval, takes the order
+	back to Draft with the workflow's own Reject action rather than the approvals drawer,
+	raises the quantity, has Morgan approve the draft, and sends it again.
+
+	| Step                              | Qty | Morgan's approval counts |
+	| --------------------------------- | --: | ------------------------ |
+	| Morgan approves in Pending        |   1 | yes                      |
+	| Workflow Reject, qty raised       |   3 | (draft)                  |
+	| Morgan approves the draft         |   3 | (draft)                  |
+	| Send for Approval                 |   3 | no                       |
+	| Arden approves, Approve attempted |   3 | no, Approve is blocked   |
+	"""
+	frappe.set_user("Administrator")
+	po = prepare_purchase_order_for_approval("Premier Equipment Leasing")
+	original_qty = po.items[0].qty
+
+	try:
+		frappe.call(
+			"approvals.approvals.api.add_user_approval",
+			doc=frappe.as_json(po.as_dict()),
+			user="arivers@cfc.co",
+			reason="Confirm lease terms",
+		)
+
+		frappe.set_user("mbritt@cfc.co")
+		frappe.call(
+			"approvals.approvals.api.approve_document",
+			doc=frappe.as_json(po.as_dict()),
+			role="Accounts Manager",
+		)
+		frappe.set_user("Administrator")
+		po.reload()
+		assert po.workflow_state == "Pending Approval"
+		assert [row.approver for row in purchase_order_approvals(po)] == ["mbritt@cfc.co"]
+
+		apply_workflow(po, "Reject")
+		po.reload()
+		assert po.workflow_state == "Draft"
+		po.items[0].qty = 3
+		po.save()
+
+		frappe.set_user("mbritt@cfc.co")
+		frappe.call(
+			"approvals.approvals.api.approve_document",
+			doc=frappe.as_json(po.as_dict()),
+			role="Accounts Manager",
+		)
+		frappe.set_user("Administrator")
+
+		po.reload()
+		apply_workflow(po, "Send for Approval")
+		po.reload()
+		assert po.workflow_state == "Pending Approval"
+		assert purchase_order_approvals(po) == []
+
+		frappe.set_user("arivers@cfc.co")
+		frappe.call(
+			"approvals.approvals.api.approve_document",
+			doc=frappe.as_json(po.as_dict()),
+			role="User Approval",
+		)
+		frappe.set_user("Administrator")
+
+		po.reload()
+		assert po.docstatus == 0
+		assert po.workflow_state == "Pending Approval"
+		with pytest.raises(ValidationError, match="All approvers must approve"):
+			apply_workflow(po, "Approve")
+	finally:
+		frappe.set_user("Administrator")
+		po.reload()
+		if po.workflow_state == "Pending Approval":
+			apply_workflow(po, "Reject")
+			po.reload()
+		po.items[0].qty = original_qty
+		po.save()
+		for uda_name in frappe.get_all(
+			"User Document Approval",
+			filters={"reference_doctype": "Purchase Order", "reference_name": po.name},
+			pluck="name",
+		):
+			frappe.call(
+				"approvals.approvals.api.remove_user_approval",
+				doc=frappe.as_json(po.as_dict()),
+				uda_name=uda_name,
+			)
+		for approval in frappe.get_all(
+			"Document Approval",
+			filters={"reference_doctype": "Purchase Order", "reference_name": po.name},
+			pluck="name",
+		):
+			frappe.delete_doc("Document Approval", approval, ignore_permissions=True)

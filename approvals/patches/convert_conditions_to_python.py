@@ -6,7 +6,9 @@ import re
 
 import frappe
 
-from approvals.approvals.conditions import validate_condition
+from approvals.approvals.doctype.document_approval_rule.document_approval_rule import (
+	validate_condition,
+)
 
 REMOVED_NAMES = (
 	"account_numbers",

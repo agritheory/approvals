@@ -30,7 +30,9 @@ any(is_capital_account(i.expense_account) for i in doc.items)
 
 ## Supplying Approvers from Your Own Data
 
-Rules assign approvals by role. Some approvals belong to a specific person found through the document's own data, such as the project manager on the Purchase Order's project. An approver provider returns those people. The app keeps them in sync as User Approval rows on the document.
+When the approver can be expressed from `doc` and `settings`, prefer a **User** Document Approval Rule with an **Approvers** expression (see [Configuration](configuration.md#approving-by-a-person-on-the-document)). No hook is required.
+
+Use an approver provider when the logic is too complex for a rule expression, when it lives in another app module, or when you need to share the same resolver across DocTypes programmatically. A provider returns those people and the app keeps them in sync as User Approval rows on the document.
 
 Register providers under `approvals_approver_providers`, keyed by DocType. Use `"*"` for every DocType.
 
@@ -85,7 +87,7 @@ The function receives:
 
 Return `True` to allow, `False` to deny, or `None` to defer. The app tries each registered function in order, and the first result that is not `None` wins. If every function returns `None`, the built-in rules apply.
 
-The server checks these permissions when an approver is added or removed, and the drawer uses them to decide which buttons to show. Reassigning a rule approval does not consult this hook. It is always limited to the current assignee and the User Approval Manager Role.
+The server checks these permissions when an approver is added or removed, and the drawer uses them to decide which buttons to show. Reassigning a Role rule's approval does not consult this hook. It is always limited to the current assignee and the User Approval Manager Role. Reassigning a User rule's approval does consult it with `action="reassign"`, but the new approver must still hold the rule's Approval Role.
 
 ## Reacting to Approver Changes
 

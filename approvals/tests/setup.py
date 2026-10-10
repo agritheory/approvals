@@ -11,6 +11,11 @@ from frappe.installer import update_site_config
 
 from approvals.tests.fixtures import (
 	document_approval_rules,
+	user_document_approval_rules,
+	timesheet_activity_type,
+	timesheet_fixture_epoch,
+	timesheet_fixture_note_prefix,
+	timesheets,
 	suppliers,
 	tax_authority,
 	employees,
@@ -62,10 +67,14 @@ def create_test_data():
 	create_customer_custom_fields()
 	create_workflows()
 	create_employees(settings)
+	sync_employee_reports_to()
+	create_timesheet_master_data(settings)
 	create_suppliers(settings)
 	create_items(settings)
 	create_document_approval_settings(settings)
 	create_pi_document_approval_rules(settings)
+	create_user_document_approval_rules(settings)
+	create_timesheets(settings)
 	create_customers(settings)
 	create_purchase_orders(settings)
 	create_invoices(settings)
@@ -172,18 +181,123 @@ def create_pi_document_approval_rules(settings=None):
 		)
 		if existing_name:
 			dar = frappe.get_doc("Document Approval Rule", existing_name)
-			for field in ("primary_assignee", "condition", "enabled", "message"):
+			for field in (
+				"primary_assignee",
+				"condition",
+				"enabled",
+				"message",
+				"approver_type",
+				"approvers",
+			):
 				if d.get(field) is not None:
 					dar.set(field, d[field])
 			dar.save()
 			continue
 		dar = frappe.new_doc("Document Approval Rule")
 		dar.approval_doctype = d.get("approval_doctype")
+		dar.approver_type = d.get("approver_type") or "Role"
 		dar.approval_role = d.get("approval_role")
 		dar.primary_assignee = d.get("primary_assignee")
 		dar.condition = d.get("condition")
 		dar.enabled = d.get("enabled")
 		dar.save()
+
+
+def create_user_document_approval_rules(settings=None):
+	for d in user_document_approval_rules:
+		existing_name = frappe.db.get_value(
+			"Document Approval Rule",
+			{
+				"approval_doctype": d.get("approval_doctype"),
+				"approver_type": "User",
+			},
+			"name",
+		)
+		if existing_name:
+			dar = frappe.get_doc("Document Approval Rule", existing_name)
+			for field in ("approvers", "enabled"):
+				if d.get(field) is not None:
+					dar.set(field, d[field])
+			dar.condition = None
+			dar.save()
+			continue
+		dar = frappe.new_doc("Document Approval Rule")
+		dar.approval_doctype = d.get("approval_doctype")
+		dar.approver_type = "User"
+		dar.condition = d.get("condition")
+		dar.approvers = d.get("approvers")
+		dar.enabled = d.get("enabled", 1)
+		dar.insert(ignore_permissions=True)
+
+
+def sync_employee_reports_to():
+	for employee in employees:
+		manager_employee_name = employee.get("reports_to")
+		if not manager_employee_name:
+			continue
+		employee_name = frappe.db.get_value(
+			"Employee", {"employee_name": employee.get("employee_name")}, "name"
+		)
+		manager_name = frappe.db.get_value("Employee", {"employee_name": manager_employee_name}, "name")
+		if employee_name and manager_name:
+			frappe.db.set_value("Employee", employee_name, "reports_to", manager_name)
+
+
+def create_timesheet_master_data(settings=None):
+	if frappe.db.exists("Activity Type", timesheet_activity_type):
+		return
+	frappe.get_doc({"doctype": "Activity Type", "activity_type": timesheet_activity_type}).insert(
+		ignore_permissions=True
+	)
+
+
+def create_timesheets(settings=None):
+	from frappe.utils import add_to_date, get_datetime
+
+	epoch = get_datetime(timesheet_fixture_epoch)
+
+	for row in timesheets:
+		note = f"{timesheet_fixture_note_prefix}{row['fixture_key']}"
+		existing_name = frappe.db.get_value("Timesheet", {"note": note}, "name")
+		if existing_name:
+			from approvals.approvals.workflow import apply_workflow
+
+			timesheet = frappe.get_doc("Timesheet", existing_name)
+			state = timesheet.get("workflow_state")
+			if timesheet.docstatus == 0 and row.get("send_for_approval"):
+				if state in (None, "", "Draft"):
+					apply_workflow(timesheet, "Send for Approval")
+			elif timesheet.docstatus == 0 and state in ("Pending Approval", "Rejected"):
+				apply_workflow(timesheet, "Revert to Draft")
+			continue
+
+		employee = frappe.db.get_value("Employee", {"employee_name": row["employee_name"]}, "name")
+		if not employee:
+			continue
+
+		hours = row.get("hours") or 1
+		start = add_to_date(epoch, hours=row.get("start_offset_hours") or 0, as_datetime=True)
+		end = add_to_date(start, hours=hours, as_datetime=True)
+		timesheet = frappe.new_doc("Timesheet")
+		timesheet.company = settings.company
+		timesheet.employee = employee
+		timesheet.note = note
+		timesheet.append(
+			"time_logs",
+			{
+				"activity_type": timesheet_activity_type,
+				"from_time": start,
+				"to_time": end,
+			},
+		)
+		timesheet.save(ignore_permissions=True)
+
+		if row.get("send_for_approval"):
+			from approvals.approvals.workflow import apply_workflow
+
+			timesheet.reload()
+			if timesheet.get("workflow_state") in (None, "", "Draft"):
+				apply_workflow(timesheet, "Send for Approval")
 
 
 def create_document_approval_settings(settings=None):

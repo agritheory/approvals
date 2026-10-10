@@ -28,9 +28,9 @@
 							<span class="pending-approvals__label">Assigned to:</span>
 							<span>{{ approval.assigned_to_user }}</span>
 						</div>
-						<div v-if="approval.requested_by_name" class="pending-approvals__context-row">
-							<span class="pending-approvals__label">Requested by:</span>
-							<span>{{ approval.requested_by_name }}</span>
+						<div v-if="approval.source_name || approval.requested_by_name" class="pending-approvals__context-row">
+							<span class="pending-approvals__label">{{ approval.source_label || 'Requested by' }}:</span>
+							<span>{{ approval.source_name || approval.requested_by_name }}</span>
 						</div>
 						<div v-if="approval.reason" class="pending-approvals__context-row">
 							<span class="pending-approvals__label">Reason:</span>
@@ -543,7 +543,6 @@ async function afterAction(completedItem: ApprovalItem, options: { advanceDelayM
 
 type UserApprovalDialogOptions = {
 	reassignRole?: string | null
-	fromApprover?: string | null
 	excludeUser?: string | null
 }
 
@@ -560,12 +559,11 @@ function userApprovalDialog(
 			reqd: 1,
 			options: 'User',
 		}
-		if (options.reassignRole || options.fromApprover) {
+		if (options.reassignRole) {
 			userField.get_query = () => ({
 				query: 'approvals.approvals.api.query_reassign_users',
 				filters: {
-					role: options.reassignRole || '',
-					from_approver: options.fromApprover || '',
+					role: options.reassignRole,
 					exclude_user: options.excludeUser || '',
 				},
 			})
@@ -639,13 +637,8 @@ async function reassignApprover(approval: ApprovalRole) {
 	const target = approval.approval_role === 'User Approval' ? approval.uda_name : approval.approval_role
 	if (!target) return
 
-	const reassignRole =
-		approval.approval_role && approval.approval_role !== 'User Approval' ? approval.approval_role : null
-	const fromApprover = !reassignRole && approval.assigned_username ? approval.assigned_username : null
-
 	const values = await userApprovalDialog('Reassign this approver', 'Reassign approver', {
-		reassignRole,
-		fromApprover,
+		reassignRole: approval.reassign_role,
 		excludeUser: approval.assigned_username || undefined,
 	})
 	try {

@@ -10,6 +10,7 @@
 		"column_break_meta",
 		"requested_by",
 		"origin",
+		"original_approver",
 		"satisfies_role",
 		"reason",
 		"todo",
@@ -59,6 +60,14 @@
 			"read_only": 1
 		},
 		{
+			"description": "The approver the rule or provider named, before any reassignment",
+			"fieldname": "original_approver",
+			"fieldtype": "Link",
+			"label": "Original Approver",
+			"options": "User",
+			"read_only": 1
+		},
+		{
 			"fieldname": "satisfies_role",
 			"fieldtype": "Link",
 			"label": "Satisfies Role",
@@ -85,7 +94,7 @@
 			"read_only": 1
 		}
 	],
-	"modified": "2021-03-10 07:47:37.301514",
+	"modified": "2026-10-10 12:50:00.000000",
 	"modified_by": "Administrator",
 	"module": "Approvals",
 	"name": "User Document Approval",

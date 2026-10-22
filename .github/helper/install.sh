@@ -39,9 +39,18 @@ cd ~ || exit
 MYSQL_HOST="${MYSQL_HOST:-127.0.0.1}"
 MYSQL_PORT="${MYSQL_PORT:-3306}"
 
+# GitHub ubuntu-latest now ships a MariaDB 11 client, which requires TLS.
+# The service container is MariaDB 10.6 and does not provide it. Frappe restores
+# the site by shelling out to that client, which reads this file.
+cat > "${HOME}/.my.cnf" << 'EOF'
+[client]
+skip-ssl = true
+EOF
+chmod 600 "${HOME}/.my.cnf"
+
 mysql_exec() {
 	if command -v mysql >/dev/null 2>&1; then
-		mysql --host "${MYSQL_HOST}" --port "${MYSQL_PORT}" -u root -e "$1"
+		mysql --skip-ssl --host "${MYSQL_HOST}" --port "${MYSQL_PORT}" -u root -e "$1"
 	else
 		python3 "${GITHUB_WORKSPACE}/.github/helper/mysql_exec.py" "$1"
 	fi

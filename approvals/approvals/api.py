@@ -553,7 +553,7 @@ def revoke_approvals_on_entering_approval_state(doc: Document, method: str | Non
 
 @frappe.whitelist()
 def assign_approvers(doc: Document, method: str | None = None):
-	if frappe.flags.get("skip_assign_approvers"):
+	if frappe.flags.get("skip_assign_approvers") or in_install_or_patch():
 		return
 
 	revoke_approvals_on_entering_approval_state(doc, method)

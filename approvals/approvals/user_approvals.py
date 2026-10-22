@@ -22,7 +22,14 @@ MANUAL_ORIGIN = "manual"
 
 
 def in_install_or_patch() -> bool:
-	return bool(frappe.flags.in_patch or frappe.flags.in_install or frappe.flags.in_setup_wizard)
+	"""Skip approval hooks while documents are loaded by install, migrate, import, or a patch."""
+	return bool(
+		frappe.flags.in_patch
+		or frappe.flags.in_install
+		or frappe.flags.in_migrate
+		or frappe.flags.in_import
+		or frappe.flags.in_setup_wizard
+	)
 
 
 def get_approval_workflow(doctype: str) -> Document | None:

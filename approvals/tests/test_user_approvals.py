@@ -659,6 +659,8 @@ def test_approved_rule_row_hides_reassign_and_remove():
 
 		row = approval_row(fetch_approvals_for_pi(pi), ROLE_ACCOUNTS_MANAGER)
 		assert row["approved"] is True
+		assert row["assigned_to_user"] == ""
+		assert row["approver"] == "You"
 		assert row["can_reassign"] is False
 		assert row["can_remove"] is False
 	finally:

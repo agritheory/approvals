@@ -284,6 +284,10 @@ def fetch_approvals_and_roles(doc: Document | str, method: str | None = None):
 		if "@" in role and assigned_user == "Unassigned":
 			assigned_user = role
 		approved = bool(approvals.get(role))
+		# Approval closes the role ToDo, so the open-assignment lookup falls through to the
+		# role name and would render as Unassigned beside the person who already approved.
+		if approved and assigned_user == "Unassigned":
+			assigned_user = ""
 		permissions = build_fetch_row_permissions(doc, role, frappe.session.user, user_roles, approved)
 		uda = get_uda_for_role_key(doc, role)
 		source_label, source_name = ("", "")

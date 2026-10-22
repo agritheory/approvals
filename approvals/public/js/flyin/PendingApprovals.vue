@@ -24,7 +24,7 @@
 							<span class="pending-approvals__label">Role:</span>
 							<span>{{ approval.approval_role }}</span>
 						</div>
-						<div class="pending-approvals__context-row">
+						<div v-if="approval.assigned_to_user" class="pending-approvals__context-row">
 							<span class="pending-approvals__label">Assigned to:</span>
 							<span>{{ approval.assigned_to_user }}</span>
 						</div>

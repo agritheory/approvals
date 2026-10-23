@@ -1,11 +1,8 @@
 # Copyright (c) 2026, AgriTheory and contributors
 # For license information, please see license.txt
 
-from unittest.mock import MagicMock
-
 import frappe
 import pytest
-from frappe.database.mariadb.database import MariaDBDatabase
 from playwright.sync_api import expect
 
 from approvals.tests.playwright_helpers import (
@@ -23,7 +20,7 @@ from approvals.tests.test_purchase_invoice_non_workflow_approval import (
 	ensure_purchase_invoice_assignments,
 	purchase_invoice_for_supplier,
 )
-from approvals.tests.test_utils import use_current_db_transaction
+from approvals.tests.test_utils import use_current_db_transaction, use_real_database_commits
 
 
 @pytest.fixture(scope="session")
@@ -52,13 +49,6 @@ def browser_type_launch_args(browser_type_launch_args, request, playwright_bench
 	launch_args = list(browser_type_launch_args.get("args") or [])
 	launch_args.append(f"--host-resolver-rules=MAP {map_host} 127.0.0.1")
 	return {**browser_type_launch_args, "args": launch_args}
-
-
-@pytest.fixture(scope="module", autouse=True)
-def use_real_database_commits():
-	if isinstance(frappe.db.commit, MagicMock):
-		frappe.db.commit = lambda: MariaDBDatabase.commit(frappe.db)
-	yield frappe.db
 
 
 @pytest.fixture(autouse=True)

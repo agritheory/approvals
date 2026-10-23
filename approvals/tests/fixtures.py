@@ -137,6 +137,11 @@ timesheet_approval_employees = {
 
 timesheet_fixture_note_prefix = "TEST_FIXTURE:"
 
+reassign_fixture_invoices = {
+	"rule_reassign": "TEST-REASSIGN-ROLE",
+	"legacy_delegate_reassign": "TEST-REASSIGN-LEGACY",
+}
+
 # Fixed log times so multiple sheets for one employee never overlap (ERPNext validate_overlap).
 timesheet_fixture_epoch = "2020-06-01 09:00:00"
 

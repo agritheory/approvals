@@ -4,11 +4,8 @@
 # Headed: pytest approvals/tests/test_purchase_invoice_submit_confirm.py \
 #   --browser chromium --headed --slowmo 500 -s
 
-from unittest.mock import MagicMock
-
 import frappe
 import pytest
-from frappe.database.mariadb.database import MariaDBDatabase
 
 from approvals.tests.playwright_helpers import (
 	accept_confirm_modal,
@@ -28,7 +25,11 @@ from approvals.tests.test_purchase_invoice_non_workflow_approval import (
 	purchase_invoice_for_supplier,
 )
 from approvals.tests.test_approval_workflow import prepare_purchase_order_for_approval
-from approvals.tests.test_utils import use_current_db_transaction, wait_for_docstatus
+from approvals.tests.test_utils import (
+	use_current_db_transaction,
+	use_real_database_commits,
+	wait_for_docstatus,
+)
 
 
 @pytest.fixture(scope="session")
@@ -57,13 +58,6 @@ def browser_type_launch_args(browser_type_launch_args, request, playwright_bench
 	launch_args = list(browser_type_launch_args.get("args") or [])
 	launch_args.append(f"--host-resolver-rules=MAP {map_host} 127.0.0.1")
 	return {**browser_type_launch_args, "args": launch_args}
-
-
-@pytest.fixture(scope="module", autouse=True)
-def use_real_database_commits():
-	if isinstance(frappe.db.commit, MagicMock):
-		frappe.db.commit = lambda: MariaDBDatabase.commit(frappe.db)
-	yield frappe.db
 
 
 @pytest.fixture(autouse=True)

@@ -13,7 +13,11 @@ from approvals.tests.test_purchase_invoice_non_workflow_approval import (
 	create_draft_purchase_invoice_for_supplier,
 	ensure_purchase_invoice_assignments,
 )
-from approvals.tests.test_utils import restore_timesheet_employee, timesheet_for_fixture
+from approvals.tests.test_utils import (
+	purchase_invoice_for_fixture,
+	restore_timesheet_employee,
+	timesheet_for_fixture,
+)
 
 
 ROLE_ACCOUNTS_MANAGER = "Accounts Manager"
@@ -262,12 +266,15 @@ def test_permission_hook_overrides_default(monkeypatch):
 
 @pytest.mark.order(40)
 def test_rule_reassign_does_not_add_user_approval_row():
-	pi = create_draft_purchase_invoice_for_supplier("Cooperative Ag Finance")
+	pi = purchase_invoice_for_fixture("rule_reassign")
 	ensure_purchase_invoice_assignments(pi)
 	delegate = "mbritt@cfc.co"
 
 	try:
 		frappe.set_user("Administrator")
+		original_rule_todo = open_rule_todo_for_role(pi, ROLE_ACCOUNTS_MANAGER)
+		assert original_rule_todo
+		original_rule_todo_name = original_rule_todo.name
 		with pytest.raises(frappe.ValidationError):
 			frappe.call(
 				"approvals.approvals.api.reassign_user_approval",
@@ -283,6 +290,8 @@ def test_rule_reassign_does_not_add_user_approval_row():
 			to_user=delegate,
 			reason="Covering",
 		)
+		assert frappe.db.exists("ToDo", original_rule_todo_name)
+		assert frappe.db.get_value("ToDo", original_rule_todo_name, "status") == "Closed"
 		assert_no_satisfies_role_uda(pi, ROLE_ACCOUNTS_MANAGER)
 		assert_open_rule_role_todo(pi, ROLE_ACCOUNTS_MANAGER, delegate)
 		response = frappe.call(
@@ -314,7 +323,47 @@ def test_rule_reassign_does_not_add_user_approval_row():
 		)
 	finally:
 		frappe.set_user("Administrator")
-		delete_test_purchase_invoice(pi.name)
+
+
+@pytest.mark.order(40)
+def test_rule_reassign_with_legacy_delegate_keeps_rule_todo():
+	pi = purchase_invoice_for_fixture("legacy_delegate_reassign")
+	ensure_purchase_invoice_assignments(pi)
+	delegate = "mbritt@cfc.co"
+
+	try:
+		frappe.set_user("Administrator")
+		original_rule_todo = open_rule_todo_for_role(pi, ROLE_ACCOUNTS_MANAGER)
+		assert original_rule_todo
+		original_rule_todo_name = original_rule_todo.name
+		frappe.call(
+			"approvals.approvals.api.add_user_approval",
+			doc=frappe.as_json(pi.as_dict()),
+			user=delegate,
+			satisfies_role=ROLE_ACCOUNTS_MANAGER,
+			reason="Legacy delegate row",
+		)
+		with pytest.raises(frappe.ValidationError):
+			frappe.call(
+				"approvals.approvals.api.reassign_user_approval",
+				doc=frappe.as_json(pi.as_dict()),
+				uda_name_or_role=ROLE_ACCOUNTS_MANAGER,
+				to_user="mmckay@cfc.co",
+				reason="Should fail",
+			)
+		frappe.call(
+			"approvals.approvals.api.reassign_user_approval",
+			doc=frappe.as_json(pi.as_dict()),
+			uda_name_or_role=ROLE_ACCOUNTS_MANAGER,
+			to_user=delegate,
+			reason="Covering",
+		)
+		assert frappe.db.exists("ToDo", original_rule_todo_name)
+		assert frappe.db.get_value("ToDo", original_rule_todo_name, "status") == "Closed"
+		assert_no_satisfies_role_uda(pi, ROLE_ACCOUNTS_MANAGER)
+		assert_open_rule_role_todo(pi, ROLE_ACCOUNTS_MANAGER, delegate)
+	finally:
+		frappe.set_user("Administrator")
 
 
 def provider_for_purchase_invoice_hook(doc):

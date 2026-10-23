@@ -11,6 +11,7 @@ from frappe.installer import update_site_config
 
 from approvals.tests.fixtures import (
 	document_approval_rules,
+	reassign_fixture_invoices,
 	user_document_approval_rules,
 	timesheet_activity_type,
 	timesheet_fixture_epoch,
@@ -78,6 +79,7 @@ def create_test_data():
 	create_customers(settings)
 	create_purchase_orders(settings)
 	create_invoices(settings)
+	create_reassign_fixture_invoices(settings)
 	set_test_user_passwords()
 	sync_approver_user_roles()
 	dismiss_onboarding(settings)
@@ -170,6 +172,36 @@ def create_invoices(settings):
 	)
 	pi.save()
 	# pi.submit()
+
+
+def create_reassign_fixture_invoices(settings=None):
+	settings = settings or frappe._dict(
+		{
+			"company": frappe.defaults.get_defaults().get("company"),
+			"day": datetime.date(
+				int(frappe.defaults.get_defaults().get("fiscal_year", datetime.datetime.now().year)), 1, 1
+			),
+		}
+	)
+	supplier_row = next(row for row in suppliers if row[0] == "Cooperative Ag Finance")
+	for bill_no in reassign_fixture_invoices.values():
+		if frappe.db.exists("Purchase Invoice", {"bill_no": bill_no, "docstatus": 0}):
+			continue
+		pi = frappe.new_doc("Purchase Invoice")
+		pi.company = settings.company
+		pi.set_posting_time = 1
+		pi.posting_date = settings.day
+		pi.supplier = supplier_row[0]
+		pi.bill_no = bill_no
+		pi.append(
+			"items",
+			{
+				"item_code": supplier_row[1],
+				"rate": supplier_row[3],
+				"qty": 1,
+			},
+		)
+		pi.save()
 
 
 def create_pi_document_approval_rules(settings=None):

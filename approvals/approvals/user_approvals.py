@@ -644,6 +644,7 @@ def delete_satisfies_role_user_document_approval(doc: Document, role: str) -> No
 	if uda.todo and frappe.db.exists("ToDo", uda.todo):
 		frappe.db.set_value("User Document Approval", uda.name, "todo", None)
 		frappe.delete_doc("ToDo", uda.todo, ignore_permissions=True)
+		uda.todo = None
 	uda.flags.ignore_permissions = True
 	uda.delete(ignore_permissions=True)
 

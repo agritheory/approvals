@@ -5,8 +5,23 @@ import time
 from contextlib import contextmanager
 
 import frappe
+import pytest
+from frappe.database.mariadb.database import MariaDBDatabase
 
-from approvals.tests.fixtures import timesheet_approval_employees, timesheet_fixture_note_prefix
+from approvals.tests.fixtures import (
+	reassign_fixture_invoices,
+	timesheet_approval_employees,
+	timesheet_fixture_note_prefix,
+)
+
+
+@pytest.fixture(scope="module", autouse=True)
+def use_real_database_commits():
+	mocked_commit = frappe.db.commit
+	frappe.db.rollback()
+	frappe.db.commit = lambda: MariaDBDatabase.commit(frappe.db)
+	yield frappe.db
+	frappe.db.commit = mocked_commit
 
 
 @contextmanager
@@ -48,6 +63,21 @@ def timesheet_for_fixture(fixture_key: str):
 		"Run bench execute 'approvals.tests.setup.before_test'."
 	)
 	return frappe.get_doc("Timesheet", name)
+
+
+def purchase_invoice_for_fixture(fixture_key: str):
+	from approvals.tests.setup import create_reassign_fixture_invoices
+
+	bill_no = reassign_fixture_invoices[fixture_key]
+	name = frappe.db.get_value("Purchase Invoice", {"bill_no": bill_no, "docstatus": 0}, "name")
+	if not name:
+		create_reassign_fixture_invoices()
+		name = frappe.db.get_value("Purchase Invoice", {"bill_no": bill_no, "docstatus": 0}, "name")
+	assert name, (
+		f"Missing Purchase Invoice fixture {fixture_key} (bill_no={bill_no}). "
+		"Run bench execute 'approvals.tests.setup.before_test'."
+	)
+	return frappe.get_doc("Purchase Invoice", name)
 
 
 def restore_timesheet_employee(timesheet, employee_name: str | None = None):

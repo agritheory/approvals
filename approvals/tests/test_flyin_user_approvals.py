@@ -18,12 +18,12 @@ from approvals.tests.test_flyin_approval_visibility import (
 	browser_type_launch_args,
 	cleanup_test_purchase_invoice,
 	playwright_bench_web,
-	use_real_database_commits,
 )
 from approvals.tests.test_purchase_invoice_non_workflow_approval import (
 	create_draft_purchase_invoice_for_supplier,
 	ensure_purchase_invoice_assignments,
 )
+from approvals.tests.test_utils import use_real_database_commits
 
 
 @pytest.mark.order(50)

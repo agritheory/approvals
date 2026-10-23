@@ -45,11 +45,14 @@ class UserDocumentApproval(Document):
 		self.todo = todo.name
 
 	def remove_todo(self):
-		if self.todo and frappe.db.exists("ToDo", self.todo):
-			todo_name = self.todo
-			frappe.db.set_value("User Document Approval", self.name, "todo", None)
-			self.todo = None
-			frappe.delete_doc("ToDo", todo_name, ignore_permissions=True)
+		if self.todo:
+			if frappe.db.exists("ToDo", self.todo):
+				todo_name = self.todo
+				frappe.db.set_value("User Document Approval", self.name, "todo", None)
+				self.todo = None
+				frappe.delete_doc("ToDo", todo_name, ignore_permissions=True)
+			else:
+				self.todo = None
 			return
 		todo = frappe.get_value(
 			"ToDo",
@@ -57,6 +60,8 @@ class UserDocumentApproval(Document):
 				"reference_type": self.reference_doctype,
 				"reference_name": self.reference_name,
 				"allocated_to": self.approver,
+				"status": "Open",
+				"document_approval_rule": ["is", "not set"],
 			},
 			"name",
 		)

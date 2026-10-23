@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Usage
 
 <div class="byline">
-  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-10-04
+  Rohan Bansal, Cursor, fproldan, Ishwarya, Myuddin Khatri, Heather Kusmierz, and Tyler Matteson 2026-10-10
 </div>
 
 Approval work happens in one place: the Pending Approvals drawer. The drawer lists every document waiting on the current user. When a document is open, the drawer also shows every approval that document requires, who each one is assigned to, and what the current user can do about it.
@@ -42,7 +42,7 @@ When there is nothing left to review, the drawer reads "All caught up."
 Each approval on the open document has its own row. A row shows:
 
 - Role: the role the rule requires, or "User Approval" when a specific person was added to this document
-- Assigned to: the person currently responsible, "You" when it is the current user, or "Unassigned"
+- Assigned to: the person currently responsible, "You" when it is the current user, or "Unassigned". Omitted once that role is approved and no one is still assigned to it
 - Rule, Requested by, or Source and Reason: which User rule or integration created the row, who added a person manually, or which provider ran; plus optional reason (User Approval rows)
 - Approved by: who approved it, once someone has
 

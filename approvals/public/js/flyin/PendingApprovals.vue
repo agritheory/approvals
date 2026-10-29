@@ -19,7 +19,10 @@
 					v-else
 					:key="documentApprovalKey(approval, index)"
 					class="pending-approvals__document-row">
-					<div class="pending-approvals__context">
+					<div class="pending-approvals__context" :class="documentApprovalStateClass(approval)">
+						<div v-if="documentApprovalStateLabel(approval)" class="pending-approvals__state">
+							{{ documentApprovalStateLabel(approval) }}
+						</div>
 						<div class="pending-approvals__context-row">
 							<span class="pending-approvals__label">Role:</span>
 							<span>{{ approval.approval_role }}</span>
@@ -35,10 +38,6 @@
 						<div v-if="approval.reason" class="pending-approvals__context-row">
 							<span class="pending-approvals__label">Reason:</span>
 							<span>{{ approval.reason }}</span>
-						</div>
-						<div v-if="approval.approved" class="pending-approvals__context-row">
-							<span class="pending-approvals__label">Approved by:</span>
-							<span>{{ approval.approver }}</span>
 						</div>
 					</div>
 
@@ -157,6 +156,9 @@ import { useFilePreview } from '@agritheory/flyin/file-preview'
 import {
 	approvalRoleKey,
 	canActOnApproval,
+	compareDocumentApprovalRows,
+	documentApprovalRowState,
+	documentApprovalRowStateLabel,
 	findPendingApproval,
 	type ApprovalRole,
 	type DocLike,
@@ -234,7 +236,15 @@ const assignedItems = computed(() => {
 	return items.value.filter(item => !matchesItem(item, route))
 })
 
-const documentGroupApprovals = computed(() => documentGroup.value.approvalsData?.approvals ?? [])
+const documentGroupApprovals = computed(() => {
+	const approvals = documentGroup.value.approvalsData?.approvals ?? []
+	const doc = documentGroup.value.doc
+	const approvalState = documentGroup.value.approvalsData?.approval_state
+	if (!doc || approvals.length < 2) {
+		return approvals
+	}
+	return [...approvals].sort((a, b) => compareDocumentApprovalRows(a, b, doc, approvalState))
+})
 
 const hasContent = computed(() => {
 	if (documentGroup.value.show && (documentGroup.value.loading || documentGroupApprovals.value.length)) {
@@ -295,6 +305,22 @@ function displayRole(item: ApprovalItem): string {
 
 function documentApprovalKey(approval: ApprovalRole, index: number): string {
 	return `${approval.approval_role}-${approval.assigned_username}-${index}`
+}
+
+function documentApprovalState(approval: ApprovalRole) {
+	const { doc, approvalsData } = documentGroup.value
+	if (!doc) {
+		return documentApprovalRowState(approval, {}, approvalsData?.approval_state)
+	}
+	return documentApprovalRowState(approval, doc, approvalsData?.approval_state)
+}
+
+function documentApprovalStateClass(approval: ApprovalRole): string {
+	return `pending-approvals__context--${documentApprovalState(approval)}`
+}
+
+function documentApprovalStateLabel(approval: ApprovalRole): string {
+	return documentApprovalRowStateLabel(approval, documentApprovalState(approval))
 }
 
 function getItemContext(item: ApprovalItem): ItemContext | undefined {
@@ -950,9 +976,11 @@ onUnmounted(() => {
 	flex-direction: column;
 	gap: 6px;
 	margin-bottom: 10px;
-	padding: 10px 12px;
-	border-radius: 6px;
-	background: var(--control-bg, rgba(0, 0, 0, 0.04));
+	padding: var(--padding-sm, 10px) var(--padding-md, 12px);
+}
+
+.pending-approvals__state {
+	margin-bottom: 2px;
 }
 
 .pending-approvals__context-row {

@@ -53,6 +53,46 @@
 
 .pending-approvals .flyout-action-btn:disabled {
 	text-decoration: line-through;
-	background: #687178;
-	color: #fff;
+	background: var(--bg-dark-gray);
+	color: var(--text-on-gray);
+}
+
+.pending-approvals .pending-approvals__state {
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+
+.pending-approvals .pending-approvals__context {
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius-md);
+}
+
+.pending-approvals .pending-approvals__context--approved {
+	background: var(--alert-bg-success);
+	border-color: transparent;
+}
+
+.pending-approvals .pending-approvals__context--approved .pending-approvals__state {
+	color: var(--alert-text-success);
+}
+
+.pending-approvals .pending-approvals__context--assigned {
+	background: var(--alert-bg-info);
+	border-color: transparent;
+}
+
+.pending-approvals .pending-approvals__context--assigned .pending-approvals__state {
+	color: var(--alert-text-info);
+}
+
+.pending-approvals .pending-approvals__context--waiting,
+.pending-approvals .pending-approvals__context--open {
+	background: var(--control-bg);
+}
+
+.pending-approvals .pending-approvals__context--waiting .pending-approvals__state,
+.pending-approvals .pending-approvals__context--open .pending-approvals__state {
+	color: var(--text-on-gray);
 }

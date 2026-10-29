@@ -37,15 +37,25 @@ class DocumentApprovalRule(Document):
 				frappe.throw(_("Approvers expression is required when Approver Type is User"))
 			validate_condition(self.approvers, self.approval_doctype)
 			self.condition = None
-			self.title = f"{self.approval_doctype} - User"
-			if self.approval_role:
-				self.title += f" ({self.approval_role})"
 		else:
 			if not self.approval_role:
 				frappe.throw(_("Approval Role is required when Approver Type is Role"))
 			validate_condition(self.condition, self.approval_doctype)
 			self.approvers = None
-			self.title = f"{self.approval_doctype} - {self.approval_role}"
+		self.set_title()
+
+	def computed_title(self) -> str:
+		if (self.approver_type or "Role") == "User":
+			title = f"{self.approval_doctype} - User"
+			return f"{title} ({self.approval_role})" if self.approval_role else title
+		return f"{self.approval_doctype} - {self.approval_role}"
+
+	def set_title(self):
+		"""Keep a typed title; recompute one that is blank or still matches the previous computed title."""
+		before = self.get_doc_before_save()
+		previous_computed = before.computed_title() if before else None
+		if not self.title or self.title == previous_computed:
+			self.title = self.computed_title()
 
 	def is_active(self, doc: Document) -> bool:
 		if in_install_or_patch() or not self.enabled:

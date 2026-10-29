@@ -96,10 +96,10 @@
 			"fieldtype": "Section Break"
 		},
 		{
+			"description": "Filled in from Approval Doctype, Approver Type and Approval Role, and kept in step while it matches. Type your own to keep it.",
 			"fieldname": "title",
 			"fieldtype": "Data",
-			"label": "Title",
-			"read_only": 1
+			"label": "Title"
 		},
 		{
 			"default": "0",
@@ -134,7 +134,7 @@
 		}
 	],
 	"links": [],
-	"modified": "2026-10-10 12:50:00.000000",
+	"modified": "2026-10-26 15:30:00.000000",
 	"modified_by": "Administrator",
 	"module": "Approvals",
 	"name": "Document Approval Rule",
